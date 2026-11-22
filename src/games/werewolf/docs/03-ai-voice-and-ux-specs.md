@@ -15,6 +15,8 @@
 
 ### 1.2 Indonesian TTS Script Templates
 
+> **PartyQuest decision (2026-11-23): the narrator never speaks player names, only role names.** Names stay on screen. The lines below that contained `{victimName}`, `{victimList}`, `{hunterName}`, or `{executedName}` are implemented without them (victim count instead, "Lihat layar…"). Every remaining variable comes from a finite set, so all lines can be pre-rendered to audio. Source of truth: `src/games/werewolf/voice/templates.ts`.
+
 #### Mode 1: Hybrid Classic Scripts
 | Trigger Event | Indonesian Voice Script Template |
 | :--- | :--- |

@@ -8,7 +8,7 @@ import { ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-sequence";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
 import { indonesianVoices, isSpeechSupported, loadVoices, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
-import { CLASSIC_LINES, joinNames, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine, type ClassicLineKey } from "@/games/werewolf/voice/templates";
+import { CLASSIC_LINES, countWords, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine, type ClassicLineKey } from "@/games/werewolf/voice/templates";
 
 type Step = { text?: string; wait?: number };
 const NIGHT_ROLES = ONUW_ROLES.filter((role) => ONUW_ROLE_LINES[role]);
@@ -28,7 +28,7 @@ export default function VoicePilot() {
   const [subtitle, setSubtitle] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [vars, setVars] = useState({ night: 1, victimName: "Budi", victims: "Budi, Citra", hunterName: "Dimas", executedName: "Eka", winningFaction: "Warga Desa", minutes: 3 });
+  const [vars, setVars] = useState({ night: 1, victimCount: 2, winningFaction: "Warga Desa", minutes: 3 });
   const [deck, setDeck] = useState<OnuwRole[]>(["WEREWOLF", "MINION", "SEER", "ROBBER", "TROUBLEMAKER", "INSOMNIAC"]);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function VoicePilot() {
 
   const idVoices = indonesianVoices(voices);
   const listedVoices = showAllVoices ? voices : idVoices;
-  const lineVars = { nightOrdinal: nightOrdinal(vars.night), roleName: "Seer", victimName: vars.victimName, victimList: joinNames(vars.victims.split(",").map((name) => name.trim()).filter(Boolean)), hunterName: vars.hunterName, minutes: vars.minutes, executedName: vars.executedName, winningFaction: vars.winningFaction };
+  const lineVars = { nightOrdinal: nightOrdinal(vars.night), roleName: "Seer", victimCount: countWords(vars.victimCount), minutes: vars.minutes, winningFaction: vars.winningFaction };
 
   function render(template: string, extra: Record<string, string | number> = {}) {
     return renderLine(template, { ...lineVars, ...extra });
@@ -145,7 +145,8 @@ export default function VoicePilot() {
 
         <section className="ww-panel" aria-labelledby="sample-vars">
           <h2 id="sample-vars">Variabel contoh</h2>
-          {([["night", "Malam ke"], ["victimName", "Korban"], ["victims", "Banyak korban (pisahkan koma)"], ["hunterName", "Pemburu"], ["executedName", "Dieksekusi"], ["winningFaction", "Kubu menang"], ["minutes", "Menit diskusi"]] as const).map(([key, label]) => <div key={key}>
+          <p className="ww-muted">Narator tidak pernah menyebut nama pemain, hanya role. Nama korban tampil di layar.</p>
+          {([["night", "Malam ke"], ["victimCount", "Jumlah korban (banyak korban)"], ["winningFaction", "Kubu menang"], ["minutes", "Menit diskusi"]] as const).map(([key, label]) => <div key={key}>
             <label className="ww-label" htmlFor={`var-${key}`}>{label}</label>
             <input id={`var-${key}`} className="ww-input" type={typeof vars[key] === "number" ? "number" : "text"} min={1} value={vars[key]} onChange={(event) => setVar(key, event.target.value)} />
           </div>)}

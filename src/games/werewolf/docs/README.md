@@ -28,10 +28,11 @@ Werewolf brings social deduction into a physical room without making one person 
 
 1. **Engine separation.** Classic and ONUW live in separate modules (`engine/classic/`, `engine/onuw/`) and share no state shapes. Do not mix multi-night health/protection with one-night card swaps.
 2. **Server-authoritative state.** Every Classic mutation is a browser *intent* validated by the Werewolf adapter and persisted with the platform's version-checked mutation. The browser never sends game state, roles, or a player id.
-3. **Single-source audio.** Only one device narrates: the paired TV when `hasTvScreen` is true, otherwise the Host's phone. Regular player phones never play voice lines.
-4. **Dead players.** `isAlive === false` means no night interaction (no Fake Taps, no actions) and no day vote. The only exception is `HUNTER_REVENGE` right after a Hunter dies. `deadRevealMode` only controls read-only visibility: `SPECTATOR_REVEAL` shows all roles, `KEEP_HIDDEN` hides them until `GAME_OVER`.
-5. **Zero role leakage.** Views are built per player by the adapter. Alive players see only their own role plus known teammates (Werewolves, Masons, and Werewolves for a Minion). Dead players see other roles only under `SPECTATOR_REVEAL`. The TV gets the public view only. Events carry no state.
-6. **ONUW anti-cheat.** Pass-the-phone always renders every Host-configured role at full opacity, with no hint of earlier picks.
+3. **Role-only narration.** The voice moderator never speaks player names, only role names; names appear on screen. All voice variables come from finite sets, so every line can be pre-rendered.
+4. **Single-source audio.** Only one device narrates: the paired TV when `hasTvScreen` is true, otherwise the Host's phone. Regular player phones never play voice lines.
+5. **Dead players.** `isAlive === false` means no night interaction (no Fake Taps, no actions) and no day vote. The only exception is `HUNTER_REVENGE` right after a Hunter dies. `deadRevealMode` only controls read-only visibility: `SPECTATOR_REVEAL` shows all roles, `KEEP_HIDDEN` hides them until `GAME_OVER`.
+6. **Zero role leakage.** Views are built per player by the adapter. Alive players see only their own role plus known teammates (Werewolves, Masons, and Werewolves for a Minion). Dead players see other roles only under `SPECTATOR_REVEAL`. The TV gets the public view only. Events carry no state.
+7. **ONUW anti-cheat.** Pass-the-phone always renders every Host-configured role at full opacity, with no hint of earlier picks.
 
 ## 4. Specification index
 
