@@ -9,14 +9,16 @@ The MVP supports:
 - Online multiplayer with each player using their own device.
 - Guest access without email or password registration.
 - Local development using Docker.
-- Deployment to Vercel with Supabase for online multiplayer.
+- Deployment to Vercel with a managed PostgreSQL database for online multiplayer.
 
 ## Technology Stack
 
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- Supabase Auth, PostgreSQL, and Realtime
+- Plain PostgreSQL through `pg` (server-only); no Supabase
+- Signed HttpOnly guest cookies for anonymous auth
+- Postgres `LISTEN/NOTIFY` relayed to browsers with Server-Sent Events
 - Docker and Docker Compose
 - Built-in unit testing capabilities of the selected test runner
 
@@ -26,7 +28,7 @@ Do not introduce additional frameworks or dependencies unless required and justi
 
 1. Inspect the existing codebase before modifying files.
 2. Prefer small, focused changes over unnecessary rewrites.
-3. Keep game rules independent from React components, Supabase, and network APIs.
+3. Keep game rules independent from React components, the database, and network APIs.
 4. Reuse the same game engine for Pass-and-Play and online multiplayer.
 5. Keep TypeScript strict and avoid `any` unless unavoidable and documented.
 6. Validate all external input and game actions.
@@ -34,6 +36,14 @@ Do not introduce additional frameworks or dependencies unless required and justi
 8. Never expose secret words or another player's private information.
 9. Avoid premature abstractions and unnecessary dependencies.
 10. Preserve existing working functionality.
+
+## Game Module Architecture
+
+PartyQuest is a multi-game platform. Keep each game self-contained in `src/games/<game>/`:
+- Rules/engine, word data, local session, server adapter (`server/`), UI (`ui/`, including the game's theme CSS), and `index.ts` exporting a `GameModule`.
+- Register UI modules in `src/games/registry.ts` and online adapters (`OnlineGameServer`) in `src/games/online-registry.ts`.
+- Platform code (`src/components/catalog`, `src/components/lobby`, `src/components/site`, `src/lib`, `src/app/api`) must not contain game rules or game-specific labels; it reaches games only through these contracts.
+- A new online game also needs its `game_key` allowed by a migration.
 
 ## Game Rules
 
@@ -56,18 +66,16 @@ Keep the role distribution and victory conditions in one authoritative rules mod
 
 ## Multiplayer Security
 
-- Authenticate online guests using Supabase anonymous sign-in.
-- Derive the acting user from the verified server session.
+- Authenticate online guests with the server-issued `pq_guest` cookie (HttpOnly, HMAC-SHA256 signed with `GUEST_SESSION_SECRET`, 30-day max age) backed by a `guest_users` row.
+- Derive the acting user only from the verified cookie; never accept a browser-supplied user id or full game state.
 - Validate room membership, phase, turn, and permitted actions on the server.
 - Keep private words in server-controlled private state.
 - Return only the information authorized for the requesting player.
-- Never send private words through public Realtime broadcasts.
-- Protect database tables with appropriate grants and Row Level Security policies.
-- Never expose Supabase secret or service-role keys in client code.
-- Use atomic state updates or equivalent concurrency control to prevent conflicting actions.
-- Online database access goes through server-only Supabase code with the secret key. Verify the anonymous JWT and active membership before reading private state or running a mutation.
-- Revoke direct `anon` and `authenticated` table grants as well as enabling RLS. Mutating RPCs are executable only by `service_role`; do not pass a browser-supplied user id or full game state to them.
-- The session view returns one player's private assignment; reveal all assignments only after the engine ends the game. Realtime is an invalidation signal and contains no game/private state.
+- Never send private words through NOTIFY or the SSE stream.
+- Database access goes through server-only modules (`src/lib/db`, `src/lib/rooms`). The browser never connects to PostgreSQL; `DATABASE_URL` and `GUEST_SESSION_SECRET` stay server-only.
+- Migrations revoke `PUBLIC` privileges on tables and functions. Mutations run through PL/pgSQL functions that lock rows and re-validate host, membership, phase, and player counts.
+- Verify the guest cookie and active membership before reading private state or running a mutation.
+- The session view returns one player's private assignment; reveal all assignments only after the engine ends the game. NOTIFY/SSE events carry only the room id as an invalidation signal.
 - Compare `expectedVersion` while locking the session row before persisting a server-computed public state.
 - Persist the spoken-clue deadline in public session state, create it from server time, and advance expired turns through the same version-checked RPC. The browser timer displays the remaining server deadline; refreshing must not restart it.
 - Preserve active membership during a running round so a transient disconnect can reconnect without stranding a turn; explicit leave is allowed from the lobby or after the round finishes.
@@ -108,12 +116,13 @@ Never claim tests passed unless they were actually executed.
 ## Docker and Deployment
 
 - Maintain a working Dockerfile and Docker Compose configuration for local development.
-- Compose includes a local PostgreSQL development service on host loopback port 5432. It does not replace Supabase Auth or Realtime; the Online Room API still uses the configured Supabase project unless a separate backend migration is designed.
+- Compose runs PostgreSQL (host loopback `POSTGRES_PORT`, default 5432) as the Online Room backend; `web` waits for it, runs `npm run db:migrate`, then starts Next.js.
 - Keep secrets in environment variables.
 - Provide `.env.example` containing variable names and safe placeholders only.
-- Document local Docker setup and Supabase configuration.
-- Keep the Supabase secret key in runtime server environment only; Compose passes it as a runtime environment value and never as a Docker build argument.
-- Migration `202610220001_initial_undercover.sql` defines 12-hour room expiry and the `cleanup_expired_rooms()` maintenance function. Anonymous Auth retention remains a Supabase project policy.
+- Document local Docker setup and PostgreSQL configuration.
+- Pass `DATABASE_URL` and `GUEST_SESSION_SECRET` as runtime environment values only, never as Docker build arguments.
+- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()`; guest row retention is an operator policy.
+- `LISTEN/NOTIFY` needs a direct or session-pooled connection; with transaction pooling, clients fall back to polling.
 - Ensure the application can also be deployed to Vercel.
 - Do not claim deployment is complete without verifying it.
 

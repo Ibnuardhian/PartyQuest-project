@@ -33,7 +33,8 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 - Undercover memakai nuansa serif/stencil dramatis dengan tracking judul lebar, bayangan kontras, vignette dan grain halus, garis lipatan kertas, aksen benang merah, dan stempel classified. Font stack mengutamakan Cinzel/Playfair Display dengan fallback serif sistem.
 - Kartu dossier memakai bidang kertas off-white, sudut tegas, garis halus, serta shadow; tombol utama merah dengan label uppercase. Kontras teks tetap terbaca.
 - Halaman game memberi prioritas pada satu tindakan utama per fase. Informasi privat harus dibedakan jelas dari informasi publik.
-- Tautan Online Room membuka setup Undercover pada kartu kanan yang sama; label berubah menjadi MODE ONLINE dan isi form berganti ke buat/gabung room. Palet Noir dan gaya dossier tetap sama.
+- Katalog (`/`) hanya menampilkan kartu game dari registry. Setup Undercover berada di `/games/undercover`; tautan Online Room membuka `/games/undercover?mode=online` pada kartu kanan yang sama, label berubah menjadi MODE ONLINE dan form berganti ke buat/gabung room. Palet Noir dan gaya dossier tetap sama.
+- Tema visual milik satu game disimpan di folder game tersebut (contoh `src/games/undercover/ui/undercover.css`) dan diimpor oleh komponen game. `src/app/globals.css` hanya berisi token dan komponen platform bersama.
 
 ## Aturan interaksi
 
