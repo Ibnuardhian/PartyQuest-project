@@ -56,7 +56,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   }, [deadlineAt, skew, load]);
 
   const secondsLeft = useCountdown(deadlineAt, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
-  const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected));
+  const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected), secondsLeft);
 
   async function perform(action: Record<string, unknown>) {
     if (!snapshot) return;

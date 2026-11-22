@@ -44,7 +44,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
   const view = data?.session?.view ?? null;
   const deadlineAt = view?.phaseDeadlineAt ?? null;
   const secondsLeft = useCountdown(deadlineAt, data?.serverNow ?? 0, data?.receivedAt ?? 0);
-  const narration = useNarration(view, data?.session?.sessionId ?? null, true);
+  const narration = useNarration(view, data?.session?.sessionId ?? null, true, secondsLeft);
   const nameOf = (id: string | null | undefined) => view?.players.find((player) => player.id === id)?.name ?? "—";
   const lastDawn = view ? [...view.log].reverse().find((entry) => entry.type === "DAWN") : undefined;
 
@@ -72,6 +72,8 @@ export default function WerewolfTvStage({ code }: { code: string }) {
           {view.lastVoteReveal && view.lastVoteReveal.length > 0 && ["TIE_DEFENSE", "NIGHT_INTRO", "HUNTER_REVENGE", "GAME_OVER"].includes(view.phase) && <div className="ww-panel"><span className="section-kicker">HASIL VOTING TERBUKA</span><ul className="ww-matrix">{view.lastVoteReveal.map((vote) => <li key={vote.voterId}><span>{nameOf(vote.voterId)}</span><span aria-hidden="true">→</span><strong>{vote.targetId ? nameOf(vote.targetId) : "Abstain"}</strong>{vote.weight > 1 && <small>×{vote.weight}</small>}</li>)}</ul></div>}
           {view.phase === "DAY_DISCUSSION" && lastDawn?.type === "DAWN" && <p className="ww-tv-ticker">{lastDawn.deadPlayerIds.length ? `Korban semalam: ${lastDawn.deadPlayerIds.map(nameOf).join(", ")}` : "Tidak ada korban semalam."}</p>}
         </>}
+        {/* Live moderator subtitle bar (docs/03 §3). */}
+        <p className="ww-tv-subtitle" aria-live="polite">{narration.subtitle || (narration.enabled ? "…" : "Ketuk “Aktifkan suara” agar TV menjadi narator.")}</p>
       </>}
     </section>
     <SiteFooter left="WEREWOLF · TV" right="Layar baca-saja: role baru terbuka saat permainan selesai" />
