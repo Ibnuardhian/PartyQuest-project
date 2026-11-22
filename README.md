@@ -86,6 +86,7 @@ src/
       server/online.ts      adapter Online Room (settings, aksi, deadline, view)
       ui/                   setup, Pass-and-Play, layar online, kartu katalog, tema CSS
       index.ts              modul game untuk platform
+    werewolf/docs/          spesifikasi game Werewolf yang sudah diadaptasi ke platform (belum diimplementasikan)
   lib/
     auth/                   cookie tamu bertanda tangan
     db/                     pool pg dan hub LISTEN/NOTIFY
