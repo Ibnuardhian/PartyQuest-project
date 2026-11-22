@@ -39,7 +39,7 @@
       "Cupid",
       "Mason",
       "Werewolf",
-      "Doctor",
+      "Guardian Angel",
       "Seer",
       "Witch",
       "Hunter",
@@ -60,21 +60,21 @@
   },
   "elevenlabs": {
     "voiceId": "pNInz6obpgDQGcFmaJgB",
-    "modelId": "eleven_multilingual_v2",
+    "modelId": "eleven_v4",
     "outputFormat": "mp3_44100_128",
     "voiceSettings": {
-      "stability": 0.4,
-      "similarity_boost": 0.75,
-      "style": 0.25,
-      "use_speaker_boost": true
-    }
+      "stability": 0.5,
+      "similarity_boost": 0.75
+    },
+    "note": "Audio tags such as [sad] or [laughs] only work on eleven_v3/eleven_v4; other models get the tags removed."
   },
   "items": [
     {
       "key": "CLASSIC_NIGHT_INTRO",
       "mode": "classic",
       "file": "/audio/werewolf/classic/night_intro.mp3",
-      "text": "Malam telah tiba... Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. Tetap tenang... dan jangan bersuara."
+      "text": "Malam telah tiba... Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. Tetap tenang... dan jangan bersuara.",
+      "elevenlabsText": "[whispers] Malam telah tiba... [ominous] Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. [whispers] Tetap tenang... dan jangan bersuara."
     },
     {
       "key": "CLASSIC_TURN_CUPID",
@@ -92,25 +92,28 @@
       "key": "CLASSIC_TURN_WEREWOLF",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_werewolf.mp3",
-      "text": "Giliran para Werewolf beraksi... Pilih satu warga yang akan menjadi mangsa malam ini."
+      "text": "Giliran para Werewolf beraksi... Pilih satu warga yang akan menjadi mangsa malam ini.",
+      "elevenlabsText": "[sinister] Giliran para Werewolf beraksi... [evil laugh] Pilih satu warga yang akan menjadi mangsa malam ini."
     },
     {
       "key": "CLASSIC_TURN_DOCTOR",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_doctor.mp3",
-      "text": "Giliran Doctor beraksi... Pilih satu pemain yang ingin kamu lindungi malam ini."
+      "text": "Giliran Guardian Angel beraksi... Pilih satu pemain yang ingin kamu lindungi malam ini."
     },
     {
       "key": "CLASSIC_TURN_SEER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_seer.mp3",
-      "text": "Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya."
+      "text": "Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya.",
+      "elevenlabsText": "[mysterious] Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya."
     },
     {
       "key": "CLASSIC_TURN_WITCH",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_witch.mp3",
-      "text": "Giliran Witch beraksi... Tentukan apakah kamu ingin menggunakan ramuanmu malam ini."
+      "text": "Giliran Witch beraksi... Tentukan apakah kamu ingin menggunakan ramuanmu malam ini.",
+      "elevenlabsText": "[mysterious] Giliran Witch beraksi... Tentukan apakah kamu ingin menggunakan ramuanmu malam ini."
     },
     {
       "key": "CLASSIC_TURN_END",
@@ -122,25 +125,29 @@
       "key": "CLASSIC_DAWN_SINGLE_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_single_kill.mp3",
-      "text": "Pagi telah tiba! Warga desa terbangun dengan kabar duka... Satu warga ditemukan tewas semalam. Lihat layar untuk melihat siapa korbannya."
+      "text": "Pagi telah tiba! Warga desa terbangun dengan kabar duka... Satu warga ditemukan tewas semalam. Lihat layar untuk melihat siapa korbannya.",
+      "elevenlabsText": "[sad] Pagi telah tiba... [sighs] Warga desa terbangun dengan kabar duka... Satu warga ditemukan tewas semalam. Lihat layar untuk melihat siapa korbannya."
     },
     {
       "key": "CLASSIC_DAWN_MULTI_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_multi_kill.mp3",
-      "text": "Pagi telah tiba! Tragedi berdarah terjadi semalam... Lebih dari satu warga ditemukan tewas! Periksa layar sekarang."
+      "text": "Pagi telah tiba! Tragedi berdarah terjadi semalam... Lebih dari satu warga ditemukan tewas! Periksa layar sekarang.",
+      "elevenlabsText": "[sad] Pagi telah tiba... [crying] Tragedi berdarah terjadi semalam... Lebih dari satu warga ditemukan tewas! Periksa layar sekarang."
     },
     {
       "key": "CLASSIC_DAWN_NO_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_no_kill.mp3",
-      "text": "Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!"
+      "text": "Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!",
+      "elevenlabsText": "[relieved] Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!"
     },
     {
       "key": "CLASSIC_HUNTER_REVENGE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/hunter_revenge.mp3",
-      "text": "Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Hunter... pilih satu targetmu di layar sekarang!"
+      "text": "Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Hunter... pilih satu targetmu di layar sekarang!",
+      "elevenlabsText": "[dramatic] Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Hunter... pilih satu targetmu di layar sekarang!"
     },
     {
       "key": "CLASSIC_DAY_DISCUSSION_START",
@@ -164,49 +171,57 @@
       "key": "CLASSIC_VOTING_TIE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/voting_tie.mp3",
-      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."
+      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai.",
+      "elevenlabsText": "[tense] Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."
     },
     {
       "key": "CLASSIC_EXECUTION_RESULT",
       "mode": "classic",
       "file": "/audio/werewolf/classic/execution_result.mp3",
-      "text": "Warga desa telah memutuskan... Lihat layar untuk melihat siapa yang dieksekusi hari ini!"
+      "text": "Warga desa telah memutuskan... Lihat layar untuk melihat siapa yang dieksekusi hari ini!",
+      "elevenlabsText": "[solemn] Warga desa telah memutuskan... Lihat layar untuk melihat siapa yang dieksekusi hari ini!"
     },
     {
       "key": "CLASSIC_EXECUTION_NONE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/execution_none.mp3",
-      "text": "Voting kembali seri... Tidak ada warga yang dieksekusi hari ini."
+      "text": "Voting kembali seri... Tidak ada warga yang dieksekusi hari ini.",
+      "elevenlabsText": "[sighs] Voting kembali seri... Tidak ada warga yang dieksekusi hari ini."
     },
     {
       "key": "CLASSIC_WIN_VILLAGER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_villager.mp3",
-      "text": "Permainan berakhir! Seluruh Werewolf telah dimusnahkan... Kemenangan mutlak diraih oleh Warga Desa!"
+      "text": "Permainan berakhir! Seluruh Werewolf telah dimusnahkan... Kemenangan mutlak diraih oleh Warga Desa!",
+      "elevenlabsText": "[cheerful] Permainan berakhir! Seluruh Werewolf telah dimusnahkan... Kemenangan mutlak diraih oleh Warga Desa!"
     },
     {
       "key": "CLASSIC_WIN_WEREWOLF",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_werewolf.mp3",
-      "text": "Permainan berakhir! Desa telah dikuasai kegelapan... Kemenangan diraih oleh para Werewolf!"
+      "text": "Permainan berakhir! Desa telah dikuasai kegelapan... Kemenangan diraih oleh para Werewolf!",
+      "elevenlabsText": "[evil laugh] Permainan berakhir! Desa telah dikuasai kegelapan... [laughs] Kemenangan diraih oleh para Werewolf!"
     },
     {
       "key": "CLASSIC_WIN_TANNER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_tanner.mp3",
-      "text": "Kalian masuk perangkap! Orang yang baru saja kalian eksekusi adalah Tanner... Kemenangan tunggal diraih oleh Tanner!"
+      "text": "Kalian masuk perangkap! Orang yang baru saja kalian eksekusi adalah Tanner... Kemenangan tunggal diraih oleh Tanner!",
+      "elevenlabsText": "[laughs] Kalian masuk perangkap! Orang yang baru saja kalian eksekusi adalah Tanner... Kemenangan tunggal diraih oleh Tanner!"
     },
     {
       "key": "CLASSIC_WIN_LOVERS",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_lovers.mp3",
-      "text": "Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!"
+      "text": "Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!",
+      "elevenlabsText": "[warmly] Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!"
     },
     {
       "key": "ONUW_ONUW_INTRO",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_intro.mp3",
-      "text": "Semua pemain, tutup mata sekarang... Pastikan HP berada di tengah meja dan jangan menyentuh layar."
+      "text": "Semua pemain, tutup mata sekarang... Pastikan HP berada di tengah meja dan jangan menyentuh layar.",
+      "elevenlabsText": "[whispers] Semua pemain, tutup mata sekarang... Pastikan HP berada di tengah meja dan jangan menyentuh layar."
     },
     {
       "key": "ONUW_WEREWOLF_OPEN",
@@ -314,7 +329,8 @@
       "key": "ONUW_ONUW_VOTE_COUNTDOWN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_vote_countdown.mp3",
-      "text": "Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!"
+      "text": "Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!",
+      "elevenlabsText": "[excited] Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!"
     }
   ]
 }

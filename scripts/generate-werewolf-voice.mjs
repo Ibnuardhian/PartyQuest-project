@@ -28,6 +28,9 @@ const option = (name) => { const index = args.indexOf(name); return index >= 0 ?
 const force = args.includes("--force");
 const provider = option("--provider") ?? "microsoft";
 const samples = args.includes("--samples");
+// Optional overrides for comparison samples: another multilingual voice and its own sample folder.
+const multilingualVoice = option("--multilingual-voice") ?? pack.bilingual.multilingualVoice;
+const sampleName = option("--sample-name");
 const bilingual = option("--bilingual") ?? pack.bilingual.strategy;
 if (!Object.hasOwn(pack.bilingual.strategies, bilingual)) throw new Error(`Unknown --bilingual "${bilingual}" (use ${Object.keys(pack.bilingual.strategies).join(", ")}).`);
 const only = option("--only")?.split(",").map((key) => key.trim()).filter(Boolean) ?? (samples ? pack.bilingual.sampleKeys : undefined);
@@ -40,20 +43,23 @@ const exists = async (file) => ((await stat(file).catch(() => null))?.size ?? 0)
 let render;
 let outputBase;
 let describe;
+// Text per item: Microsoft reads the plain text; ElevenLabs may read an emotional variant.
+let textFor = (item) => item.text;
 if (provider === "microsoft") {
   const voice = process.env.TTS_VOICE || pack.voice;
   const presetId = process.env.TTS_PRESET || pack.activePreset;
   const preset = pack.presets[presetId];
   if (!preset) throw new Error(`Unknown preset "${presetId}". Choose one of: ${Object.keys(pack.presets).join(", ")}`);
-  outputBase = path.join(root, samples ? `public/audio/werewolf/samples/${bilingual}` : "public/audio/werewolf");
-  describe = `Microsoft ${voice}, preset ${presetId} (rate ${preset.rate}, pitch ${preset.pitch}), bilingual ${bilingual}`;
+  outputBase = path.join(root, samples ? `public/audio/werewolf/samples/${sampleName ?? bilingual}` : "public/audio/werewolf");
+  const speaker = bilingual === "multilingual" ? multilingualVoice : bilingual === "segments" ? `${voice} + ${pack.bilingual.englishVoice}` : voice;
+  describe = `Microsoft ${speaker}, preset ${presetId} (rate ${preset.rate}, pitch ${preset.pitch}), bilingual ${bilingual}`;
   const edge = async (speaker, lang, text, file) => {
     const tts = new EdgeTTS({ voice: speaker, lang, outputFormat: "audio-24khz-48kbitrate-mono-mp3", rate: preset.rate, pitch: preset.pitch, timeout: 20_000 });
     await tts.ttsPromise(text, file);
   };
   if (bilingual === "multilingual") {
     // One multilingual voice reads the whole line: English role names, Indonesian sentences.
-    render = (text, file) => edge(pack.bilingual.multilingualVoice, "id-ID", text, file);
+    render = (text, file) => edge(multilingualVoice, "id-ID", text, file);
   } else if (bilingual === "segments") {
     render = async (text, file) => {
       const parts = splitBilingual(text, pack.bilingual.englishTerms);
@@ -73,8 +79,14 @@ if (provider === "microsoft") {
   const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || settings.voiceId;
   const modelId = process.env.ELEVENLABS_MODEL_ID?.trim() || settings.modelId;
   const baseUrl = (process.env.ELEVENLABS_BASE_URL?.trim() || "https://api.elevenlabs.io").replace(/\/$/, "");
-  outputBase = path.join(root, "public/audio/werewolf/elevenlabs");
-  describe = `ElevenLabs voice ${voiceId}, model ${modelId}`;
+  outputBase = path.join(root, samples ? `public/audio/werewolf/samples/${sampleName ?? "elevenlabs"}` : "public/audio/werewolf/elevenlabs");
+  const tags = /^eleven_v[34]\b/.test(modelId);
+  describe = `ElevenLabs voice ${voiceId}, model ${modelId}${tags ? " with emotion tags" : " (no audio tags on this model; tags removed)"}`;
+  // Emotion tags ([sad], [laughs], ...) only on eleven_v3/v4; other models would read them aloud.
+  textFor = (item) => {
+    const text = item.elevenlabsText ?? item.text;
+    return tags ? text : text.replace(/\[[^\]]{1,40}\]\s*/g, "").trim();
+  };
   render = async (text, file) => {
     const response = await fetch(`${baseUrl}/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${settings.outputFormat}`, {
       method: "POST",
@@ -85,8 +97,8 @@ if (provider === "microsoft") {
     if (!response.ok) {
       const reason = (await response.text().catch(() => "")).slice(0, 300);
       const error = new Error(`HTTP ${response.status} ${reason}`);
-      // 401/403/422 will not improve with retries.
-      error.fatal = [400, 401, 403, 422].includes(response.status);
+      // 400/401/402 (plan required)/403/422 will not improve with retries.
+      error.fatal = [400, 401, 402, 403, 422].includes(response.status);
       throw error;
     }
     await writeFile(file, Buffer.from(await response.arrayBuffer()));
@@ -158,7 +170,7 @@ for (const [index, item] of items.entries()) {
   }
   await mkdir(path.dirname(out), { recursive: true });
   try {
-    await renderWithRetry(item.text, out);
+    await renderWithRetry(textFor(item), out);
     generated += 1;
     console.log(`${label} ok`);
   } catch (error) {

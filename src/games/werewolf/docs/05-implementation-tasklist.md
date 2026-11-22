@@ -12,6 +12,8 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 - [x] **1.7** `engine/onuw`: deck validation (`ΣS(r) = N` and `S(r) ≤ D(r)`, mismatch list, names preserved) and the night sequencer script with per-role durations.
 - [x] **1.8** Vitest coverage for every rule above, including invalid phase/turn/actor and dead-player rejections.
 
+**Naming:** the Doctor role is shown and voiced as **Guardian Angel** (internal id stays `DOCTOR`; decided 2026-11-23).
+
 **Phase 1 decisions where the spec was silent or inconsistent** (implemented and tested):
 - Wolf target = plurality of alive Werewolves' picks; an even split means no attack. Werewolves cannot target Werewolves.
 - `NIGHT_INTRO` lasts 6 s and `OPEN_VOTING` 60 s (the spec names no durations for these).

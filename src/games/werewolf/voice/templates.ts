@@ -44,13 +44,61 @@ export function packLine(key: string): VoiceLine {
   return { text: item.text, clip: item.file };
 }
 
-/** Daytime announcements that name players (subtitle wording from the voice pack spec). */
+/**
+ * Daytime announcements that name players (subtitle wording from the voice pack spec).
+ * `elevenlabs` adds emotion tags ([sad], [sighs], ...) for ElevenLabs v3/v4; Microsoft uses `template`.
+ */
 export const NAME_LINES = {
-  DAWN_SINGLE_KILL: { template: "Pagi telah tiba! Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam.", fallback: "CLASSIC_DAWN_SINGLE_KILL" },
-  DAWN_MULTI_KILL: { template: "Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas!", fallback: "CLASSIC_DAWN_MULTI_KILL" },
-  HUNTER_REVENGE: { template: "Sang Pemburu, {hunterName}, gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}... pilih satu targetmu di layar sekarang!", fallback: "CLASSIC_HUNTER_REVENGE" },
-  EXECUTION_RESULT: { template: "Warga desa telah memutuskan... {executedName} dieksekusi hari ini!", fallback: "CLASSIC_EXECUTION_RESULT" },
+  DAWN_SINGLE_KILL: {
+    template: "Pagi telah tiba! Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam.",
+    elevenlabs: "[sad] Pagi telah tiba... [sighs] Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam.",
+    fallback: "CLASSIC_DAWN_SINGLE_KILL",
+  },
+  DAWN_MULTI_KILL: {
+    template: "Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas!",
+    elevenlabs: "[sad] Pagi telah tiba... [crying] Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas!",
+    fallback: "CLASSIC_DAWN_MULTI_KILL",
+  },
+  HUNTER_REVENGE: {
+    template: "Sang Pemburu, {hunterName}, gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}... pilih satu targetmu di layar sekarang!",
+    elevenlabs: "[dramatic] Sang Pemburu, {hunterName}, gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}... pilih satu targetmu di layar sekarang!",
+    fallback: "CLASSIC_HUNTER_REVENGE",
+  },
+  EXECUTION_RESULT: {
+    template: "Warga desa telah memutuskan... {executedName} dieksekusi hari ini!",
+    elevenlabs: "[solemn] Warga desa telah memutuskan... {executedName} dieksekusi hari ini!",
+    fallback: "CLASSIC_EXECUTION_RESULT",
+  },
 } as const;
+
+/** Only ElevenLabs v3/v4 understand audio tags; other models would read them aloud. */
+export function supportsAudioTags(modelId: string) {
+  return /^eleven_v[34]\b/.test(modelId);
+}
+
+export function stripAudioTags(text: string) {
+  return text.replace(/\[[^\]]{1,40}\]\s*/g, "").trim();
+}
+
+const PACK_EMOTIONAL = new Map(pack.items.flatMap((item) => "elevenlabsText" in item && typeof item.elevenlabsText === "string" ? [[item.text, item.elevenlabsText] as const] : []));
+
+/**
+ * The ElevenLabs version of a validated narrator line: the emotional pack text, or the named
+ * template's emotional wording with the same player names. Unknown text is returned unchanged.
+ */
+export function elevenLabsText(text: string): string {
+  const packed = PACK_EMOTIONAL.get(text);
+  if (packed) return packed;
+  for (const line of Object.values(NAME_LINES)) {
+    const names: string[] = [];
+    const pattern = line.template.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\{(\w+)\\\}/g, (_, name: string) => { names.push(name); return "(.+?)"; });
+    const match = new RegExp(`^${pattern}$`, "u").exec(text);
+    if (!match) continue;
+    const values = new Map(names.map((name, index) => [name, match[index + 1]!]));
+    return line.elevenlabs.replace(/\{(\w+)\}/g, (_, name: string) => values.get(name) ?? "");
+  }
+  return text;
+}
 export type NameLineKey = keyof typeof NAME_LINES;
 
 export const NAME_VARIABLES = ["victimName", "victimList", "hunterName", "executedName"] as const;

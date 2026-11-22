@@ -8,11 +8,12 @@ import { cachedAudio } from "@/lib/tts/cache";
  */
 
 export const ELEVENLABS_DEFAULTS = {
-  /** "Adam", the deep male narrator suggested by the voice pack. Replace with any voice from your library. */
+  /** "Adam", a premade voice usable on every plan. Voice Library voices need a paid plan for API use. */
   voiceId: "pNInz6obpgDQGcFmaJgB",
-  modelId: "eleven_multilingual_v2",
+  /** eleven_v4 supports audio tags ([sad], [laughs], ...) and Indonesian. */
+  modelId: "eleven_v4",
   outputFormat: "mp3_44100_128",
-  voiceSettings: { stability: 0.4, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true },
+  voiceSettings: { stability: 0.5, similarity_boost: 0.75 },
 } as const;
 
 export interface ElevenLabsConfig { apiKey: string; voiceId: string; modelId: string; baseUrl: string }

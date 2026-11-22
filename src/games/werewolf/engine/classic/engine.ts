@@ -291,7 +291,7 @@ export function applyClassicAction(state: ClassicGameState, actor: Actor, action
         case "DOCTOR_PROTECT": {
           requireNightTurn(draft, "DOCTOR", actor.playerId);
           const target = requireLivingTarget(draft, action.targetId, actor.playerId, true);
-          if (target === secret.doctorLastTarget) fail("Doctor tidak boleh melindungi pemain yang sama dua malam berturut-turut.");
+          if (target === secret.doctorLastTarget) fail("Guardian Angel tidak boleh melindungi pemain yang sama dua malam berturut-turut.");
           night.doctorTarget = target;
           break;
         }

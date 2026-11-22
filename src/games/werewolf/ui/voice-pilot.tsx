@@ -15,6 +15,8 @@ type Step = { line?: VoiceLine; wait?: number; preset?: VoicePresetId; label?: s
 const PRESET_IDS = Object.keys(VOICE_PRESETS) as VoicePresetId[];
 const BILINGUAL = VOICE_PACK.bilingual;
 const BILINGUAL_SAMPLES = VOICE_PACK.items.filter((item) => BILINGUAL.sampleKeys.includes(item.key));
+/** Indonesian-heavy line voiced by en-US-BrianMultilingualNeural (samples/brian, generated on request). */
+const BRIAN_SAMPLE = VOICE_PACK.items.find((item) => item.key === "ONUW_SEER_OPEN")!;
 const MICROSOFT_VOICES = [{ id: "id-ID-ArdiNeural", label: "Ardi (laki-laki, sesuai voice pack)" }, { id: "id-ID-GadisNeural", label: "Gadis (perempuan)" }] as const;
 const NIGHT_ROLES = ONUW_ROLES.filter((role) => VOICE_PACK.items.some((item) => item.key === `ONUW_${role}_OPEN`));
 const ENGINE_LABELS = { pack: "Voice pack MP3 (statis)", microsoft: "Dibuat server (Microsoft atau ElevenLabs)", browser: "Suara browser (cadangan)" } as const;
@@ -218,7 +220,20 @@ export default function VoicePilot() {
             <button className="ww-button" onClick={() => void playSample(item.file.replace("/audio/werewolf/", "/audio/werewolf/samples/multilingual/"), item.text, "Multibahasa")}>Multibahasa</button>
           </span>
           <span>{item.text}</span>
-        </li>)}</ul>
+        </li>)}
+        <li>
+          <span className="ww-sample-buttons">
+            <button className="ww-button" onClick={() => void playSample(BRIAN_SAMPLE.file, BRIAN_SAMPLE.text, "Ardi")}>Ardi</button>
+            <button className="ww-button ww-primary" onClick={() => void playSample(BRIAN_SAMPLE.file.replace("/audio/werewolf/", "/audio/werewolf/samples/brian/"), BRIAN_SAMPLE.text, "Brian")}>Brian</button>
+          </span>
+          <span><code>Contoh Brian (en-US-BrianMultilingualNeural), kalimat banyak bahasa Indonesia</code>{BRIAN_SAMPLE.text}</span>
+        </li>
+        <li>
+          <span className="ww-sample-buttons">
+            <button className="ww-button ww-primary" onClick={() => void playSample("/audio/werewolf/samples/elevenlabs-adam/classic/win_werewolf.mp3", "Desa telah dikuasai kegelapan... Para Werewolf menang!", "ElevenLabs emosi")}>ElevenLabs</button>
+          </span>
+          <span><code>Uji emosi ElevenLabs (eleven_v4, suara Adam): [evil laugh] … [laughs]</code>Desa telah dikuasai kegelapan... Para Werewolf menang!</span>
+        </li></ul>
       </section>
 
       <section className="ww-panel" aria-labelledby="onuw-deck">

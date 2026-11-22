@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { NIGHT_ORDER } from "@/games/werewolf/contract";
 import { ONUW_NIGHT_ORDER } from "@/games/werewolf/engine/onuw/night-sequence";
 import { indonesianVoices, splitSentences } from "@/games/werewolf/voice/narrator";
-import { classicVoice, joinNames, NAME_LINES, nameLine, onuwVoice, packLine, renderLine, VOICE_PACK } from "@/games/werewolf/voice/templates";
+import { classicVoice, elevenLabsText, joinNames, NAME_LINES, nameLine, onuwVoice, packLine, renderLine, stripAudioTags, supportsAudioTags, VOICE_PACK } from "@/games/werewolf/voice/templates";
 
 describe("voice pack", () => {
   it("has all 41 lines with a generated, non-empty MP3 in public/", () => {
@@ -45,6 +45,29 @@ describe("named announcements", () => {
     for (const role of NIGHT_ORDER) expect(classicVoice.turnStart(role).text).not.toMatch(/\{/);
     expect(Object.keys(NAME_LINES).sort()).toEqual(["DAWN_MULTI_KILL", "DAWN_SINGLE_KILL", "EXECUTION_RESULT", "HUNTER_REVENGE"]);
     expect(joinNames(["Budi"])).toBe("Budi");
+  });
+});
+
+describe("ElevenLabs emotion", () => {
+  it("gives deaths a sad delivery and the Werewolf win a laugh, keeping player names", () => {
+    expect(elevenLabsText(classicVoice.dawnKills(["Budi"]).text)).toBe("[sad] Pagi telah tiba... [sighs] Warga desa terbangun dengan kabar duka... Budi ditemukan tewas semalam.");
+    expect(elevenLabsText(classicVoice.dawnKills(["Budi", "Citra"]).text)).toContain("[crying]");
+    expect(elevenLabsText(classicVoice.hunter("Dimas").text)).toBe("[dramatic] Sang Pemburu, Dimas, gugur, namun ia sempat menarik pelatuk senjatanya! Dimas... pilih satu targetmu di layar sekarang!");
+    expect(elevenLabsText(classicVoice.win("WEREWOLF").text)).toMatch(/^\[evil laugh\].*\[laughs\]/);
+    expect(elevenLabsText(classicVoice.dawnNoKill().text)).toMatch(/^\[relieved\]/);
+    expect(elevenLabsText("Teks lain")).toBe("Teks lain");
+  });
+
+  it("only sends tags to models that understand them", () => {
+    expect(supportsAudioTags("eleven_v4")).toBe(true);
+    expect(supportsAudioTags("eleven_v3")).toBe(true);
+    expect(supportsAudioTags("eleven_multilingual_v2")).toBe(false);
+    expect(stripAudioTags("[sad] Pagi telah tiba... [sighs] Budi tewas.")).toBe("Pagi telah tiba... Budi tewas.");
+  });
+
+  it("keeps Microsoft text free of tags and renames Doctor to Guardian Angel", () => {
+    for (const item of VOICE_PACK.items) expect(item.text).not.toMatch(/\[/);
+    expect(classicVoice.turnStart("DOCTOR").text).toContain("Guardian Angel");
   });
 });
 

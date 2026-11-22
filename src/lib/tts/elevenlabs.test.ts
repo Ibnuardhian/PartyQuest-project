@@ -10,7 +10,7 @@ describe("ElevenLabs configuration", () => {
   it("is off without a key and applies defaults when a key is set", () => {
     expect(elevenLabsConfig({})).toBeNull();
     expect(elevenLabsConfig({ ELEVENLABS_API_KEY: "   " })).toBeNull();
-    expect(elevenLabsConfig({ ELEVENLABS_API_KEY: "sk_abc" })).toEqual({ apiKey: "sk_abc", voiceId: ELEVENLABS_DEFAULTS.voiceId, modelId: "eleven_multilingual_v2", baseUrl: "https://api.elevenlabs.io" });
+    expect(elevenLabsConfig({ ELEVENLABS_API_KEY: "sk_abc" })).toEqual({ apiKey: "sk_abc", voiceId: ELEVENLABS_DEFAULTS.voiceId, modelId: "eleven_v4", baseUrl: "https://api.elevenlabs.io" });
     expect(elevenLabsConfig({ ELEVENLABS_API_KEY: "sk_abc", ELEVENLABS_VOICE_ID: "deep", ELEVENLABS_BASE_URL: "https://api.eu.residency.elevenlabs.io/" })).toMatchObject({ voiceId: "deep", baseUrl: "https://api.eu.residency.elevenlabs.io" });
   });
 

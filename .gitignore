@@ -10,3 +10,5 @@ coverage/
 
 # Voice comparison samples (regenerate with npm run voice:generate -- --samples)
 /public/audio/werewolf/samples/
+# Scratch audio from voice experiments
+/.tmp-voice-test/

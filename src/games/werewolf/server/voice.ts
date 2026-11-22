@@ -1,7 +1,7 @@
 import "server-only";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { ACTIVE_PRESET, VOICE_PACK, VOICE_PRESETS, type VoicePresetId } from "@/games/werewolf/voice/templates";
+import { ACTIVE_PRESET, elevenLabsText, stripAudioTags, supportsAudioTags, VOICE_PACK, VOICE_PRESETS, type VoicePresetId } from "@/games/werewolf/voice/templates";
 import { edgeSpeech, type EdgeVoice } from "@/lib/tts/edge-tts";
 import { elevenLabsConfig, elevenLabsSpeech } from "@/lib/tts/elevenlabs";
 
@@ -46,7 +46,10 @@ export async function werewolfSpeech(text: string, options: { provider?: VoicePr
   const elevenLabs = provider === "elevenlabs" ? elevenLabsConfig() : null;
   if (elevenLabs) {
     try {
-      return { audio: await elevenLabsSpeech(text, elevenLabs), provider: "elevenlabs" as const };
+      // Emotional wording (audio tags) only for models that understand them.
+      const emotional = elevenLabsText(text);
+      const spoken = supportsAudioTags(elevenLabs.modelId) ? emotional : stripAudioTags(emotional);
+      return { audio: await elevenLabsSpeech(spoken, elevenLabs), provider: "elevenlabs" as const };
     } catch {
       // Fall through to Microsoft.
     }

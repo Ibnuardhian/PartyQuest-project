@@ -23,9 +23,10 @@ export const CLASSIC_ROLE_INFO: Record<ClassicRole, ClassicRoleInfo> = {
   SEER: { name: "Seer", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: false,
     description: "Kamu memiliki mata batin yang mampu menembus topeng kebohongan. Setiap malam, pilih satu pemain untuk menerawang apakah ia termasuk kubu Werewolf atau warga yang tidak bersalah.",
     artPrompt: "Dark gothic tarot card illustration of a mystical oracle gazing into a glowing cyan crystal ball with an all-seeing eye motif, fine line art on obsidian background." },
-  DOCTOR: { name: "Doctor", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: false,
-    description: "Kamu adalah tabib desa yang sigap menyelamatkan nyawa di tengah kegelapan. Setiap malam, pilih satu pemain untuk dilindungi dari serangan Werewolf, namun kamu tidak boleh melindungi orang yang sama dua malam berturut-turut.",
-    artPrompt: "Dark gothic tarot card illustration of a plague-era apothecary holding a glowing emerald healing vial and caduceus staff, fine line art on obsidian background." },
+  // Internal id stays DOCTOR; players see and hear "Guardian Angel" (renamed 2026-11-23).
+  DOCTOR: { name: "Guardian Angel", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: false,
+    description: "Kamu adalah malaikat pelindung yang diam-diam mengawasi desa di tengah kegelapan. Setiap malam, pilih satu pemain untuk dilindungi dari serangan Werewolf, namun kamu tidak boleh melindungi orang yang sama dua malam berturut-turut.",
+    artPrompt: "Dark gothic tarot card illustration of a hooded guardian angel with luminous silver wings shielding a sleeping villager, fine line art on obsidian background." },
   HUNTER: { name: "Hunter", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: false,
     description: "Kamu adalah pemburu ulung yang tidak pernah pergi tanpa perlawanan. Kapan pun kamu tereliminasi—baik dimangsa di malam hari maupun dieksekusi voting siang—kamu langsung menembak satu pemain lain untuk ikut mati bersamamu.",
     artPrompt: "Dark gothic tarot card illustration of a hooded ranger aiming a silver-tipped crossbow in dark woods, sharp bronze and white line art on obsidian background." },

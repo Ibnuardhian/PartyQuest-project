@@ -317,7 +317,7 @@ describe("AFK handling (Paksa Lanjut)", () => {
     state = act(state, "p1", { type: "force-advance" }, { onlinePlayerIds: ["p1", "p2", "p3", "p5"], random: () => 0 });
     expect(state.secret.roles.p3).toBe("VILLAGER");
     expect(state.secret.roles.p5).toBe("DOCTOR");
-    expect(state.secret.notices).toContainEqual({ playerId: "p5", message: expect.stringContaining("Doctor") });
+    expect(state.secret.notices).toContainEqual({ playerId: "p5", message: expect.stringContaining("Guardian Angel") });
     expect(state.public.players.find((player) => player.id === "p3")!.hasAfkPenalty).toBe(true);
     expect(activeNightRole(state)).toBe("SEER");
     state = expire(finishNight(state));
