@@ -47,6 +47,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - A new online game also needs its `game_key` allowed by a migration.
 - `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`.
 - Werewolf voice: Microsoft Edge Neural. Static lines are the committed voice pack in `public/audio/werewolf/` (regenerate with `npm run voice:generate`); the four named daytime announcements are synthesized on demand through `node-edge-tts` (an unofficial service; keep the generic-clip and Web Speech fallbacks). The TTS routes must only voice those named templates (`isAllowedNarration`) and only for the session host; night turn lines name roles only.
+- Optional ElevenLabs provider (`TTS_PROVIDER=elevenlabs` + `ELEVENLABS_API_KEY`): the key stays in runtime server env only (never `NEXT_PUBLIC_`, never a build arg, never committed); failures fall back to Microsoft. Voice presets, dramatic effects, and the bilingual role-name option live in `voice-pack.json`.
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
 ## Game Rules

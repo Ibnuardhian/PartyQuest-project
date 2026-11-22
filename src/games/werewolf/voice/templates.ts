@@ -16,7 +16,27 @@ export interface VoiceLine { text: string; clip?: string; fallbackClip?: string 
 type PackItem = (typeof pack.items)[number];
 const PACK = new Map<string, PackItem>(pack.items.map((item) => [item.key, item]));
 
-export const VOICE_PACK = { voice: pack.voice, rate: pack.rate, pitch: pack.pitch, items: pack.items };
+export type VoicePresetId = keyof typeof pack.presets;
+export const VOICE_PRESETS = pack.presets as Record<VoicePresetId, { label: string; rate: string; pitch: string }>;
+export const ACTIVE_PRESET = pack.activePreset as VoicePresetId;
+export const VOICE_PACK = {
+  voice: pack.voice,
+  preset: ACTIVE_PRESET,
+  ...VOICE_PRESETS[ACTIVE_PRESET],
+  dramaticEffects: pack.dramaticEffects,
+  bilingual: { strategy: pack.bilingual.strategy, englishVoice: pack.bilingual.englishVoice, multilingualVoice: pack.bilingual.multilingualVoice, sampleKeys: pack.bilingual.sampleKeys },
+  items: pack.items,
+};
+
+export function isVoicePreset(value: unknown): value is VoicePresetId {
+  return typeof value === "string" && Object.hasOwn(VOICE_PRESETS, value);
+}
+
+const PACK_TEXTS = new Set(pack.items.map((item) => item.text));
+/** True for the exact text of a static voice-pack line. */
+export function isPackText(text: string) {
+  return PACK_TEXTS.has(text);
+}
 
 export function packLine(key: string): VoiceLine {
   const item = PACK.get(key);

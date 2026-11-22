@@ -28,6 +28,9 @@ Salin `.env.example` ke `.env` bila perlu mengubah nilai default.
 | `TTS_VOICE` | Opsional. Suara moderator Werewolf: `id-ID-ArdiNeural` (default, sesuai voice pack) atau `id-ID-GadisNeural`. |
 | `TTS_CACHE_DIR` | Opsional. Folder cache MP3 (default folder temp OS; Compose memakai volume `tts_cache`). |
 | `WEREWOLF_VOICE_PILOT` | Isi `1` untuk mengaktifkan route suara halaman pilot di produksi. |
+| `TTS_PROVIDER` | `microsoft` (default) atau `elevenlabs`. |
+| `ELEVENLABS_API_KEY` | Opsional. Kunci ElevenLabs, hanya server. Jangan commit kunci asli. |
+| `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Opsional. Suara dan model ElevenLabs. |
 | `POSTGRES_*`, `WEB_PORT` | Hanya untuk Compose lokal. |
 
 ### Suara moderator Werewolf
@@ -40,6 +43,12 @@ Narator memakai **Microsoft Edge Neural TTS** (`id-ID-ArdiNeural`, kecepatan -6%
 Giliran malam hanya menyebut nama role agar tidak membocorkan siapa pemegangnya. Route suara hanya membacakan keempat template bernama (`src/games/werewolf/voice/allowed-lines.ts`), hanya untuk host sesi, dan hanya dengan nama pemain di sesi tersebut; `POST /api/games/werewolf/tts/pilot` melayani halaman uji `/games/werewolf/suara` (mati di produksi kecuali `WEREWOLF_VOICE_PILOT=1`).
 
 Layanan ini adalah "Read Aloud" milik Edge, bukan API resmi publik: dapat berubah tanpa pemberitahuan dan penggunaan dari server berada di area abu-abu ketentuan Microsoft. Alternatif resmi dengan suara yang sama adalah Azure Speech.
+
+**Karakter suara dan efek.** `voice-pack.json` berisi preset prosodi Microsoft (`standar`, `berat`, `sangat-berat`, `gelap`; `activePreset` menentukan pack dan baris bernama) dan `dramaticEffects` (gema ruangan, bass tebal, kompresor lewat Web Audio di browser). Edge tidak mendukung gaya emosi untuk suara Indonesia; hanya kecepatan dan nada. Bandingkan di `/games/werewolf/suara`, lalu buat ulang pack dengan `TTS_PRESET=<preset> npm run voice:generate -- --force`.
+
+**Nama role berbahasa Inggris (Microsoft).** Opsi `--bilingual segments` membuat Ardi membaca bahasa Indonesia dan suara Inggris (`bilingual.englishVoice`) membaca nama role, lalu ffmpeg memangkas jeda dan menggabungkannya menjadi satu MP3. `--bilingual multilingual` memakai satu suara multibahasa untuk seluruh kalimat. Sampel pembanding: `npm run voice:generate -- --samples --bilingual segments` (dan `multilingual`), tersimpan di `public/audio/werewolf/samples/` (tidak di-commit). ffmpeg hanya ada di image dev.
+
+**ElevenLabs (opsional).** Isi `ELEVENLABS_API_KEY` di `.env` (opsional `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`; default suara "Adam" dan `eleven_multilingual_v2`). Kunci hanya dipakai server dan tidak pernah dikirim ke browser. Buat pack ElevenLabs dengan `docker compose run --rm --no-deps web npm run voice:generate -- --provider elevenlabs` (sekitar 3.200 karakter dari kuota akun) ke `public/audio/werewolf/elevenlabs/`, lalu set `TTS_PROVIDER=elevenlabs`. Baris bernama juga dibuat ElevenLabs (di-cache per baris); jika ElevenLabs gagal, server memakai Microsoft. `GET /api/games/werewolf/voice-config` memberi tahu browser pack mana yang dipakai.
 
 Jangan memberi prefix `NEXT_PUBLIC_` pada variabel di atas dan jangan commit `.env`.
 

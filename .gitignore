@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Voice comparison samples (regenerate with npm run voice:generate -- --samples)
+/public/audio/werewolf/samples/

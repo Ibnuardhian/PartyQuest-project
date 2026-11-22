@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
+import { loadVoiceConfig, microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
+import { VOICE_PACK } from "@/games/werewolf/voice/templates";
 import { narrationKey, narrationLines, type NarrationKey } from "@/games/werewolf/ui/narration";
 import type { WerewolfView } from "@/games/werewolf/ui/labels";
 
@@ -16,9 +17,16 @@ export function useNarration(view: WerewolfView | null, sessionId: string) {
   const isAudioDevice = Boolean(view?.you.isHost);
 
   useEffect(() => {
-    // Microsoft Edge Neural voice first; Web Speech if the service is unavailable.
+    let cancelled = false;
+    // Named lines come from the server (ElevenLabs when configured, else Microsoft Edge Neural).
     narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts", { sessionId }));
-    return () => narrator.cancel();
+    narrator.setEffects(VOICE_PACK.dramaticEffects);
+    void loadVoiceConfig().then((config) => {
+      if (cancelled || !config) return;
+      narrator.setStaticBase(config.staticBase);
+      narrator.setEffects(config.dramaticEffects);
+    });
+    return () => { cancelled = true; narrator.cancel(); };
   }, [narrator, sessionId]);
 
   useEffect(() => {

@@ -37,6 +37,9 @@ body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
 .ww-lines code { display: block; color: var(--ww-muted); font-size: 10px; letter-spacing: .08em; }
 .ww-play { flex: 0 0 34px; height: 34px; border: 1px solid var(--ww-line); border-radius: 50%; background: transparent; color: var(--ww-text); font-size: 11px; }
 @media (max-width: 720px) { .ww-grid { grid-template-columns: 1fr; } .ww-subtitle { font-size: 16px; } }
+.ww-sample-buttons { display: flex; flex-wrap: wrap; gap: 6px; flex: 0 0 auto; }
+.ww-sample-buttons .ww-button { padding: 7px 10px; font-size: 11px; }
+@media (max-width: 720px) { .ww-lines li:has(.ww-sample-buttons) { flex-direction: column; } }
 
 /* ---------- Classic game UI ---------- */
 .ww-setup { flex: 1; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: clamp(28px, 6vw, 80px); align-items: start; width: min(1040px, 100%); margin: 48px auto 70px; }

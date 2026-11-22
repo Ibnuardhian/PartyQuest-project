@@ -8,6 +8,21 @@
 
 import type { VoiceLine } from "@/games/werewolf/voice/templates";
 
+const DEFAULT_STATIC_BASE = "/audio/werewolf/";
+
+/** Public narrator settings from GET /api/games/werewolf/voice-config. */
+export interface VoiceConfig { provider: "microsoft" | "elevenlabs"; staticBase: string; elevenLabsConfigured: boolean; elevenLabsPackReady: boolean; dramaticEffects: boolean }
+
+export async function loadVoiceConfig(): Promise<VoiceConfig | null> {
+  try {
+    const response = await fetch("/api/games/werewolf/voice-config", { cache: "no-store" });
+    const payload = await response.json() as { data?: VoiceConfig };
+    return response.ok && payload.data ? payload.data : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Returns an audio URL for a line, or null to fall back to browser speech. */
 export type ClipResolver = (text: string) => Promise<string | null>;
 
@@ -82,11 +97,72 @@ export class Narrator {
   private generation = 0;
   private resolveClip: ClipResolver | null = null;
   private audio: HTMLAudioElement | null = null;
+  private context: AudioContext | null = null;
+  private fx: { wet: GainNode; bass: BiquadFilterNode } | null = null;
+  private effects = false;
+
+  /**
+   * "Dramatic" narrator sound: heavier bass, a dark room reverb, and a compressor (Web Audio).
+   * Applies to every clip (voice pack and Microsoft named lines); takes effect after unlock().
+   */
+  setEffects(enabled: boolean) {
+    this.effects = enabled;
+    this.applyEffects();
+  }
+
+  private applyEffects() {
+    if (!this.fx || !this.context) return;
+    const now = this.context.currentTime;
+    this.fx.wet.gain.setTargetAtTime(this.effects ? 0.32 : 0, now, 0.05);
+    this.fx.bass.gain.setTargetAtTime(this.effects ? 7 : 0, now, 0.05);
+  }
+
+  /** Built during the unlock tap, because browsers only start audio graphs from a user gesture. */
+  private ensureEffectsGraph(audio: HTMLAudioElement) {
+    if (this.fx || typeof AudioContext === "undefined") return;
+    try {
+      const context = this.context ?? new AudioContext();
+      this.context = context;
+      const source = context.createMediaElementSource(audio);
+      const bass = context.createBiquadFilter();
+      bass.type = "lowshelf";
+      bass.frequency.value = 220;
+      bass.gain.value = 0;
+      const dry = context.createGain();
+      const wet = context.createGain();
+      wet.gain.value = 0;
+      const reverb = context.createConvolver();
+      reverb.buffer = darkRoomImpulse(context, 2.6, 2.8);
+      const compressor = context.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.ratio.value = 3;
+      source.connect(bass);
+      bass.connect(dry).connect(compressor);
+      bass.connect(reverb).connect(wet).connect(compressor);
+      compressor.connect(context.destination);
+      this.fx = { wet, bass };
+      this.applyEffects();
+    } catch {
+      this.fx = null;
+    }
+  }
   /** "microsoft" when the last line played from Edge Neural audio, "browser" for Web Speech. */
   lastEngine: "pack" | "microsoft" | "browser" | null = null;
 
   setClipResolver(resolver: ClipResolver | null) {
     this.resolveClip = resolver;
+  }
+
+  private staticBase = DEFAULT_STATIC_BASE;
+
+  /** Plays static clips from another pack folder (e.g. the ElevenLabs pack) with the same file names. */
+  setStaticBase(base: string) {
+    this.staticBase = base.endsWith("/") ? base : `${base}/`;
+  }
+
+  private mapClip(clip: string | undefined) {
+    if (!clip || this.staticBase === DEFAULT_STATIC_BASE || !clip.startsWith(DEFAULT_STATIC_BASE)) return clip;
+    return this.staticBase + clip.slice(DEFAULT_STATIC_BASE.length);
   }
 
   constructor(options: NarratorOptions = {}) {
@@ -102,6 +178,8 @@ export class Narrator {
     // Mobile browsers only allow audio started from a tap; prime one reusable element now.
     if (typeof window !== "undefined" && typeof Audio !== "undefined") {
       this.audio ??= new Audio();
+      this.ensureEffectsGraph(this.audio);
+      void this.context?.resume().catch(() => {});
       this.audio.muted = true;
       void this.audio.play().catch(() => {}).finally(() => { if (this.audio) this.audio.muted = false; });
     }
@@ -144,7 +222,8 @@ export class Narrator {
    * fallback clip -> Web Speech.
    */
   async speak(input: VoiceLine | string): Promise<boolean> {
-    const line: VoiceLine = typeof input === "string" ? { text: input } : input;
+    const raw: VoiceLine = typeof input === "string" ? { text: input } : input;
+    const line: VoiceLine = { text: raw.text, clip: this.mapClip(raw.clip), fallbackClip: this.mapClip(raw.fallbackClip) };
     const text = line.text;
     const generation = this.generation;
     if (line.clip && await this.playClip(line.clip, generation)) {
@@ -182,6 +261,17 @@ export class Narrator {
     }
     return generation === this.generation;
   }
+}
+
+/** Synthetic impulse response: decaying noise that sounds like a large, dark stone room. */
+function darkRoomImpulse(context: AudioContext, seconds: number, decay: number) {
+  const length = Math.floor(context.sampleRate * seconds);
+  const buffer = context.createBuffer(2, length, context.sampleRate);
+  for (let channel = 0; channel < 2; channel += 1) {
+    const data = buffer.getChannelData(channel);
+    for (let index = 0; index < length; index += 1) data[index] = (Math.random() * 2 - 1) * (1 - index / length) ** decay;
+  }
+  return buffer;
 }
 
 /** Keeps the screen on during play when supported. Returns a release function. */

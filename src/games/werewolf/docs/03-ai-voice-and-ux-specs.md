@@ -10,6 +10,9 @@
 - **Static voice pack (zero runtime TTS):** 41 lines (22 Classic, 19 ONUW) are pre-generated MP3 files in `public/audio/werewolf/classic/` and `public/audio/werewolf/onuw/`, created once with **Microsoft Edge Neural TTS** (`id-ID-ArdiNeural`, rate `-6%`, pitch `-4Hz`; alternative `id-ID-GadisNeural`) by `npm run voice:generate` (`scripts/generate-werewolf-voice.mjs`, reads `src/games/werewolf/voice/voice-pack.json`). The files are committed, so play time needs no API.
 - **Named announcements (on demand):** four daytime lines name the players involved. The host's device asks `POST /api/games/werewolf/tts` (Microsoft Edge Neural via `node-edge-tts`, same voice and prosody, cached per line on the server). The route only voices these four templates with names of players in that session.
 - **Fallback chain:** named line from Microsoft → the pack's generic MP3 for that event (no name) → browser Web Speech (`id-ID`).
+- **Optional ElevenLabs:** with `TTS_PROVIDER=elevenlabs` and `ELEVENLABS_API_KEY`, named lines and (once generated) a separate static pack in `/audio/werewolf/elevenlabs/` use ElevenLabs (`eleven_multilingual_v2`); ElevenLabs failures fall back to Microsoft.
+- **Character:** prosody presets (`standar` … `gelap`) and optional dramatic effects (reverb, bass, compressor in the browser). Edge offers no emotional styles for Indonesian voices.
+- **English role names (optional):** `segments` joins Ardi (Indonesian) with an English voice for role names into one MP3; `multilingual` uses one multilingual voice for the whole line. Compare on the pilot page before regenerating the pack.
 - **Strict Single-Device Audio Output:**
   - `TV_SCREEN` client connected -> `TV_SCREEN` plays audio; `HOST` phone stays muted.
   - No `TV_SCREEN` connected -> `HOST` phone plays audio; all other `PLAYER` phones stay muted.

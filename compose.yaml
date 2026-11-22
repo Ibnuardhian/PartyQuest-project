@@ -32,6 +32,10 @@ services:
       GUEST_SESSION_SECRET: ${GUEST_SESSION_SECRET:-local-dev-only-guest-session-secret-change-me}
       TTS_VOICE: ${TTS_VOICE:-id-ID-ArdiNeural}
       TTS_CACHE_DIR: /var/cache/partyquest-tts
+      TTS_PROVIDER: ${TTS_PROVIDER:-microsoft}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
+      ELEVENLABS_MODEL_ID: ${ELEVENLABS_MODEL_ID:-}
     command: ["sh", "-c", "npm run db:migrate && npm run dev"]
     volumes:
       - .:/app

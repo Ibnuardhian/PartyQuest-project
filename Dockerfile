@@ -3,6 +3,8 @@ WORKDIR /app
 
 FROM base AS dev
 ENV NODE_ENV=development
+# ffmpeg is only for development tooling: the voice-pack generator trims and joins audio segments.
+RUN apk add --no-cache ffmpeg
 COPY package*.json ./
 RUN npm ci
 COPY . .
