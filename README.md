@@ -25,7 +25,16 @@ Salin `.env.example` ke `.env` bila perlu mengubah nilai default.
 | `DATABASE_URL` | Connection string PostgreSQL untuk server. Wajib untuk Vercel/produksi. |
 | `GUEST_SESSION_SECRET` | String acak minimal 32 karakter untuk menandatangani cookie tamu. Hanya server. |
 | `DATABASE_POOL_MAX` | Opsional, jumlah koneksi per proses server (default 10). |
+| `TTS_VOICE` | Opsional. Suara moderator Werewolf: `id-ID-GadisNeural` (default) atau `id-ID-ArdiNeural`. |
+| `TTS_CACHE_DIR` | Opsional. Folder cache MP3 (default folder temp OS; Compose memakai volume `tts_cache`). |
+| `WEREWOLF_VOICE_PILOT` | Isi `1` untuk mengaktifkan route suara halaman pilot di produksi. |
 | `POSTGRES_*`, `WEB_PORT` | Hanya untuk Compose lokal. |
+
+### Suara moderator Werewolf
+
+Narator memakai **Microsoft Edge Neural TTS** melalui paket `node-edge-tts`, dibuat di server dan disimpan per baris di cache disk (baris yang sama hanya dibuat sekali). Ini memakai layanan "Read Aloud" Edge, bukan API resmi publik: layanan dapat berubah tanpa pemberitahuan dan penggunaan dari server berada di area abu-abu ketentuan Microsoft. Jika layanan gagal, browser memakai Web Speech API (`id-ID`). Alternatif resmi dengan suara yang sama adalah Azure Speech.
+
+Route suara hanya membacakan baris yang persis sesuai naskah moderator (`src/games/werewolf/voice/allowed-lines.ts`): `POST /api/games/werewolf/tts` hanya untuk host sesi dan hanya untuk nama pemain di sesi tersebut; `POST /api/games/werewolf/tts/pilot` untuk halaman uji `/games/werewolf/suara` (mati di produksi kecuali `WEREWOLF_VOICE_PILOT=1`). Pengumuman siang menyebut nama pemain; giliran malam hanya menyebut nama role agar tidak membocorkan siapa pemegangnya.
 
 Jangan memberi prefix `NEXT_PUBLIC_` pada variabel di atas dan jangan commit `.env`.
 

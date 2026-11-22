@@ -30,14 +30,18 @@ services:
       # Runtime-only values; never passed as build args or baked into the image.
       DATABASE_URL: postgres://${POSTGRES_USER:-partyquest}:${POSTGRES_PASSWORD:-partyquest_dev_only}@postgres:5432/${POSTGRES_DB:-partyquest}
       GUEST_SESSION_SECRET: ${GUEST_SESSION_SECRET:-local-dev-only-guest-session-secret-change-me}
+      TTS_VOICE: ${TTS_VOICE:-id-ID-GadisNeural}
+      TTS_CACHE_DIR: /var/cache/partyquest-tts
     command: ["sh", "-c", "npm run db:migrate && npm run dev"]
     volumes:
       - .:/app
       - node_modules:/app/node_modules
       - next_cache:/app/.next
+      - tts_cache:/var/cache/partyquest-tts
     init: true
 
 volumes:
   postgres_data:
   node_modules:
   next_cache:
+  tts_cache:

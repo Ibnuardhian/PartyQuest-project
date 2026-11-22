@@ -18,6 +18,7 @@ The MVP supports:
 - Tailwind CSS
 - Plain PostgreSQL through `pg` (server-only); no Supabase
 - Signed HttpOnly guest cookies for anonymous auth
+- Microsoft Edge Neural TTS (`node-edge-tts`) for the Werewolf voice moderator, cached on disk
 - Postgres `LISTEN/NOTIFY` relayed to browsers with Server-Sent Events
 - Docker and Docker Compose
 - Built-in unit testing capabilities of the selected test runner
@@ -44,7 +45,8 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Register UI modules in `src/games/registry.ts` and online adapters (`OnlineGameServer`) in `src/games/online-registry.ts`.
 - Platform code (`src/components/catalog`, `src/components/lobby`, `src/components/site`, `src/lib`, `src/app/api`) must not contain game rules or game-specific labels; it reaches games only through these contracts.
 - A new online game also needs its `game_key` allowed by a migration.
-- `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`. The voice moderator never speaks player names.
+- `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`.
+- Werewolf voice: Microsoft Edge Neural TTS through `node-edge-tts` (an unofficial service; keep the Web Speech fallback). The TTS routes must only voice narrator template lines (`isAllowedNarration`) and only for the session host; daytime lines may name players, night turn lines name roles only.
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
 ## Game Rules

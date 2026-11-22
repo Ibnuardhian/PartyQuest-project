@@ -7,13 +7,15 @@ import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-sequence";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
-import { indonesianVoices, isSpeechSupported, loadVoices, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
-import { CLASSIC_LINES, countWords, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine, type ClassicLineKey } from "@/games/werewolf/voice/templates";
+import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
+import { indonesianVoices, isSpeechSupported, loadVoices, microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
+import { CLASSIC_LINES, countWords, joinNames, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine, type ClassicLineKey } from "@/games/werewolf/voice/templates";
 
 type Step = { text?: string; wait?: number };
+const MICROSOFT_VOICES = [{ id: "id-ID-GadisNeural", label: "Gadis (perempuan)" }, { id: "id-ID-ArdiNeural", label: "Ardi (laki-laki)" }] as const;
 const NIGHT_ROLES = ONUW_ROLES.filter((role) => ONUW_ROLE_LINES[role]);
 
-/** Pilot page for the Indonesian voice moderator (Web Speech API). Not linked from the catalog yet. */
+/** Pilot page for the Indonesian voice moderator: Microsoft Edge Neural first, Web Speech fallback. */
 export default function VoicePilot() {
   const narrator = useMemo(() => new Narrator(), []);
   const runRef = useRef(0);
@@ -28,7 +30,9 @@ export default function VoicePilot() {
   const [subtitle, setSubtitle] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [vars, setVars] = useState({ night: 1, victimCount: 2, winningFaction: "Warga Desa", minutes: 3 });
+  const [vars, setVars] = useState({ night: 1, victimName: "Budi", victims: "Budi, Citra", hunterName: "Dimas", executedName: "Eka", winningFaction: "Warga Desa", minutes: 3 });
+  const [microsoftVoice, setMicrosoftVoice] = useState<string>(MICROSOFT_VOICES[0].id);
+  const [engine, setEngine] = useState<"microsoft" | "browser" | null>(null);
   const [deck, setDeck] = useState<OnuwRole[]>(["WEREWOLF", "MINION", "SEER", "ROBBER", "TROUBLEMAKER", "INSOMNIAC"]);
 
   useEffect(() => {
@@ -44,10 +48,11 @@ export default function VoicePilot() {
   }, [narrator]);
 
   useEffect(() => { narrator.setOptions({ voiceURI: voiceURI || null, rate, pitch }); }, [narrator, voiceURI, rate, pitch]);
+  useEffect(() => { narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts/pilot", { voice: microsoftVoice })); }, [narrator, microsoftVoice]);
 
   const idVoices = indonesianVoices(voices);
   const listedVoices = showAllVoices ? voices : idVoices;
-  const lineVars = { nightOrdinal: nightOrdinal(vars.night), roleName: "Seer", victimCount: countWords(vars.victimCount), minutes: vars.minutes, winningFaction: vars.winningFaction };
+  const lineVars = { nightOrdinal: nightOrdinal(vars.night), roleName: "Seer", victimName: vars.victimName, victimList: joinNames(vars.victims.split(",").map((name) => name.trim()).filter(Boolean)), hunterName: vars.hunterName, executedName: vars.executedName, minutes: countWords(vars.minutes), winningFaction: vars.winningFaction };
 
   function render(template: string, extra: Record<string, string | number> = {}) {
     return renderLine(template, { ...lineVars, ...extra });
@@ -55,6 +60,8 @@ export default function VoicePilot() {
 
   async function activate() {
     narrator.unlock();
+    // The Microsoft voice route needs a guest session (no account).
+    await ensureBrowserGuest().catch(() => {});
     setUnlocked(true);
     await requestWakeLock();
   }
@@ -75,6 +82,7 @@ export default function VoicePilot() {
       if (step.text) {
         setSubtitle(step.text);
         await narrator.speak(step.text);
+        setEngine(narrator.lastEngine);
       }
       for (let left = step.wait ?? 0; left > 0; left -= 1) {
         if (id !== runRef.current) return;
@@ -121,7 +129,7 @@ export default function VoicePilot() {
       <Link className="text-button" href="/">← Kembali ke katalog</Link>
       <span className="section-kicker">WEREWOLF · PILOT SUARA</span>
       <h1>Moderator <em>suara.</em></h1>
-      <p className="ww-muted">Suara dibuat langsung oleh browser (Web Speech API) memakai suara Bahasa Indonesia di perangkat ini. Kualitas tergantung browser: Edge (Microsoft Natural) dan Chrome (Google Bahasa Indonesia) biasanya paling jelas.</p>
+      <p className="ww-muted">Suara utama memakai Microsoft Edge Neural (Gadis atau Ardi) yang dibuat di server lalu disimpan. Jika layanan Microsoft tidak tersedia, halaman memakai suara Bahasa Indonesia bawaan browser.</p>
 
       {supported === false && <p className="ww-alert" role="alert">Browser ini tidak mendukung Web Speech API.</p>}
       {supported && idVoices.length === 0 && <p className="ww-alert" role="alert">Tidak ada suara Bahasa Indonesia terpasang. Browser akan memakai suara bawaan dengan logat yang mungkin tidak pas; coba Chrome atau Edge, atau pasang paket suara Indonesia di sistem.</p>}
@@ -129,7 +137,11 @@ export default function VoicePilot() {
       <div className="ww-grid">
         <section className="ww-panel" aria-labelledby="voice-settings">
           <h2 id="voice-settings">Pengaturan suara</h2>
-          <label className="ww-label" htmlFor="voice">Suara</label>
+          <label className="ww-label" htmlFor="ms-voice">Suara Microsoft</label>
+          <select id="ms-voice" className="ww-input" value={microsoftVoice} onChange={(event) => setMicrosoftVoice(event.target.value)}>
+            {MICROSOFT_VOICES.map((voice) => <option key={voice.id} value={voice.id}>{voice.label}</option>)}
+          </select>
+          <label className="ww-label" htmlFor="voice">Suara cadangan browser</label>
           <select id="voice" className="ww-input" value={voiceURI} onChange={(event) => setVoiceURI(event.target.value)}>
             <option value="">Bawaan (id-ID)</option>
             {listedVoices.map((voice) => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}{voice.localService ? "" : " · online"}</option>)}
@@ -145,8 +157,7 @@ export default function VoicePilot() {
 
         <section className="ww-panel" aria-labelledby="sample-vars">
           <h2 id="sample-vars">Variabel contoh</h2>
-          <p className="ww-muted">Narator tidak pernah menyebut nama pemain, hanya role. Nama korban tampil di layar.</p>
-          {([["night", "Malam ke"], ["victimCount", "Jumlah korban (banyak korban)"], ["winningFaction", "Kubu menang"], ["minutes", "Menit diskusi"]] as const).map(([key, label]) => <div key={key}>
+          {([["night", "Malam ke"], ["victimName", "Korban"], ["victims", "Banyak korban (pisahkan koma)"], ["hunterName", "Pemburu"], ["executedName", "Dieksekusi"], ["winningFaction", "Kubu menang"], ["minutes", "Menit diskusi"]] as const).map(([key, label]) => <div key={key}>
             <label className="ww-label" htmlFor={`var-${key}`}>{label}</label>
             <input id={`var-${key}`} className="ww-input" type={typeof vars[key] === "number" ? "number" : "text"} min={1} value={vars[key]} onChange={(event) => setVar(key, event.target.value)} />
           </div>)}
@@ -156,6 +167,7 @@ export default function VoicePilot() {
       <section className="ww-panel ww-stage" aria-live="polite">
         <span className="section-kicker">SEDANG DIBACAKAN</span>
         <p className="ww-subtitle">{subtitle || "—"}</p>
+        {engine && <span className="ww-muted">Mesin suara: {engine === "microsoft" ? "Microsoft Edge Neural" : "browser (cadangan)"}</span>}
         {countdown !== null && <time className="ww-countdown" aria-label={`${countdown} detik`}>{countdown}</time>}
         <div className="ww-actions">
           <button className="ww-button ww-primary" disabled={!supported} onClick={() => safeRun(classicNight)}>Simulasi malam Classic</button>
@@ -179,6 +191,6 @@ export default function VoicePilot() {
         })}</ul>
       </section>
     </section>
-    <SiteFooter left="WEREWOLF · PILOT" right="Suara Web Speech API · tanpa API key" />
+    <SiteFooter left="WEREWOLF · PILOT" right="Suara Microsoft Edge Neural · cadangan Web Speech" />
   </main>;
 }

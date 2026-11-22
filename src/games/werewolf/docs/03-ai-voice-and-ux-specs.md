@@ -15,7 +15,7 @@
 
 ### 1.2 Indonesian TTS Script Templates
 
-> **PartyQuest decision (2026-11-23): the narrator never speaks player names, only role names.** Names stay on screen. The lines below that contained `{victimName}`, `{victimList}`, `{hunterName}`, or `{executedName}` are implemented without them (victim count instead, "Lihat layar…"). Every remaining variable comes from a finite set, so all lines can be pre-rendered to audio. Source of truth: `src/games/werewolf/voice/templates.ts`.
+> **PartyQuest decision (2026-11-23, revised): the templates below are used as written, including player names** in daytime announcements (`{victimName}`, `{victimList}`, `{hunterName}`, `{executedName}`). Night turn lines name roles only, as below, because naming a player there would reveal their role. `NIGHT_INTRO` speaks the night as an ordinal ("Malam kedua"). Voice: **Microsoft Edge Neural TTS** (`node-edge-tts`, voices `id-ID-GadisNeural` / `id-ID-ArdiNeural`) generated on the server and cached per line; the browser's Web Speech API is the fallback. Source of truth: `src/games/werewolf/voice/templates.ts`.
 
 #### Mode 1: Hybrid Classic Scripts
 | Trigger Event | Indonesian Voice Script Template |

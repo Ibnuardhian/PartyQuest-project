@@ -1,10 +1,10 @@
 import type { OnuwRole } from "@/games/werewolf/contract";
 
 /**
- * Deterministic Indonesian voice lines (docs/03 §1.2). No LLM; only variable interpolation.
- * The narrator never speaks player names, only role names; names appear on screen.
- * Every variable comes from a small finite set (night ordinal, role name, count, minutes),
- * so every line can also be pre-rendered to audio files.
+ * Deterministic Indonesian voice lines, worded as in the original spec (docs/03 §1.2).
+ * No LLM; only variable interpolation. Announcements use player names (victims, Hunter,
+ * executed player). Night turns call role names only, because naming the player there
+ * would reveal who holds the role.
  * ONUW role lines are split into an "open" part and a "close" part around the countdown.
  */
 
@@ -12,15 +12,15 @@ export const CLASSIC_LINES = {
   NIGHT_INTRO: "Malam {nightOrdinal} telah tiba. Seluruh warga desa menunduk dan perhatikan layar masing-masing. Tetap tenang dan jangan bersuara.",
   NIGHT_TURN_START: "Giliran {roleName} beraksi. Silakan tentukan pilihanmu di layar sekarang.",
   NIGHT_TURN_END: "Waktu untuk {roleName} telah selesai.",
-  DAWN_SINGLE_KILL: "Pagi telah tiba! Warga desa terbangun dengan kabar duka... satu warga ditemukan tewas semalam. Lihat layar untuk mengetahui siapa korbannya.",
-  DAWN_MULTI_KILL: "Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimCount} warga ditemukan tewas. Lihat layar untuk mengetahui siapa saja korbannya.",
+  DAWN_SINGLE_KILL: "Pagi telah tiba! Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam.",
+  DAWN_MULTI_KILL: "Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas.",
   DAWN_NO_KILL: "Pagi telah tiba! Keajaiban terjadi semalam, tidak ada satu pun warga desa yang menjadi korban.",
-  HUNTER_TRIGGER: "Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Pemburu, pilih satu targetmu di layar sekarang.",
+  HUNTER_TRIGGER: "Pemburu {hunterName} gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}, pilih satu targetmu sekarang.",
   DAY_START: "Fase diskusi dimulai. Kalian memiliki waktu {minutes} menit untuk berdebat dan mencari pelaku.",
   DAY_1MIN_WARN: "Waktu diskusi tersisa satu menit lagi.",
   VOTING_START: "Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi.",
   VOTE_TIE: "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri sebelum voting ulang.",
-  EXECUTION_RESULT: "Warga desa telah memutuskan. Satu warga dieksekusi hari ini. Lihat layar untuk hasil voting.",
+  EXECUTION_RESULT: "Warga desa telah memutuskan. {executedName} dieksekusi hari ini.",
   NO_EXECUTION: "Voting kembali seri. Tidak ada warga yang dieksekusi hari ini.",
   GAME_OVER: "Permainan berakhir! Kemenangan diraih oleh kubu {winningFaction}!",
 } as const;
@@ -44,7 +44,7 @@ export const ONUW_ROLE_LINES: Partial<Record<OnuwRole, { open: string; close: st
   INSOMNIAC: { open: "Insomniac, buka mata dan periksa kartumu sendiri sekarang.", close: "Insomniac, tutup mata." },
 };
 
-const ORDINALS = ["pertama", "kedua", "ketiga", "keempat", "kelima", "keenam", "ketujuh", "kedelapan", "kesembilan", "kesepuluh",
+export const ORDINALS = ["pertama", "kedua", "ketiga", "keempat", "kelima", "keenam", "ketujuh", "kedelapan", "kesembilan", "kesepuluh",
   "kesebelas", "kedua belas", "ketiga belas", "keempat belas", "kelima belas", "keenam belas", "ketujuh belas", "kedelapan belas", "kesembilan belas", "kedua puluh"];
 
 /** "Malam ke-1" reads awkwardly in TTS, so nights are spoken as words. */
@@ -52,16 +52,23 @@ export function nightOrdinal(night: number) {
   return ORDINALS[night - 1] ?? `ke-${night}`;
 }
 
-const NUMBER_WORDS = ["nol", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
+export const NUMBER_WORDS = ["nol", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
   "sebelas", "dua belas", "tiga belas", "empat belas", "lima belas", "enam belas"];
 
-/** Small counts spoken as words ("dua warga"), matching pre-rendered audio. */
+/** Joins names the way Indonesian speech does: "A, B, dan C". */
+export function joinNames(names: readonly string[]) {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")}, dan ${names.at(-1)}`;
+}
+
+/** Small numbers spoken as words ("tiga menit"). */
 export function countWords(count: number) {
   return NUMBER_WORDS[count] ?? String(count);
 }
 
-/** Placeholders a line may use. Player names are deliberately not among them. */
-export const ALLOWED_VARIABLES = ["nightOrdinal", "roleName", "victimCount", "minutes", "winningFaction"] as const;
+/** Placeholders a line may use. Player names appear only in daytime announcements. */
+export const NAME_VARIABLES = ["victimName", "victimList", "hunterName", "executedName"] as const;
+export const ALLOWED_VARIABLES = ["nightOrdinal", "roleName", "minutes", "winningFaction", ...NAME_VARIABLES] as const;
 
 export type TemplateVars = Record<string, string | number>;
 
