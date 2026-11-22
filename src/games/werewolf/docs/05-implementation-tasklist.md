@@ -32,9 +32,11 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 **Phase 2 notes:** `apply_game_action` also persists secret state (Werewolf changes it on every action). Changing settings resets other players' ready state. Presence counts a member online when seen within 30 s (`PRESENCE_WINDOW_SECONDS`). Undercover votes now use retry-on-conflict too.
 
 ## Phase 3: Classic online adapter
-- [ ] **3.1** `server/online.ts`: settings schema (roster, twist toggles, `deadRevealMode`, timers), `createRound`, intents from file 04 §4, `advance` for every timed phase.
-- [ ] **3.2** Per-player `view` with the privacy rules in file 04 §6; `publicView` for the TV.
-- [ ] **3.3** Register in `src/games/online-registry.ts`; adapter tests for privacy, spoofed actors, dead players, host-only force advance.
+- [x] **3.1** `server/online.ts`: settings schema (roster, twist toggles, `deadRevealMode`, timers), `createRound`, intents from file 04 §4, `advance` for every timed phase.
+- [x] **3.2** Per-player `view` with the privacy rules in file 04 §6; `publicView` for the TV.
+- [x] **3.3** Register in `src/games/online-registry.ts`; adapter tests for privacy, spoofed actors, dead players, host-only force advance.
+
+**Phase 3 notes:** Room settings accept `roles: "AUTO"` (recommended composition for the final player count, the default) or a custom composition checked against the real count at start. The role composition is public (like a deck on the table); death causes are shown only as EXECUTION / HUNTER / DEAD_AFK / NIGHT so poison or heartbreak never reveal roles; AFK promotions are removed from the public log. Commutative intents retry up to 20 times with jittered backoff (verified with simultaneous votes in a live room).
 
 ## Phase 4: Classic UI
 - [ ] **4.1** `index.ts` GameModule, catalog card, `/games/werewolf` setup (Mode 1 create/join, Mode 2 start), `werewolf.css` theme.
