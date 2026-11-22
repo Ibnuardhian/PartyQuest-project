@@ -39,16 +39,18 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 **Phase 3 notes:** Room settings accept `roles: "AUTO"` (recommended composition for the final player count, the default) or a custom composition checked against the real count at start. The role composition is public (like a deck on the table); death causes are shown only as EXECUTION / HUNTER / DEAD_AFK / NIGHT so poison or heartbreak never reveal roles; AFK promotions are removed from the public log. Commutative intents retry up to 20 times with jittered backoff (verified with simultaneous votes in a live room).
 
 ## Phase 4: Classic UI
-- [ ] **4.1** `index.ts` GameModule, catalog card, `/games/werewolf` setup (Mode 1 create/join, Mode 2 start), `werewolf.css` theme.
-- [ ] **4.2** Flip role card with description and alignment badge; ready flow.
-- [ ] **4.3** Dark Outline Night UI (`#000000`, low-luminance outlines, no white surfaces) and the `GILIRANMU` action panel with a 200 ms cross-fade.
-- [ ] **4.4** Fake Tap mini-game for alive players outside their turn; passive Dead/Spectator view for eliminated players.
-- [ ] **4.5** Day discussion countdown, open voting, reveal matrix, tie defense/revote, Hunter target picker, Host `Paksa Lanjut`.
-- [ ] **4.6** Game over: winner, full roles, lovers, match timeline; rematch through the platform.
+- [x] **4.1** `index.ts` GameModule, catalog card, `/games/werewolf` setup (Mode 1 create/join; Mode 2 shown as "segera hadir" until Phase 6), `werewolf.css` theme, host lobby settings editor.
+- [x] **4.2** Flip role card with description and alignment badge; ready flow.
+- [x] **4.3** Dark Outline Night UI (`#000000`, low-luminance outlines, no white surfaces) and the `GILIRANMU` action panel with a 200 ms fade.
+- [x] **4.4** Fake Tap mini-game for alive players outside their turn; passive Dead/Spectator view for eliminated players.
+- [x] **4.5** Day discussion countdown, open voting, reveal matrix, tie defense/revote, Hunter target picker, Host `Paksa Lanjut`.
+- [x] **4.6** Game over: winner, full roles, lovers, match timeline; rematch through the platform lobby.
+
+**Phase 4 notes:** Verified by unit tests, typecheck, lint, production build, and API/page checks on the local server. A hands-on multi-device browser run is still pending (Phase 7.2). Each client refetches its view right after the server deadline, so phases advance on server time.
 
 ## Phase 5: Voice moderator
-- [x] **5.1** `voice/templates.ts` with every Mode 1 and Mode 2 line from file 03 (nights spoken as ordinals, e.g. "Malam kedua").
-- [ ] **5.2** `voice/narrator.ts`: queue, Web Speech `id-ID`, audio unlock button, Wake Lock *(done; pilot page at `/games/werewolf/suara`)*, single-source lock driven by `audioOutput` *(pending, needs the online adapter)*.
+- [x] **5.1** `voice/templates.ts` with every Mode 1 and Mode 2 line from file 03, as written (daytime lines name players; nights spoken as ordinals, e.g. "Malam kedua").
+- [ ] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, **Microsoft Edge Neural TTS** from the server (`/api/games/werewolf/tts`, template-only, host-only, disk cache) with Web Speech fallback, narration on the host's phone *(done)*; single-source lock driven by `audioOutput` once a TV can be paired *(pending, Phase 7)*.
 
 ## Phase 6: ONUW local mode
 - [ ] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).

@@ -55,6 +55,8 @@ export function buildPublicView(state: ClassicGameState) {
     /** The configured role list is public, like a physical deck on the table. */
     composition: state.settings.roles,
     deadRevealMode: state.settings.deadRevealMode,
+    nightTurnSeconds: state.settings.nightTurnSeconds,
+    dayDiscussionSeconds: state.settings.dayDiscussionSeconds,
     log: publicLog(pub.log),
     winner: pub.winner,
     winReason: pub.winReason,

@@ -37,3 +37,100 @@ body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
 .ww-lines code { display: block; color: var(--ww-muted); font-size: 10px; letter-spacing: .08em; }
 .ww-play { flex: 0 0 34px; height: 34px; border: 1px solid var(--ww-line); border-radius: 50%; background: transparent; color: var(--ww-text); font-size: 11px; }
 @media (max-width: 720px) { .ww-grid { grid-template-columns: 1fr; } .ww-subtitle { font-size: 16px; } }
+
+/* ---------- Classic game UI ---------- */
+.ww-setup { flex: 1; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: clamp(28px, 6vw, 80px); align-items: start; width: min(1040px, 100%); margin: 48px auto 70px; }
+.ww-setup-copy { display: grid; gap: 14px; align-content: start; }
+.ww-setup-copy h1 { margin: 0; font-size: clamp(38px, 5.5vw, 62px); line-height: 1.02; }
+.ww-facts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; list-style: none; color: var(--ww-muted); font-size: 12px; }
+.ww-facts li::before { content: "◦ "; color: var(--ww-accent-solid); }
+.ww-roster summary, .ww-mycard summary { cursor: pointer; color: var(--ww-text); font-size: 13px; }
+.ww-roster ul { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 10px; }
+.ww-roster li { display: grid; gap: 2px; font-size: 12px; }
+.ww-roster small { color: var(--ww-muted); line-height: 1.5; }
+.ww-wide { width: 100%; }
+.ww-join { display: grid; gap: 8px; margin-top: 8px; }
+.ww-join-row { display: flex; gap: 8px; }
+.ww-code { letter-spacing: .18em; text-transform: uppercase; font-weight: 700; }
+.ww-soon { border-top: 1px solid var(--ww-line); padding-top: 12px; margin-top: 4px; }
+.ww-warning { margin: 0; color: #fbbf24; font-size: 12px; }
+.ww-game { flex: 1; width: min(720px, 100%); margin: 28px auto 60px; display: grid; gap: 14px; align-content: start; }
+.ww-topline { display: flex; justify-content: space-between; align-items: center; color: var(--ww-muted); font-size: 10px; letter-spacing: .14em; }
+.ww-phase { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ww-timer { font: 30px Georgia, serif; font-variant-numeric: tabular-nums; color: var(--ww-text); }
+.ww-center { justify-items: center; text-align: center; }
+.ww-notice { margin: 0; border: 1px solid var(--ww-accent); border-radius: 3px; padding: 10px 12px; font-size: 13px; color: var(--ww-text); }
+.ww-result { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ww-text); }
+.ww-team p { margin: 4px 0; color: var(--ww-muted); font-size: 12px; }
+.ww-host { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 1px dashed var(--ww-line); padding-top: 12px; }
+.ww-host .section-kicker { width: 100%; }
+.ww-mycard { border: 1px solid var(--ww-line); border-radius: 4px; padding: 12px; }
+.ww-mycard[open] { display: grid; gap: 10px; justify-items: center; }
+/* Role card (3D flip) */
+.ww-role-card { width: min(300px, 100%); aspect-ratio: 3 / 4; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }
+.ww-role-inner { position: relative; display: block; width: 100%; height: 100%; transition: transform .5s ease; transform-style: preserve-3d; }
+.ww-role-card.is-open .ww-role-inner { transform: rotateY(180deg); }
+.ww-role-face { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 12px; padding: 22px; border: 1px solid var(--ww-accent); border-radius: 6px; backface-visibility: hidden; background: radial-gradient(circle at 50% 30%, #0f172a, #000 70%); }
+.ww-role-front { transform: rotateY(180deg); }
+.ww-role-face strong { font: 30px Georgia, serif; color: var(--ww-text); letter-spacing: .06em; }
+.ww-role-face small { color: var(--ww-muted); font-size: 12px; line-height: 1.6; }
+.ww-role-sigil { font-size: 54px; color: var(--ww-accent-solid); opacity: .5; }
+.ww-badge { border: 1px solid var(--ww-line); border-radius: 999px; padding: 4px 10px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.ww-badge-werewolf { border-color: #7f1d1d; color: #fca5a5; }
+.ww-badge-villager { border-color: #155e75; color: #67e8f9; }
+.ww-badge-independent { border-color: #713f12; color: #fcd34d; }
+@media (prefers-reduced-motion: reduce) { .ww-role-inner { transition: none; } }
+/* Night: pure black, dim outlines, no bright surfaces (docs/03 §2.1) */
+body:has(.ww-is-night) { background: #000; }
+.ww-is-night .topbar, .ww-is-night .footer { opacity: .35; }
+.ww-night-stage { min-height: 360px; display: grid; }
+.ww-fade { animation: ww-fade .2s ease both; }
+@keyframes ww-fade { from { opacity: 0; } to { opacity: 1; } }
+.ww-your-turn { justify-self: start; color: #94a3b8; border: 1px solid var(--ww-accent); padding: 4px 10px; font-size: 11px; letter-spacing: .3em; }
+.ww-night-hint { margin: 0; color: #64748b; font-size: 12px; line-height: 1.6; }
+.ww-fake-tap { display: grid; gap: 10px; height: 100%; }
+.ww-tap-area { position: relative; min-height: 340px; border: 1px solid #1e293b; border-radius: 6px; }
+.ww-tap { position: absolute; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; border: 1px solid #0ea5e959; background: transparent; color: #64748b; font: 18px Georgia, serif; }
+.ww-tap.is-done { border-color: #1e293b; color: #1e293b; }
+.ww-targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.ww-target { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid #1e293b; border-radius: 3px; background: transparent; color: #94a3b8; padding: 12px; font-size: 13px; text-align: left; }
+.ww-target:hover:not(:disabled), .ww-target.is-selected { border-color: #0ea5e959; }
+.ww-target.is-selected { box-shadow: inset 0 0 0 1px #0ea5e959; }
+.ww-target:disabled { opacity: .4; }
+.ww-claw { color: #b91c1c; letter-spacing: -2px; }
+/* Day */
+.ww-matrix, .ww-voted, .ww-role-list, .ww-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ww-matrix li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; border-top: 1px solid var(--ww-line); padding-top: 6px; }
+.ww-matrix small { color: #fbbf24; }
+.ww-voted { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); color: var(--ww-muted); font-size: 12px; }
+.ww-voted .is-voted { color: var(--ww-text); }
+.ww-role-list li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--ww-line); padding-top: 6px; font-size: 13px; }
+.ww-role-list .is-winner strong { color: #fcd34d; }
+.ww-timeline { color: var(--ww-muted); font-size: 12px; list-style: decimal inside; }
+.ww-dead { border-color: #334155; }
+/* Lobby editor (rendered inside the light platform lobby) */
+.ww-editor { display: grid; gap: 10px; }
+.ww-editor .ww-check { color: inherit; }
+.ww-editor .ww-input { background: #fff; color: #152126; border-color: #dce7df; }
+.ww-editor .ww-label { color: #647477; }
+.ww-editor .ww-button { color: #285b47; border-color: #dce7df; background: #f8faf8; }
+.ww-editor .ww-primary { color: #fff; background: #3c745d; border-color: #3c745d; }
+.ww-editor .ww-muted { color: #647477; }
+.ww-composer { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ww-composer li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; border-bottom: 1px solid #edf1ee; padding: 4px 0; }
+.ww-composer small { color: #8a9790; }
+.ww-stepper { display: inline-flex; align-items: center; gap: 8px; }
+.ww-stepper button { width: 26px; height: 26px; border: 1px solid #dce7df; border-radius: 4px; background: #f8faf8; color: #285b47; }
+.ww-stepper button:disabled { opacity: .4; }
+/* Catalog card */
+.catalog-werewolf { border: 1px solid #1e293b; background: #020617; }
+.catalog-werewolf .werewolf-art { color: #cbd5e1; background: radial-gradient(circle at 75% 30%, #0f172a 0, #020617 60%); border-bottom: 1px solid #1e293b; }
+.catalog-werewolf .art-tag { color: #38bdf8; }
+.werewolf-moon { position: absolute; right: 26px; top: 26px; width: 54px; height: 54px; border-radius: 50%; box-shadow: inset -12px -4px 0 0 #cbd5e1; opacity: .7; }
+.catalog-werewolf .catalog-card-body { background: #020617; color: #cbd5e1; }
+.catalog-werewolf .catalog-meta { color: #64748b; }
+.catalog-werewolf .catalog-card-body h2 { color: #e2e8f0; }
+.catalog-werewolf .catalog-card-body p { color: #94a3b8; }
+.catalog-werewolf .primary-button { background: transparent; border: 1px solid #0ea5e959; color: #e2e8f0; text-decoration: none; }
+.catalog-werewolf .primary-button:hover { background: #0f172a; }
+@media (max-width: 760px) { .ww-setup { grid-template-columns: 1fr; margin-top: 28px; } .ww-timer { font-size: 24px; } }
