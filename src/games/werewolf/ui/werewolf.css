@@ -38,6 +38,16 @@ body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
 .ww-play { flex: 0 0 34px; height: 34px; border: 1px solid var(--ww-line); border-radius: 50%; background: transparent; color: var(--ww-text); font-size: 11px; }
 @media (max-width: 720px) { .ww-grid { grid-template-columns: 1fr; } .ww-subtitle { font-size: 16px; } }
 .ww-sample-buttons { display: flex; flex-wrap: wrap; gap: 6px; flex: 0 0 auto; }
+/* ONUW (Mode 2) */
+.ww-onuw-deck { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; }
+.ww-onuw-deck li { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ww-line); padding: 6px 0; font-size: 13px; }
+.ww-onuw-stepper { display: inline-flex; align-items: center; gap: 10px; }
+.ww-onuw-stepper button { width: 30px; height: 30px; border: 1px solid var(--ww-line); border-radius: 3px; background: transparent; color: var(--ww-text); }
+.ww-onuw-stepper button:disabled { opacity: .35; }
+.ww-onuw-night { min-height: 420px; display: grid; justify-items: center; align-content: center; gap: 18px; text-align: center; }
+.ww-onuw-moon { width: 90px; height: 90px; border-radius: 50%; box-shadow: inset -22px -6px 0 0 #334155; opacity: .55; }
+.ww-onuw-ring { display: grid; place-items: center; width: 120px; height: 120px; border-radius: 50%; }
+.ww-onuw-ring time { display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%; background: #000; color: var(--ww-text); font: 30px Georgia, serif; font-variant-numeric: tabular-nums; }
 .ww-sample-buttons .ww-button { padding: 7px 10px; font-size: 11px; }
 @media (max-width: 720px) { .ww-lines li:has(.ww-sample-buttons) { flex-direction: column; } }
 

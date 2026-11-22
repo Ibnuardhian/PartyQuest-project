@@ -55,9 +55,11 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 - [ ] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, static clips first, **Microsoft Edge Neural** for named lines from the server (`/api/games/werewolf/tts`, named templates only, host-only, disk cache), generic clip and Web Speech fallbacks, narration on the host's phone *(done)*; single-source lock driven by `audioOutput` once a TV can be paired *(pending, Phase 7)*.
 
 ## Phase 6: ONUW local mode
-- [ ] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).
-- [ ] **6.2** Pass-the-phone registration with every configured role at full opacity; re-pick flow on mismatch that keeps names.
-- [ ] **6.3** Voice-only night with countdown rings, day timer, and the `3-2-1` pointing prompt; optional post-game log.
+- [x] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).
+- [x] **6.2** Pass-the-phone registration with every configured role at full opacity; re-pick flow on mismatch that keeps names.
+- [x] **6.3** Voice-only night with countdown rings, day timer, and the `3-2-1` pointing prompt; optional post-game log.
+
+**Phase 6 notes:** Route `/games/werewolf/onuw`, client-only (no server). Recommended N + 3 decks with per-role limits (Masons in pairs); every configured role is always shown at full opacity; a mismatch keeps names and every player re-picks; the night plays the voice pack (open, countdown ring, close) for every deck role, then the day timer and the 3-2-1 pointing line. Verified by unit tests, typecheck, lint, and page checks; a hands-on run with physical cards is still pending.
 
 ## Phase 7: TV screen and verification
 - [ ] **7.1** TV pairing code, read-only TV token, `/games/werewolf/tv` and `/games/werewolf/tv/[code]` stage (player ring, countdown, vote breakdown, subtitle bar).

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { CLASSIC_ROLE_INFO } from "@/games/werewolf/roles";
 import { CLASSIC_ROLES } from "@/games/werewolf/contract";
-import { WEREWOLF_VOICE_PILOT_PATH } from "@/games/werewolf/paths";
+import { WEREWOLF_ONUW_PATH, WEREWOLF_VOICE_PILOT_PATH } from "@/games/werewolf/paths";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 
 /** Werewolf setup: create or join a Classic room. Composition and timers are set by the host in the lobby. */
@@ -74,7 +74,7 @@ export default function WerewolfSetup() {
         </form>
         {!ready && !message && <p className="ww-muted">Menghubungkan sesi tamu…</p>}
         {message && <p className="ww-alert" role="alert">{message}</p>}
-        <div className="ww-soon"><span className="section-kicker">MODE 2 · ONUW (1 HP + KARTU FISIK)</span><p className="ww-muted">Segera hadir.</p></div>
+        <div className="ww-soon"><span className="section-kicker">MODE 2 · ONUW (1 HP + KARTU FISIK)</span><p className="ww-muted">Satu HP di tengah meja memvalidasi kartu dan memandu malam dengan suara.</p><Link className="ww-button ww-wide" href={WEREWOLF_ONUW_PATH}>Main ONUW</Link></div>
       </section>
     </section>
     <SiteFooter left="WEREWOLF" right="Game kedua di katalog PartyQuest" />
