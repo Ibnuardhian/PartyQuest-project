@@ -43,8 +43,8 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 - [ ] **4.6** Game over: winner, full roles, lovers, match timeline; rematch through the platform.
 
 ## Phase 5: Voice moderator
-- [ ] **5.1** `voice/templates.ts` with every Mode 1 and Mode 2 line from file 03.
-- [ ] **5.2** `voice/narrator.ts`: queue, Web Speech `id-ID`, audio unlock button, Wake Lock, single-source lock driven by `audioOutput`.
+- [x] **5.1** `voice/templates.ts` with every Mode 1 and Mode 2 line from file 03 (nights spoken as ordinals, e.g. "Malam kedua").
+- [ ] **5.2** `voice/narrator.ts`: queue, Web Speech `id-ID`, audio unlock button, Wake Lock *(done; pilot page at `/games/werewolf/suara`)*, single-source lock driven by `audioOutput` *(pending, needs the online adapter)*.
 
 ## Phase 6: ONUW local mode
 - [ ] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).

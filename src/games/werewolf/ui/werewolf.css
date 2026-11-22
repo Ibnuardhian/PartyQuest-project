@@ -1,0 +1,39 @@
+/* Werewolf: Dark Outline night palette (docs/03 §2.1). Owned by the Werewolf game folder. */
+body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
+.werewolf-theme { --ww-bg: #000; --ww-line: #1e293b; --ww-accent: #0ea5e959; --ww-accent-solid: #0ea5e9; --ww-muted: #64748b; --ww-text: #94a3b8; color: var(--ww-text); }
+.werewolf-theme .topbar, .werewolf-theme .footer { border-color: var(--ww-line); }
+.werewolf-theme .brand, .werewolf-theme .topbar-note { color: var(--ww-text); }
+.werewolf-theme .brand-mark { background: transparent; border: 1px solid var(--ww-accent); color: var(--ww-text); }
+.werewolf-theme .live-dot { background: var(--ww-accent-solid); box-shadow: 0 0 0 4px #0ea5e91a; opacity: .6; }
+.werewolf-theme .section-kicker { color: var(--ww-muted); letter-spacing: .22em; }
+.werewolf-theme .text-button { color: var(--ww-text); }
+.werewolf-theme h1, .werewolf-theme h2 { color: var(--ww-text); font-family: Georgia, serif; font-weight: 400; }
+.werewolf-theme h1 em { color: var(--ww-accent-solid); opacity: .7; }
+.werewolf-theme .footer, .werewolf-theme .footer span:last-child { color: var(--ww-muted); }
+.ww-wrap { flex: 1; width: min(940px, 100%); margin: 40px auto 70px; display: grid; gap: 16px; align-content: start; }
+.ww-wrap h1 { margin: 6px 0 0; font-size: clamp(38px, 6vw, 60px); }
+.ww-muted { color: var(--ww-muted); font-size: 13px; line-height: 1.6; max-width: 640px; margin: 0; }
+.ww-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ww-panel { border: 1px solid var(--ww-line); border-radius: 4px; padding: 20px; display: grid; gap: 10px; align-content: start; background: transparent; }
+.ww-panel h2 { margin: 0 0 4px; font-size: 20px; }
+.ww-label { font-size: 11px; color: var(--ww-muted); display: flex; justify-content: space-between; }
+.ww-input { width: 100%; border: 1px solid var(--ww-line); border-radius: 3px; background: #000; color: var(--ww-text); padding: 10px; font-size: 13px; }
+.ww-input:focus, .ww-button:focus-visible, .ww-play:focus-visible { outline: 1px solid var(--ww-accent-solid); outline-offset: 2px; }
+.werewolf-theme input[type="range"] { accent-color: #0ea5e9; width: 100%; }
+.ww-check, .ww-chip { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ww-text); }
+.ww-check input, .ww-chip input { accent-color: #0ea5e9; }
+.ww-button { border: 1px solid var(--ww-line); border-radius: 3px; background: transparent; color: var(--ww-text); padding: 11px 14px; font-size: 12px; letter-spacing: .06em; }
+.ww-button:hover:not(:disabled), .ww-play:hover:not(:disabled) { border-color: var(--ww-accent); }
+.ww-primary { border-color: var(--ww-accent); }
+.ww-button:disabled, .ww-play:disabled { opacity: .4; cursor: not-allowed; }
+.ww-stage { justify-items: center; text-align: center; min-height: 190px; }
+.ww-subtitle { margin: 0; min-height: 48px; max-width: 680px; color: var(--ww-text); font: 18px/1.5 Georgia, serif; }
+.ww-countdown { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid var(--ww-accent); border-radius: 50%; color: var(--ww-text); font: 24px Georgia, serif; font-variant-numeric: tabular-nums; }
+.ww-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.ww-alert { margin: 0; border: 1px solid #7f1d1d; border-radius: 3px; padding: 10px 12px; color: #fca5a5; font-size: 12px; line-height: 1.5; }
+.ww-chips { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.ww-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ww-lines li { display: flex; gap: 12px; align-items: flex-start; border-top: 1px solid var(--ww-line); padding-top: 8px; font-size: 13px; line-height: 1.5; }
+.ww-lines code { display: block; color: var(--ww-muted); font-size: 10px; letter-spacing: .08em; }
+.ww-play { flex: 0 0 34px; height: 34px; border: 1px solid var(--ww-line); border-radius: 50%; background: transparent; color: var(--ww-text); font-size: 11px; }
+@media (max-width: 720px) { .ww-grid { grid-template-columns: 1fr; } .ww-subtitle { font-size: 16px; } }
