@@ -1,29 +1,26 @@
 import { z } from "zod";
-import { apiError, apiSuccess, mapDatabaseError } from "@/lib/api";
+import { apiError, apiSuccess, databaseErrorResponse, UNAUTHORIZED_MESSAGE } from "@/lib/api";
 import { requireGuest } from "@/lib/auth/require-guest";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { broadcastRoomChanged } from "@/lib/supabase/realtime";
+import { normalizeRoomCode } from "@/lib/room-code";
+import { findRoomByCode, setRoomReady } from "@/lib/rooms/repository";
+
+export const runtime = "nodejs";
 
 const readySchema = z.object({ ready: z.boolean() }).strict();
 
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const guest = await requireGuest();
-  if (!guest) return apiError(401, "unauthorized", "Buat sesi tamu terlebih dahulu.");
+  if (!guest) return apiError(401, "unauthorized", UNAUTHORIZED_MESSAGE);
   const body = readySchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return apiError(400, "invalid_input", "Status siap tidak valid.");
-  const { code } = await params;
+  const code = normalizeRoomCode((await params).code);
+  if (!code) return apiError(404, "room_not_found", "Room tidak ditemukan.");
   try {
-    const admin = createAdminClient();
-    const { data: room } = await admin.from("game_rooms").select("id").eq("code", code.toUpperCase()).maybeSingle();
+    const room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
-    const { error } = await admin.rpc("set_room_ready", { p_room_id: room.id, p_user_id: guest.userId, p_is_ready: body.data.ready });
-    if (error) {
-      const mapped = mapDatabaseError(error.message);
-      return apiError(mapped.status, mapped.code, mapped.message);
-    }
-    await broadcastRoomChanged(room.id, Date.now());
+    await setRoomReady(room.id, guest.userId, body.data.ready);
     return apiSuccess({ ready: body.data.ready });
-  } catch {
-    return apiError(503, "room_unavailable", "Status room belum dapat diperbarui.");
+  } catch (error) {
+    return databaseErrorResponse(error, { status: 503, code: "room_unavailable", message: "Status room belum dapat diperbarui." });
   }
 }

@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import "server-only";
+import { cookies } from "next/headers";
+import { GUEST_COOKIE_NAME, getGuestSessionSecret, verifyGuestToken } from "@/lib/auth/guest-token";
 
+/** Returns the guest proven by the signed HttpOnly cookie, or null. Never trusts a client-supplied id. */
 export async function requireGuest() {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.getClaims();
-    const claims = data?.claims;
-    if (error || typeof claims?.sub !== "string" || claims.is_anonymous !== true) return null;
-    return { userId: claims.sub, supabase };
+    const cookieStore = await cookies();
+    const verified = verifyGuestToken(cookieStore.get(GUEST_COOKIE_NAME)?.value, getGuestSessionSecret());
+    return verified ? { userId: verified.userId } : null;
   } catch {
     return null;
   }

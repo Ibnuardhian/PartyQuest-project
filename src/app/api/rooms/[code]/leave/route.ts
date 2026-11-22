@@ -1,24 +1,21 @@
-import { apiError, apiSuccess, mapDatabaseError } from "@/lib/api";
+import { apiError, apiSuccess, databaseErrorResponse, UNAUTHORIZED_MESSAGE } from "@/lib/api";
 import { requireGuest } from "@/lib/auth/require-guest";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { broadcastRoomChanged } from "@/lib/supabase/realtime";
+import { normalizeRoomCode } from "@/lib/room-code";
+import { findRoomByCode, leaveRoom } from "@/lib/rooms/repository";
+
+export const runtime = "nodejs";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ code: string }> }) {
   const guest = await requireGuest();
-  if (!guest) return apiError(401, "unauthorized", "Buat sesi tamu terlebih dahulu.");
-  const { code } = await params;
+  if (!guest) return apiError(401, "unauthorized", UNAUTHORIZED_MESSAGE);
+  const code = normalizeRoomCode((await params).code);
+  if (!code) return apiError(404, "room_not_found", "Room tidak ditemukan.");
   try {
-    const admin = createAdminClient();
-    const { data: room } = await admin.from("game_rooms").select("id").eq("code", code.toUpperCase()).maybeSingle();
+    const room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
-    const { error } = await admin.rpc("leave_room", { p_room_id: room.id, p_user_id: guest.userId });
-    if (error) {
-      const mapped = mapDatabaseError(error.message);
-      return apiError(mapped.status, mapped.code, mapped.message);
-    }
-    await broadcastRoomChanged(room.id, Date.now());
+    await leaveRoom(room.id, guest.userId);
     return apiSuccess({ left: true });
-  } catch {
-    return apiError(503, "room_unavailable", "Kamu belum dapat keluar dari room.");
+  } catch (error) {
+    return databaseErrorResponse(error, { status: 503, code: "room_unavailable", message: "Kamu belum dapat keluar dari room." });
   }
 }
