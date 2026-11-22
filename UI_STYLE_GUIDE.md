@@ -43,6 +43,15 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 - Dalam Pass-and-Play, clue, diskusi, dan voting dilakukan lisan di luar aplikasi. Tampilkan satu timer maksimum 3 menit untuk ronde clue; setelah voting, pemain memilih dan mengonfirmasi pemain tereliminasi di aplikasi. Jangan menyimpan clue, giliran clue, atau pilihan voting.
 - Kartu privat Pass-and-Play menampilkan kata saja; jangan menampilkan label role sebelum permainan selesai. Tetap gunakan hand-off sebelum membuka kartu.
 - Online Room tetap memakai clue bergiliran dan voting online dengan state server dan deadline server.
+
+## Werewolf
+
+- Tema "Dark Outline" (`src/games/werewolf/ui/werewolf.css`): latar hitam pekat `#000000`, garis tipis slate `#1E293B`, aksen cyan `#0EA5E9` pada opasitas rendah, teks `#94A3B8`/`#64748B`. Jangan memakai permukaan putih atau terang selama fase malam agar layar tidak menerangi wajah pemain.
+- Fase malam (`.ww-is-night`): header dan footer diredupkan; pemain hidup yang bukan giliran melihat mini-game Fake Tap, pemegang role aktif melihat panel `GILIRANMU` dengan fade 200 ms, pemain tereliminasi melihat tampilan pasif tanpa kontrol.
+- Kartu role memakai flip 3D yang dimatikan bila `prefers-reduced-motion`. Label kubu memakai badge berwarna (warga cyan, Werewolf merah, independen kuning) yang juga diberi teks, bukan warna saja.
+- Layar TV (`/games/werewolf/tv/<kode>`) memakai tipografi besar, grid pemain, dan bilah subtitle moderator di bawah; tidak pernah menampilkan role sebelum permainan selesai.
+- Nama role yang tampil diambil dari `CLASSIC_ROLE_INFO` (misalnya Doctor tampil sebagai "Guardian Angel"); jangan menulis nama role langsung di komponen.
+- Editor pengaturan Werewolf dirender di lobi platform yang terang, sehingga kelas `.ww-editor` memakai warna platform.
 - Pass-and-Play memakai `/games/undercover/local#<hash-sesi>`. ID sesi dan salt acak berada di `sessionStorage`; hanya hash SHA-256 yang tampil di fragment URL. Kata dan peran tetap privat dari URL. Hash berfungsi sebagai penanda sesi, bukan batas keamanan. Beri jalur “Lanjutkan permainan” jika pemain kembali ke katalog selama sesi tab masih tersedia.
 - Deadline Online Room berasal dari server dan tetap sama setelah refresh. UI menampilkan sisa waktu dari deadline tersebut; UI klien tidak boleh membuat ulang atau memperpanjang deadline.
 - Layout harus tetap berfungsi tanpa scroll horizontal pada lebar ponsel. Pertahankan hierarki konten dan aksi utama ketika grid berubah menjadi satu kolom.
