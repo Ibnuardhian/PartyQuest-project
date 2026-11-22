@@ -2,6 +2,7 @@ import { apiError, apiSuccess } from "@/lib/api";
 import { requireGuest } from "@/lib/auth/require-guest";
 import { applyGameAction, findSession, findSessionSecret, touchMember } from "@/lib/rooms/repository";
 import { loadMemberSession } from "@/lib/rooms/session-context";
+import { isTvConnected } from "@/lib/rooms/tv";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ses
     }
     const view = game.view(stored, { userId: guest.userId, isHost: room.host_user_id === guest.userId });
     if (!view) return apiError(403, "not_a_player", "Kamu tidak memiliki kursi di permainan ini.");
-    return apiSuccess({ sessionId: session.id, roomId: room.id, roomCode: room.code, gameKey: room.game_key, stateVersion: session.state_version, status: session.status, serverNow: Date.now(), ...view });
+    // A connected TV becomes the single audio device; host phones stay silent then.
+    const tvConnected = await isTvConnected(room.id);
+    return apiSuccess({ sessionId: session.id, roomId: room.id, roomCode: room.code, gameKey: room.game_key, stateVersion: session.state_version, status: session.status, serverNow: Date.now(), tvConnected, ...view });
   } catch {
     return apiError(503, "session_unavailable", "Permainan belum dapat dimuat.");
   }

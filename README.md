@@ -33,6 +33,10 @@ Salin `.env.example` ke `.env` bila perlu mengubah nilai default.
 | `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Opsional. Suara dan model ElevenLabs. |
 | `POSTGRES_*`, `WEB_PORT` | Hanya untuk Compose lokal. |
 
+### Layar TV Werewolf (opsional)
+
+Host menekan **Hubungkan layar TV** di lobi untuk membuat kode 6 angka (berlaku 10 menit, sekali pakai). TV atau laptop membuka `/games/werewolf/tv`, memasukkan kode room dan kode TV, lalu menerima token acak di cookie HttpOnly (hanya hash SHA-256 yang disimpan, migration `202611230002_tv_screens.sql`). Halaman `/games/werewolf/tv/<kode>` menampilkan fase, hitung mundur, daftar pemain, status voting, hasil voting terbuka, dan pemenang tanpa pernah menampilkan role sebelum permainan selesai. Selama TV aktif (terlihat dalam 30 detik terakhir), suara moderator diputar di TV dan HP host diam.
+
 ### Suara moderator Werewolf
 
 Narator memakai **Microsoft Edge Neural TTS** (`id-ID-ArdiNeural`, kecepatan -6%, nada -4Hz) dalam dua bagian:

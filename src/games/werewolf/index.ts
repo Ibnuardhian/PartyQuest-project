@@ -1,6 +1,6 @@
 import type { GameModule } from "@/games/types";
 import { CLASSIC_ROLES, type ClassicRole } from "@/games/werewolf/contract";
-import { WEREWOLF_SETUP_PATH } from "@/games/werewolf/paths";
+import { WEREWOLF_SETUP_PATH, WEREWOLF_TV_PATH } from "@/games/werewolf/paths";
 import { CLASSIC_ROLE_INFO } from "@/games/werewolf/roles";
 import { WerewolfCatalogCard } from "@/games/werewolf/ui/catalog-card";
 import WerewolfOnlineGame from "@/games/werewolf/ui/online-game";
@@ -11,6 +11,7 @@ export const werewolfModule: GameModule = {
   key: "werewolf",
   title: "Werewolf",
   setupHref: WEREWOLF_SETUP_PATH,
+  tvSetupHref: WEREWOLF_TV_PATH,
   CatalogCard: WerewolfCatalogCard,
   OnlineGame: WerewolfOnlineGame,
   RoomSettingsEditor: WerewolfRoomSettingsEditor,

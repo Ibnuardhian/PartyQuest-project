@@ -52,7 +52,7 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 
 ## Phase 5: Voice moderator
 - [x] **5.1** Voice lines: the 41-line voice pack (`voice/voice-pack.json`, MP3 in `public/audio/werewolf/`, generated with Microsoft Edge Neural Ardi) plus four named daytime announcements (`NAME_LINES`).
-- [ ] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, static clips first, **Microsoft Edge Neural** for named lines from the server (`/api/games/werewolf/tts`, named templates only, host-only, disk cache), generic clip and Web Speech fallbacks, narration on the host's phone *(done)*; single-source lock driven by `audioOutput` once a TV can be paired *(pending, Phase 7)*.
+- [x] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, static clips first, **Microsoft Edge Neural** for named lines from the server (`/api/games/werewolf/tts`, named templates only, host-only, disk cache), generic clip and Web Speech fallbacks, narration on the host's phone *(done)*; single-source lock: the paired TV narrates while connected, otherwise the host phone *(done in Phase 7)*.
 
 ## Phase 6: ONUW local mode
 - [x] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).
@@ -62,5 +62,8 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 **Phase 6 notes:** Route `/games/werewolf/onuw`, client-only (no server). Recommended N + 3 decks with per-role limits (Masons in pairs); every configured role is always shown at full opacity; a mismatch keeps names and every player re-picks; the night plays the voice pack (open, countdown ring, close) for every deck role, then the day timer and the 3-2-1 pointing line. Verified by unit tests, typecheck, lint, and page checks; a hands-on run with physical cards is still pending.
 
 ## Phase 7: TV screen and verification
-- [ ] **7.1** TV pairing code, read-only TV token, `/games/werewolf/tv` and `/games/werewolf/tv/[code]` stage (player ring, countdown, vote breakdown, subtitle bar).
+- [x] **7.1** TV pairing code, read-only TV token, `/games/werewolf/tv` and `/games/werewolf/tv/[code]` stage (player ring, countdown, vote breakdown, subtitle bar).
 - [ ] **7.2** README, AGENTS.md, UI style guide updates; `npm test`, typecheck, lint, production build, and a multi-device run in Docker.
+
+**Phase 7 notes:** Host creates a 6-digit pairing code in the lobby (10 minutes, single use); the TV trades it at `/games/werewolf/tv` for a random token stored only as a SHA-256 hash (HttpOnly cookie, 12 h). `/games/werewolf/tv/[code]` polls the public view every 2.5 s (no roles until game over) and narrates after "Aktifkan suara"; while a TV has polled within 30 s, `tvConnected` silences the host phone. The TTS route accepts the host or a TV paired to that room. Live subtitle bar and animated vote arrows are not implemented yet (see CHANGELOG). 7.2 (multi-device hands-on run) is still open.
+

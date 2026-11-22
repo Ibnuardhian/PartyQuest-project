@@ -38,6 +38,23 @@ body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
 .ww-play { flex: 0 0 34px; height: 34px; border: 1px solid var(--ww-line); border-radius: 50%; background: transparent; color: var(--ww-text); font-size: 11px; }
 @media (max-width: 720px) { .ww-grid { grid-template-columns: 1fr; } .ww-subtitle { font-size: 16px; } }
 .ww-sample-buttons { display: flex; flex-wrap: wrap; gap: 6px; flex: 0 0 auto; }
+/* TV stage (docs/03 §3) */
+.ww-tv .page-shell, .ww-tv { max-width: none; }
+.ww-tv-stage { flex: 1; width: min(1400px, 100%); margin: 24px auto 40px; display: grid; gap: 18px; align-content: start; }
+.ww-tv-top { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+.ww-tv-code { font: 28px Georgia, serif; letter-spacing: .2em; border: 1px solid var(--ww-accent); padding: 6px 14px; }
+.ww-tv-phase { flex: 1; font: clamp(24px, 3vw, 40px) Georgia, serif; color: var(--ww-text); }
+.ww-tv-timer { font: clamp(36px, 5vw, 72px) Georgia, serif; font-variant-numeric: tabular-nums; color: var(--ww-text); }
+.ww-tv-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.ww-tv-grid li { display: grid; gap: 4px; border: 1px solid var(--ww-line); border-radius: 6px; padding: 16px; text-align: center; }
+.ww-tv-grid strong { font: 22px Georgia, serif; color: var(--ww-text); }
+.ww-tv-grid small { color: var(--ww-muted); font-size: 13px; }
+.ww-tv-grid em { color: #fcd34d; font-style: normal; font-size: 14px; }
+.ww-tv-grid .is-dead { opacity: .4; text-decoration: line-through; }
+.ww-tv-grid .has-voted { border-color: var(--ww-accent); }
+.ww-tv-grid .is-tied { border-color: #fbbf24; }
+.ww-tv-grid .is-ready { border-color: var(--ww-accent); }
+.ww-tv-ticker { margin: 0; border-top: 1px solid var(--ww-line); padding-top: 12px; font: 20px Georgia, serif; color: var(--ww-text); }
 /* ONUW (Mode 2) */
 .ww-onuw-deck { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; }
 .ww-onuw-deck li { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ww-line); padding: 6px 0; font-size: 13px; }

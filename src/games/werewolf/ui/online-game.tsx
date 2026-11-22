@@ -56,7 +56,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   }, [deadlineAt, skew, load]);
 
   const secondsLeft = useCountdown(deadlineAt, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
-  const narration = useNarration(snapshot, sessionId);
+  const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected));
 
   async function perform(action: Record<string, unknown>) {
     if (!snapshot) return;
@@ -136,6 +136,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
 
         {view.you.isHost && phase !== "GAME_OVER" && <div className="ww-host">
           <span className="section-kicker">KONTROL HOST</span>
+          {view.tvConnected && <span className="ww-muted">Suara moderator diputar di layar TV.</span>}
           {narration.isAudioDevice && (narration.enabled
             ? <button type="button" className="ww-button" onClick={narration.disable}>Matikan suara moderator</button>
             : <button type="button" className="ww-button ww-primary" onClick={() => void narration.enable()}>Aktifkan suara moderator</button>)}

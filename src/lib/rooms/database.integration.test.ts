@@ -179,6 +179,21 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
+  it("pairs a TV once with a valid, unexpired code", async () => {
+    await inRollback(async () => {
+      const { room } = await roomWithPlayers(3);
+      await client.query("insert into room_tv_pairings(room_id, pairing_code, expires_at) values ($1, '123456', now() + interval '10 minutes')", [room.id]);
+      const pair = async (code: string, hash: string) => (await client.query<{ paired: boolean }>("select pair_tv_screen($1, $2, $3) as paired", [room.id, code, hash])).rows[0]!.paired;
+      expect(await pair("000000", "a".repeat(64))).toBe(false);
+      expect(await pair("123456", "b".repeat(64))).toBe(true);
+      expect(await pair("123456", "c".repeat(64))).toBe(false);
+      await client.query("insert into room_tv_pairings(room_id, pairing_code, expires_at) values ($1, '654321', now() - interval '1 minute')", [room.id]);
+      expect(await pair("654321", "d".repeat(64))).toBe(false);
+      const screens = await client.query("select token_hash from room_tv_screens where room_id = $1", [room.id]);
+      expect(screens.rows).toEqual([{ token_hash: "b".repeat(64) }]);
+    });
+  });
+
   it("ignores unknown ids without leaking a session", async () => {
     const result = await client.query("select ok, error_code from apply_game_action($1, $2, 0, '{}'::jsonb)", [randomUUID(), randomUUID()]);
     expect(result.rows[0]).toEqual({ ok: false, error_code: "session_not_found" });

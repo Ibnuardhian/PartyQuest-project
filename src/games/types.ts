@@ -22,6 +22,8 @@ export interface GameModule {
   CatalogCard: ComponentType;
   /** In-game screen for Online Room. */
   OnlineGame?: ComponentType<{ roomCode: string; sessionId: string }>;
+  /** Page a TV/laptop opens to pair as a shared screen (lobby shows a pairing code to the host). */
+  tvSetupHref?: string;
   /** Host-only lobby editor for room settings; saved through PATCH /api/rooms/[code]/settings. */
   RoomSettingsEditor?: ComponentType<RoomSettingsEditorProps>;
   /** Human-readable room settings for the lobby. */

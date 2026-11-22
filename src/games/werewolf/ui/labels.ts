@@ -10,6 +10,8 @@ export type WerewolfSnapshot = WerewolfView & {
   stateVersion: number;
   status: string;
   serverNow: number;
+  /** A paired TV is the audio device; the host phone stays silent while it is connected. */
+  tvConnected: boolean;
   /** Client clock when the snapshot arrived; used to correct countdowns to server time. */
   receivedAt: number;
 };

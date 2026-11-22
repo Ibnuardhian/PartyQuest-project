@@ -7,16 +7,16 @@ import { narrationKey, narrationLines, type NarrationKey } from "@/games/werewol
 import type { WerewolfView } from "@/games/werewolf/ui/labels";
 
 /**
- * Voice moderator for the designated audio device. Until a TV can be paired (Phase 7),
- * that is the host's phone; every other phone stays silent (single-source audio rule).
+ * Voice moderator for the single audio device (docs/03 §1.1): the paired TV when one is connected,
+ * otherwise the host's phone. Every other device stays silent.
  */
-export function useNarration(view: WerewolfView | null, sessionId: string) {
+export function useNarration(publicView: WerewolfView["public"] | null, sessionId: string | null, isAudioDevice: boolean) {
   const narrator = useMemo(() => new Narrator({ rate: 1 }), []);
   const [enabled, setEnabled] = useState(false);
   const previous = useRef<NarrationKey | null>(null);
-  const isAudioDevice = Boolean(view?.you.isHost);
 
   useEffect(() => {
+    if (!sessionId) return;
     let cancelled = false;
     // Named lines come from the server (ElevenLabs when configured, else Microsoft Edge Neural).
     narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts", { sessionId }));
@@ -31,14 +31,17 @@ export function useNarration(view: WerewolfView | null, sessionId: string) {
   }, [narrator, sessionId]);
 
   useEffect(() => {
-    if (!view) return;
-    const lines = narrationLines(previous.current, view.public);
-    previous.current = narrationKey(view.public);
+    if (!publicView) return;
+    const lines = narrationLines(previous.current, publicView);
+    previous.current = narrationKey(publicView);
     if (!enabled || !isAudioDevice || lines.length === 0) return;
     void (async () => {
       for (const line of lines) if (!(await narrator.speak(line))) return;
     })();
-  }, [view, enabled, isAudioDevice, narrator]);
+  }, [publicView, enabled, isAudioDevice, narrator]);
+
+  // Hand the voice over cleanly when a TV connects or disconnects.
+  useEffect(() => { if (!isAudioDevice) narrator.cancel(); }, [isAudioDevice, narrator]);
 
   async function enable() {
     narrator.unlock();
