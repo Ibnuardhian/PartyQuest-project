@@ -3,14 +3,24 @@
 Work through the phases in order. Mark each item `[x]` once it is implemented and verified (Vitest, typecheck, lint, build in Docker). Rules come from files 01–03; architecture from file 04.
 
 ## Phase 1: Pure engines and roster data
-- [ ] **1.1** `contract.ts` and `roles.ts`: roles, alignments, phases, settings, Indonesian descriptions, art prompts, recommended composition (5–16 players).
-- [ ] **1.2** `engine/classic`: state machine from file 02 §1.1 with night priority order, fixed turn windows, and `phaseDeadlineAt`.
-- [ ] **1.3** Night resolution: Werewolf kill (majority/consensus), Doctor protection (no consecutive repeat), Seer (Lycan reads as Werewolf, Minion as Villager), Witch heal/poison (once each), Cupid lovers chain death, Cursed conversion, Disease blocking the next night's kill.
-- [ ] **1.4** Day: hidden votes, simultaneous reveal matrix, Mayor 2×, abstain, `TIE_DEFENSE` → `TIE_REVOTE` → no execution on a second tie; `HUNTER_REVENGE` after night or day death.
-- [ ] **1.5** AFK: role promotion of a random eligible online Villager, strike 1 (`canVote = false`), strike 2 (`DEAD_AFK`, does not use the day's execution).
-- [ ] **1.6** Win check: Tanner override, Lovers (final two), Villager (no Werewolves), Werewolf parity.
-- [ ] **1.7** `engine/onuw`: deck validation (`ΣS(r) = N` and `S(r) ≤ D(r)`, mismatch list, names preserved) and the night sequencer script with per-role durations.
-- [ ] **1.8** Vitest coverage for every rule above, including invalid phase/turn/actor and dead-player rejections.
+- [x] **1.1** `contract.ts` and `roles.ts`: roles, alignments, phases, settings, Indonesian descriptions, art prompts, recommended composition (5–16 players).
+- [x] **1.2** `engine/classic`: state machine from file 02 §1.1 with night priority order, fixed turn windows, and `phaseDeadlineAt`.
+- [x] **1.3** Night resolution: Werewolf kill (majority/consensus), Doctor protection (no consecutive repeat), Seer (Lycan reads as Werewolf, Minion as Villager), Witch heal/poison (once each), Cupid lovers chain death, Cursed conversion, Disease blocking the next night's kill.
+- [x] **1.4** Day: hidden votes, simultaneous reveal matrix, Mayor 2×, abstain, `TIE_DEFENSE` → `TIE_REVOTE` → no execution on a second tie; `HUNTER_REVENGE` after night or day death.
+- [x] **1.5** AFK: role promotion of a random eligible online Villager, strike 1 (`canVote = false`), strike 2 (`DEAD_AFK`, does not use the day's execution).
+- [x] **1.6** Win check: Tanner override, Lovers (final two), Villager (no Werewolves), Werewolf parity.
+- [x] **1.7** `engine/onuw`: deck validation (`ΣS(r) = N` and `S(r) ≤ D(r)`, mismatch list, names preserved) and the night sequencer script with per-role durations.
+- [x] **1.8** Vitest coverage for every rule above, including invalid phase/turn/actor and dead-player rejections.
+
+**Phase 1 decisions where the spec was silent or inconsistent** (implemented and tested):
+- Wolf target = plurality of alive Werewolves' picks; an even split means no attack. Werewolves cannot target Werewolves.
+- `NIGHT_INTRO` lasts 6 s and `OPEN_VOTING` 60 s (the spec names no durations for these).
+- Night turns stay in the queue when holders are dead, Werewolves are diseased, or the Witch has no potions, so pacing never leaks.
+- Hunter shots resolve before the win check; Tanner execution overrides everything.
+- Any active night role may `SKIP` deliberately; only holders who could act are struck as AFK. Strike 2 = AFK again while strike 1 is active; the struck player keeps their role (no promotion). Strike 1's vote ban covers the next day's voting (including a revote) and clears afterwards.
+- A promoted Villager acts from the next turn; Witch potions are game-wide, so they carry over.
+- Recommended composition fills remaining seats with Villagers, because the spec's Villager ranges for 10–16 players do not add up.
+- Seer: Lycan reads as Werewolf; Minion and an unconverted Cursed read as Villager. Cupid may link themselves.
 
 ## Phase 2: Platform extensions (file 04 §8)
 - [ ] **2.1** Migration: `game_key` adds `werewolf`; `max_players`/`seat_no` up to 16; `create_room` takes `max_players`.
