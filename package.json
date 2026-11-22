@@ -8,12 +8,12 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "latest",
-    "@supabase/supabase-js": "latest",
     "next": "latest",
+    "pg": "^8.23.1",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
+    "@types/pg": "^8.23.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "eslint": "latest",

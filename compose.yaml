@@ -20,13 +20,17 @@ services:
       context: .
       target: dev
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
-      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY:-}
+      # Runtime-only values; never passed as build args or baked into the image.
+      DATABASE_URL: postgres://${POSTGRES_USER:-partyquest}:${POSTGRES_PASSWORD:-partyquest_dev_only}@postgres:5432/${POSTGRES_DB:-partyquest}
+      GUEST_SESSION_SECRET: ${GUEST_SESSION_SECRET:-local-dev-only-guest-session-secret-change-me}
+    command: ["sh", "-c", "npm run db:migrate && npm run dev"]
     volumes:
       - .:/app
       - node_modules:/app/node_modules
