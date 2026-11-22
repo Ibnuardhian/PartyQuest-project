@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "voice:generate": "node scripts/generate-werewolf-voice.mjs"
   },
   "dependencies": {
     "next": "latest",

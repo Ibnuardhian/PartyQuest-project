@@ -2,53 +2,47 @@
 
 > **PartyQuest adaptation:** This file keeps the original Werewolf Hybrid spec wording. Stack references were mapped to the PartyQuest platform (guest cookie, PostgreSQL, SSE). See `04-architecture-and-platform-integration.md` for how each item is implemented.
 
-## 1. AI Voice Moderator Engine (Template + TTS)
+## 1. AI Voice Moderator (Microsoft Edge Neural: static voice pack + named announcements)
+
+> **PartyQuest decision (2026-11-23):** merged from `werewolf-tts-voice-pack.zip` (the static MP3 pack and its spec update). The original template table is in git history (`a08d009`). Player names are spoken in daytime announcements; night turns name roles only.
 
 ### 1.1 Architecture & Audio Routing Rules
-- **No LLM Generation Delay:** All voice lines are generated from deterministic Indonesian text templates interpolated with dynamic variables (`{playerName}`, `{victimName}`, `{seconds}`).
+- **Static voice pack (zero runtime TTS):** 41 lines (22 Classic, 19 ONUW) are pre-generated MP3 files in `public/audio/werewolf/classic/` and `public/audio/werewolf/onuw/`, created once with **Microsoft Edge Neural TTS** (`id-ID-ArdiNeural`, rate `-6%`, pitch `-4Hz`; alternative `id-ID-GadisNeural`) by `npm run voice:generate` (`scripts/generate-werewolf-voice.mjs`, reads `src/games/werewolf/voice/voice-pack.json`). The files are committed, so play time needs no API.
+- **Named announcements (on demand):** four daytime lines name the players involved. The host's device asks `POST /api/games/werewolf/tts` (Microsoft Edge Neural via `node-edge-tts`, same voice and prosody, cached per line on the server). The route only voices these four templates with names of players in that session.
+- **Fallback chain:** named line from Microsoft → the pack's generic MP3 for that event (no name) → browser Web Speech (`id-ID`).
 - **Strict Single-Device Audio Output:**
   - `TV_SCREEN` client connected -> `TV_SCREEN` plays audio; `HOST` phone stays muted.
   - No `TV_SCREEN` connected -> `HOST` phone plays audio; all other `PLAYER` phones stay muted.
 - **Browser Autoplay & Sleep Prevention:**
-  - Host/TV must click a `"Mulai Permainan / Aktifkan Suara"` button at game start to unlock Web Audio API (`AudioContext.resume()`).
+  - Host/TV taps `"Aktifkan suara moderator"` to unlock browser audio playback.
   - Request `navigator.wakeLock.request('screen')` on TV and active player devices so screens do not lock mid-night.
 
-### 1.2 Indonesian TTS Script Templates
+### 1.2 Mode 1: Hybrid Classic (`/audio/werewolf/classic/`)
+| Event | Audio | Spoken text |
+| :--- | :--- | :--- |
+| `NIGHT_INTRO` | `night_intro.mp3` | *"Malam telah tiba... Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. Tetap tenang... dan jangan bersuara."* |
+| `TURN_<ROLE>` | `turn_cupid/mason/werewolf/doctor/seer/witch.mp3` | Per role, e.g. *"Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya."* |
+| `TURN_END` | `turn_end.mp3` | *"Waktu giliranmu telah selesai."* |
+| `DAWN_SINGLE_KILL` | **Microsoft on demand** (fallback `dawn_single_kill.mp3`) | *"Pagi telah tiba! Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam."* |
+| `DAWN_MULTI_KILL` | **Microsoft on demand** (fallback `dawn_multi_kill.mp3`) | *"Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas!"* |
+| `DAWN_NO_KILL` | `dawn_no_kill.mp3` | *"Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!"* |
+| `HUNTER_REVENGE` | **Microsoft on demand** (fallback `hunter_revenge.mp3`) | *"Sang Pemburu, {hunterName}, gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}... pilih satu targetmu di layar sekarang!"* |
+| `DAY_START` | `day_discussion_start.mp3` | *"Fase diskusi dimulai! Kalian punya waktu untuk berdebat dan mencari siapa pelaku di antara kalian."* |
+| `DAY_1MIN_WARN` | `day_one_minute_left.mp3` | *"Perhatian... Waktu diskusi tersisa satu menit lagi."* |
+| `VOTING_START` | `voting_start.mp3` | *"Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi sekarang."* |
+| `VOTE_TIE` | `voting_tie.mp3` | *"Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."* |
+| `EXECUTION_RESULT` | **Microsoft on demand** (fallback `execution_result.mp3`) | *"Warga desa telah memutuskan... {executedName} dieksekusi hari ini!"* |
+| `NO_EXECUTION` | `execution_none.mp3` | *"Voting kembali seri... Tidak ada warga yang dieksekusi hari ini."* |
+| `WIN_*` | `win_villager/werewolf/tanner/lovers.mp3` | One line per winning side. |
 
-> **PartyQuest decision (2026-11-23, revised): the templates below are used as written, including player names** in daytime announcements (`{victimName}`, `{victimList}`, `{hunterName}`, `{executedName}`). Night turn lines name roles only, as below, because naming a player there would reveal their role. `NIGHT_INTRO` speaks the night as an ordinal ("Malam kedua"). Voice: **Microsoft Edge Neural TTS** (`node-edge-tts`, voices `id-ID-GadisNeural` / `id-ID-ArdiNeural`) generated on the server and cached per line; the browser's Web Speech API is the fallback. Source of truth: `src/games/werewolf/voice/templates.ts`.
+Exact texts: `src/games/werewolf/voice/voice-pack.json` (static) and `NAME_LINES` in `src/games/werewolf/voice/templates.ts` (named).
 
-#### Mode 1: Hybrid Classic Scripts
-| Trigger Event | Indonesian Voice Script Template |
-| :--- | :--- |
-| `NIGHT_INTRO` | *"Malam ke-{nightNumber} telah tiba. Seluruh warga desa menunduk dan perhatikan layar masing-masing. Tetap tenang dan jangan bersuara."* |
-| `NIGHT_TURN_START` | *"Giliran {roleName} beraksi. Silakan tentukan pilihanmu di layar sekarang."* |
-| `NIGHT_TURN_END` | *"Waktu untuk {roleName} telah selesai."* |
-| `DAWN_SINGLE_KILL` | *"Pagi telah tiba! Warga desa terbangun dengan kabar duka... {victimName} ditemukan tewas semalam."* |
-| `DAWN_MULTI_KILL` | *"Pagi telah tiba! Tragedi berdarah terjadi semalam... {victimList} ditemukan tewas."* |
-| `DAWN_NO_KILL` | *"Pagi telah tiba! Keajaiban terjadi semalam, tidak ada satu pun warga desa yang menjadi korban."* |
-| `HUNTER_TRIGGER` | *"Pemburu {hunterName} gugur, namun ia sempat menarik pelatuk senjatanya! {hunterName}, pilih satu targetmu sekarang."* |
-| `DAY_START` | *"Fase diskusi dimulai. Kalian memiliki waktu {minutes} menit untuk berdebat dan mencari pelaku."* |
-| `DAY_1MIN_WARN` | *"Waktu diskusi tersisa satu menit lagi."* |
-| `VOTING_START` | *"Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi."* |
-| `VOTE_TIE` | *"Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri sebelum voting ulang."* |
-| `EXECUTION_RESULT` | *"Warga desa telah memutuskan. {executedName} dieksekusi hari ini."* |
-| `NO_EXECUTION` | *"Voting kembali seri. Tidak ada warga yang dieksekusi hari ini."* |
-| `GAME_OVER` | *"Permainan berakhir! Kemenangan diraih oleh kubu {winningFaction}!"* |
-
-#### Mode 2: ONUW Voice-Only Scripts (10–15s Timed Pauses)
-| Step | Indonesian Voice Script Template |
-| :--- | :--- |
-| `ONUW_START` | *"Semua pemain tutup mata. Pastikan HP berada di tengah meja dan jangan menyentuh layar."* |
-| `WEREWOLF` | *"Werewolf, buka mata dan kenali sesama Werewolf. Jika sendirian, lihat satu kartu tengah... [12s countdown] ... Werewolf, tutup mata."* |
-| `MINION` | *"Minion, buka mata. Werewolf, acungkan jempol kalian agar Minion mengenali kalian... [10s countdown] ... Werewolf turunkan jempol, Minion tutup mata."* |
-| `MASON` | *"Mason, buka mata dan kenali sesama rekan Mason kalian... [10s countdown] ... Mason, tutup mata."* |
-| `SEER` | *"Seer, buka mata. Lihat kartu milik satu pemain lain, atau dua kartu di tengah meja... [14s countdown] ... Seer, tutup mata."* |
-| `ROBBER` | *"Robber, buka mata. Tukar kartumu dengan kartu satu pemain lain, lalu lihat kartu barumu... [14s countdown] ... Robber, tutup mata."* |
-| `TROUBLEMAKER` | *"Troublemaker, buka mata. Tukar kartu milik dua pemain lain tanpa melihat isinya... [14s countdown] ... Troublemaker, tutup mata."* |
-| `DRUNK` | *"Drunk, buka mata. Tukar kartumu dengan satu kartu di tengah meja tanpa melihatnya... [12s countdown] ... Drunk, tutup mata."* |
-| `INSOMNIAC` | *"Insomniac, buka mata dan periksa kartumu sendiri sekarang... [10s countdown] ... Insomniac, tutup mata."* |
-| `ONUW_DAY` | *"Semua pemain, buka mata! Pagi telah tiba. Kalian punya waktu {minutes} menit untuk berdiskusi."* |
-| `ONUW_VOTE` | *"Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!"* |
+### 1.3 Mode 2: ONUW voice-only night (`/audio/werewolf/onuw/`, split open/close clips)
+The phone in the center plays `*_open.mp3`, shows the countdown ring (10–14 s), then plays `*_close.mp3`:
+- Intro: `onuw_intro.mp3`
+- Werewolf (12 s), Minion (10 s), Mason (10 s), Seer (14 s), Robber (14 s), Troublemaker (14 s), Drunk (12 s), Insomniac (10 s): `<role>_open.mp3` → countdown → `<role>_close.mp3`
+- Day start: `onuw_day_start.mp3`
+- Final pointing countdown: `onuw_vote_countdown.mp3`
 
 ---
 

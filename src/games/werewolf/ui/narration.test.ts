@@ -3,6 +3,7 @@ import type { ClassicAction, ClassicGameState, ClassicRole } from "@/games/werew
 import { advanceClassic, applyClassicAction, createClassicGame } from "@/games/werewolf/engine/classic/engine";
 import { buildPublicView } from "@/games/werewolf/server/view";
 import { narrationKey, narrationLines, type NarrationKey } from "@/games/werewolf/ui/narration";
+import type { VoiceLine } from "@/games/werewolf/voice/templates";
 
 const NOW = Date.UTC(2026, 10, 23, 20);
 const NAMES = ["Alya", "Budi", "Citra", "Dimas", "Eka", "Fajar"];
@@ -32,6 +33,9 @@ function narrate(states: ClassicGameState[]) {
   });
 }
 
+/** Static clips as their file name; named (server TTS) lines as "TTS: text". */
+const describeLines = (lines: VoiceLine[]) => lines.map((line) => line.clip ? line.clip.split("/").at(-1)! : `TTS: ${line.text}`);
+
 describe("narration", () => {
   it("calls roles at night, names the victim at dawn, and names the executed player", () => {
     const intro = readyAll(game(["WEREWOLF", "SEER", "DOCTOR", "VILLAGER", "VILLAGER"]));
@@ -42,20 +46,25 @@ describe("narration", () => {
     const day = expire(seerTurn);
     const voting = expire(day);
     const afterVote = ["p1", "p2", "p3", "p5"].reduce((current, id) => act(current, id, { type: "vote", targetId: id === "p1" ? "p2" : "p1" }), voting);
-    const said = narrate([intro, wolfTurn, picked, doctorTurn, seerTurn, day, voting, afterVote]);
-    expect(said[0]).toEqual(["Malam pertama telah tiba. Seluruh warga desa menunduk dan perhatikan layar masing-masing. Tetap tenang dan jangan bersuara."]);
-    expect(said[1]).toEqual(["Giliran Werewolf beraksi. Silakan tentukan pilihanmu di layar sekarang."]);
+    const said = narrate([intro, wolfTurn, picked, doctorTurn, seerTurn, day, voting, afterVote]).map(describeLines);
+    expect(said[0]).toEqual(["night_intro.mp3"]);
+    expect(said[1]).toEqual(["turn_werewolf.mp3"]);
     expect(said[2]).toEqual([]);
-    expect(said[3]).toEqual(["Waktu untuk Werewolf telah selesai.", "Giliran Doctor beraksi. Silakan tentukan pilihanmu di layar sekarang."]);
-    expect(said[5]).toEqual([
-      "Pagi telah tiba! Warga desa terbangun dengan kabar duka... Dimas ditemukan tewas semalam.",
-      "Fase diskusi dimulai. Kalian memiliki waktu tiga menit untuk berdebat dan mencari pelaku.",
-    ]);
-    expect(said[6]).toEqual(["Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi."]);
-    expect(said[7]![0]).toBe("Warga desa telah memutuskan. Alya dieksekusi hari ini.");
-    expect(said[7]).toContain("Permainan berakhir! Kemenangan diraih oleh kubu Warga Desa!");
-    // Night lines never contain a player's name.
+    expect(said[3]).toEqual(["turn_end.mp3", "turn_doctor.mp3"]);
+    expect(said[4]).toEqual(["turn_end.mp3", "turn_seer.mp3"]);
+    expect(said[5]).toEqual(["TTS: Pagi telah tiba! Warga desa terbangun dengan kabar duka... Dimas ditemukan tewas semalam.", "day_discussion_start.mp3"]);
+    expect(said[6]).toEqual(["voting_start.mp3"]);
+    expect(said[7]).toEqual(["TTS: Warga desa telah memutuskan... Alya dieksekusi hari ini!", "win_villager.mp3"]);
+    // Night lines are static role-only clips and never carry a player's name.
     for (const line of [...said[0]!, ...said[1]!, ...said[3]!]) for (const name of NAMES) expect(line).not.toContain(name);
+  });
+
+  it("falls back to the generic static clip when a named line cannot be synthesized", () => {
+    const intro = readyAll(game(["WEREWOLF", "SEER", "DOCTOR", "VILLAGER", "VILLAGER"]));
+    const day = expire(expire(expire(act(expire(intro), "p1", { type: "wolf-target", targetId: "p4" }))));
+    expect(day.public.phase).toBe("DAY_DISCUSSION");
+    const [dawn] = narrationLines(narrationKey(buildPublicView(expire(intro))), buildPublicView(day));
+    expect(dawn?.fallbackClip).toBe("/audio/werewolf/classic/dawn_single_kill.mp3");
   });
 
   it("announces the dawn before an overnight Hunter's shot", () => {
@@ -64,10 +73,10 @@ describe("narration", () => {
     const picked = act(wolfTurn, "p1", { type: "wolf-target", targetId: "p2" });
     const hunter = expire(picked);
     expect(hunter.public.phase).toBe("HUNTER_REVENGE");
-    const said = narrate([intro, wolfTurn, picked, hunter]);
+    const said = narrate([intro, wolfTurn, picked, hunter]).map(describeLines);
     expect(said[3]).toEqual([
-      "Pagi telah tiba! Warga desa terbangun dengan kabar duka... Budi ditemukan tewas semalam.",
-      "Pemburu Budi gugur, namun ia sempat menarik pelatuk senjatanya! Budi, pilih satu targetmu sekarang.",
+      "TTS: Pagi telah tiba! Warga desa terbangun dengan kabar duka... Budi ditemukan tewas semalam.",
+      "TTS: Sang Pemburu, Budi, gugur, namun ia sempat menarik pelatuk senjatanya! Budi... pilih satu targetmu di layar sekarang!",
     ]);
   });
 });

@@ -49,8 +49,8 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 **Phase 4 notes:** Verified by unit tests, typecheck, lint, production build, and API/page checks on the local server. A hands-on multi-device browser run is still pending (Phase 7.2). Each client refetches its view right after the server deadline, so phases advance on server time.
 
 ## Phase 5: Voice moderator
-- [x] **5.1** `voice/templates.ts` with every Mode 1 and Mode 2 line from file 03, as written (daytime lines name players; nights spoken as ordinals, e.g. "Malam kedua").
-- [ ] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, **Microsoft Edge Neural TTS** from the server (`/api/games/werewolf/tts`, template-only, host-only, disk cache) with Web Speech fallback, narration on the host's phone *(done)*; single-source lock driven by `audioOutput` once a TV can be paired *(pending, Phase 7)*.
+- [x] **5.1** Voice lines: the 41-line voice pack (`voice/voice-pack.json`, MP3 in `public/audio/werewolf/`, generated with Microsoft Edge Neural Ardi) plus four named daytime announcements (`NAME_LINES`).
+- [ ] **5.2** `voice/narrator.ts`: queue, audio unlock, Wake Lock, static clips first, **Microsoft Edge Neural** for named lines from the server (`/api/games/werewolf/tts`, named templates only, host-only, disk cache), generic clip and Web Speech fallbacks, narration on the host's phone *(done)*; single-source lock driven by `audioOutput` once a TV can be paired *(pending, Phase 7)*.
 
 ## Phase 6: ONUW local mode
 - [ ] **6.1** Host deck builder (`N` = 3–10 players, `N + 3` cards).

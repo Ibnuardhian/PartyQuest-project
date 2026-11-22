@@ -8,61 +8,35 @@ import { ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-sequence";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
-import { indonesianVoices, isSpeechSupported, loadVoices, microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
-import { CLASSIC_LINES, countWords, joinNames, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine, type ClassicLineKey } from "@/games/werewolf/voice/templates";
+import { microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
+import { classicVoice, onuwVoice, VOICE_PACK, type VoiceLine } from "@/games/werewolf/voice/templates";
 
-type Step = { text?: string; wait?: number };
-const MICROSOFT_VOICES = [{ id: "id-ID-GadisNeural", label: "Gadis (perempuan)" }, { id: "id-ID-ArdiNeural", label: "Ardi (laki-laki)" }] as const;
-const NIGHT_ROLES = ONUW_ROLES.filter((role) => ONUW_ROLE_LINES[role]);
+type Step = { line?: VoiceLine; wait?: number };
+const MICROSOFT_VOICES = [{ id: "id-ID-ArdiNeural", label: "Ardi (laki-laki, sesuai voice pack)" }, { id: "id-ID-GadisNeural", label: "Gadis (perempuan)" }] as const;
+const NIGHT_ROLES = ONUW_ROLES.filter((role) => VOICE_PACK.items.some((item) => item.key === `ONUW_${role}_OPEN`));
+const ENGINE_LABELS = { pack: "Voice pack MP3 (Microsoft, statis)", microsoft: "Microsoft Edge Neural (dibuat server)", browser: "Suara browser (cadangan)" } as const;
 
-/** Pilot page for the Indonesian voice moderator: Microsoft Edge Neural first, Web Speech fallback. */
+/** Pilot page for the Werewolf voice moderator: static Microsoft voice pack + named announcements. */
 export default function VoicePilot() {
   const narrator = useMemo(() => new Narrator(), []);
   const runRef = useRef(0);
-  const [supported, setSupported] = useState<boolean | null>(null);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [showAllVoices, setShowAllVoices] = useState(false);
-  const [voiceURI, setVoiceURI] = useState("");
-  const [rate, setRate] = useState(0.95);
-  const [pitch, setPitch] = useState(1);
+  const [microsoftVoice, setMicrosoftVoice] = useState<string>(MICROSOFT_VOICES[0].id);
   const [unlocked, setUnlocked] = useState(false);
   const [quick, setQuick] = useState(true);
   const [subtitle, setSubtitle] = useState("");
+  const [engine, setEngine] = useState<keyof typeof ENGINE_LABELS | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [vars, setVars] = useState({ night: 1, victimName: "Budi", victims: "Budi, Citra", hunterName: "Dimas", executedName: "Eka", winningFaction: "Warga Desa", minutes: 3 });
-  const [microsoftVoice, setMicrosoftVoice] = useState<string>(MICROSOFT_VOICES[0].id);
-  const [engine, setEngine] = useState<"microsoft" | "browser" | null>(null);
+  const [names, setNames] = useState({ victim: "Budi", victims: "Budi, Citra", hunter: "Dimas", executed: "Eka" });
   const [deck, setDeck] = useState<OnuwRole[]>(["WEREWOLF", "MINION", "SEER", "ROBBER", "TROUBLEMAKER", "INSOMNIAC"]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const ok = isSpeechSupported();
-    void loadVoices().then((list) => {
-      if (cancelled) return;
-      setSupported(ok);
-      setVoices(list);
-      setVoiceURI((current) => current || indonesianVoices(list)[0]?.voiceURI || "");
-    });
-    return () => { cancelled = true; narrator.cancel(); };
-  }, [narrator]);
-
-  useEffect(() => { narrator.setOptions({ voiceURI: voiceURI || null, rate, pitch }); }, [narrator, voiceURI, rate, pitch]);
+  useEffect(() => () => narrator.cancel(), [narrator]);
   useEffect(() => { narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts/pilot", { voice: microsoftVoice })); }, [narrator, microsoftVoice]);
-
-  const idVoices = indonesianVoices(voices);
-  const listedVoices = showAllVoices ? voices : idVoices;
-  const lineVars = { nightOrdinal: nightOrdinal(vars.night), roleName: "Seer", victimName: vars.victimName, victimList: joinNames(vars.victims.split(",").map((name) => name.trim()).filter(Boolean)), hunterName: vars.hunterName, executedName: vars.executedName, minutes: countWords(vars.minutes), winningFaction: vars.winningFaction };
-
-  function render(template: string, extra: Record<string, string | number> = {}) {
-    return renderLine(template, { ...lineVars, ...extra });
-  }
 
   async function activate() {
     narrator.unlock();
-    // The Microsoft voice route needs a guest session (no account).
-    await ensureBrowserGuest().catch(() => {});
     setUnlocked(true);
+    try { await ensureBrowserGuest(); } catch { setError("Sesi tamu belum siap; baris bernama akan memakai suara cadangan."); }
     await requestWakeLock();
   }
 
@@ -76,12 +50,13 @@ export default function VoicePilot() {
   async function run(steps: Step[]) {
     stop();
     setError("");
+    if (!unlocked) await activate();
     const id = runRef.current;
     for (const step of steps) {
       if (id !== runRef.current) return;
-      if (step.text) {
-        setSubtitle(step.text);
-        await narrator.speak(step.text);
+      if (step.line) {
+        setSubtitle(step.line.text);
+        await narrator.speak(step.line);
         setEngine(narrator.lastEngine);
       }
       for (let left = step.wait ?? 0; left > 0; left -= 1) {
@@ -98,80 +73,73 @@ export default function VoicePilot() {
     try { void run(build()); } catch (cause) { setError(cause instanceof Error ? cause.message : "Baris suara tidak valid."); }
   }
 
-  function classicNight() {
+  const victims = names.victims.split(",").map((name) => name.trim()).filter(Boolean);
+  const namedLines: Array<{ label: string; line: () => VoiceLine }> = [
+    { label: "Satu korban", line: () => classicVoice.dawnKills([names.victim.trim()]) },
+    { label: "Banyak korban", line: () => classicVoice.dawnKills(victims) },
+    { label: "Pemburu", line: () => classicVoice.hunter(names.hunter.trim()) },
+    { label: "Eksekusi", line: () => classicVoice.execution(names.executed.trim()) },
+  ];
+
+  function classicNight(): Step[] {
     const turn = quick ? 3 : 15;
     return [
-      { text: render(CLASSIC_LINES.NIGHT_INTRO), wait: quick ? 1 : 3 },
-      ...["Werewolf", "Doctor", "Seer"].flatMap((roleName) => [
-        { text: render(CLASSIC_LINES.NIGHT_TURN_START, { roleName }), wait: turn },
-        { text: render(CLASSIC_LINES.NIGHT_TURN_END, { roleName }), wait: 1 },
+      { line: classicVoice.nightIntro(), wait: quick ? 1 : 3 },
+      ...(["WEREWOLF", "DOCTOR", "SEER"] as const).flatMap((role, index): Step[] => [
+        ...(index > 0 ? [{ line: classicVoice.turnEnd() }] : []),
+        { line: classicVoice.turnStart(role), wait: turn },
       ]),
-      { text: render(CLASSIC_LINES.DAWN_SINGLE_KILL), wait: 1 },
-      { text: render(CLASSIC_LINES.DAY_START) },
+      { line: classicVoice.dawnKills([names.victim.trim()]), wait: 1 },
+      { line: classicVoice.dayStart() },
     ];
   }
 
-  function onuwNight() {
+  function onuwNight(): Step[] {
     const counts = Object.fromEntries(deck.map((role) => [role, 1])) as Partial<Record<OnuwRole, number>>;
     return buildOnuwNightSequence(counts).flatMap((step): Step[] => {
-      if (step.key === "ONUW_START") return [{ text: ONUW_LINES.ONUW_START, wait: quick ? 2 : step.seconds }];
-      if (step.key === "ONUW_DAY") return [{ text: render(ONUW_LINES.ONUW_DAY), wait: quick ? 3 : 5 }, { text: ONUW_LINES.ONUW_VOTE }];
-      const line = ONUW_ROLE_LINES[step.key]!;
-      return [{ text: line.open, wait: quick ? 3 : step.seconds }, { text: line.close, wait: 1 }];
+      if (step.key === "ONUW_START") return [{ line: onuwVoice.intro(), wait: quick ? 2 : step.seconds }];
+      if (step.key === "ONUW_DAY") return [{ line: onuwVoice.dayStart(), wait: quick ? 3 : 5 }, { line: onuwVoice.voteCountdown() }];
+      return [{ line: onuwVoice.open(step.key), wait: quick ? 3 : step.seconds }, { line: onuwVoice.close(step.key), wait: 1 }];
     });
   }
-
-  const setVar = (key: keyof typeof vars, value: string) => setVars((current) => ({ ...current, [key]: typeof current[key] === "number" ? Math.max(1, Number(value) || 1) : value }));
 
   return <main className="page-shell werewolf-theme">
     <SiteHeader><span className="topbar-note"><span className="live-dot" /> Pilot suara moderator</span></SiteHeader>
     <section className="ww-wrap">
-      <Link className="text-button" href="/">← Kembali ke katalog</Link>
+      <Link className="text-button" href="/games/werewolf">← Kembali ke Werewolf</Link>
       <span className="section-kicker">WEREWOLF · PILOT SUARA</span>
       <h1>Moderator <em>suara.</em></h1>
-      <p className="ww-muted">Suara utama memakai Microsoft Edge Neural (Gadis atau Ardi) yang dibuat di server lalu disimpan. Jika layanan Microsoft tidak tersedia, halaman memakai suara Bahasa Indonesia bawaan browser.</p>
-
-      {supported === false && <p className="ww-alert" role="alert">Browser ini tidak mendukung Web Speech API.</p>}
-      {supported && idVoices.length === 0 && <p className="ww-alert" role="alert">Tidak ada suara Bahasa Indonesia terpasang. Browser akan memakai suara bawaan dengan logat yang mungkin tidak pas; coba Chrome atau Edge, atau pasang paket suara Indonesia di sistem.</p>}
+      <p className="ww-muted">Semua baris memakai Microsoft Edge Neural. {VOICE_PACK.items.length} baris tanpa nama sudah berupa MP3 statis dari voice pack ({VOICE_PACK.voice}, kecepatan {VOICE_PACK.rate}, nada {VOICE_PACK.pitch}). Empat pengumuman siang yang menyebut nama pemain dibuat server saat dibutuhkan dengan suara yang sama; jika gagal, dipakai MP3 umum lalu suara browser.</p>
 
       <div className="ww-grid">
         <section className="ww-panel" aria-labelledby="voice-settings">
-          <h2 id="voice-settings">Pengaturan suara</h2>
-          <label className="ww-label" htmlFor="ms-voice">Suara Microsoft</label>
+          <h2 id="voice-settings">Pengaturan</h2>
+          <label className="ww-label" htmlFor="ms-voice">Suara untuk baris bernama</label>
           <select id="ms-voice" className="ww-input" value={microsoftVoice} onChange={(event) => setMicrosoftVoice(event.target.value)}>
             {MICROSOFT_VOICES.map((voice) => <option key={voice.id} value={voice.id}>{voice.label}</option>)}
           </select>
-          <label className="ww-label" htmlFor="voice">Suara cadangan browser</label>
-          <select id="voice" className="ww-input" value={voiceURI} onChange={(event) => setVoiceURI(event.target.value)}>
-            <option value="">Bawaan (id-ID)</option>
-            {listedVoices.map((voice) => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} · {voice.lang}{voice.localService ? "" : " · online"}</option>)}
-          </select>
-          <label className="ww-check"><input type="checkbox" checked={showAllVoices} onChange={(event) => setShowAllVoices(event.target.checked)} /> Tampilkan semua suara ({voices.length})</label>
-          <label className="ww-label" htmlFor="rate">Kecepatan <span>{rate.toFixed(2)}×</span></label>
-          <input id="rate" type="range" min={0.7} max={1.3} step={0.05} value={rate} onChange={(event) => setRate(Number(event.target.value))} />
-          <label className="ww-label" htmlFor="pitch">Nada <span>{pitch.toFixed(2)}</span></label>
-          <input id="pitch" type="range" min={0.7} max={1.3} step={0.05} value={pitch} onChange={(event) => setPitch(Number(event.target.value))} />
-          <button className="ww-button ww-primary" onClick={() => void activate()} disabled={!supported}>{unlocked ? "Suara aktif ✓" : "Aktifkan suara"}</button>
+          <button className="ww-button ww-primary" onClick={() => void activate()}>{unlocked ? "Suara aktif ✓" : "Aktifkan suara"}</button>
           <label className="ww-check"><input type="checkbox" checked={quick} onChange={(event) => setQuick(event.target.checked)} /> Jeda singkat untuk uji cepat</label>
         </section>
 
-        <section className="ww-panel" aria-labelledby="sample-vars">
-          <h2 id="sample-vars">Variabel contoh</h2>
-          {([["night", "Malam ke"], ["victimName", "Korban"], ["victims", "Banyak korban (pisahkan koma)"], ["hunterName", "Pemburu"], ["executedName", "Dieksekusi"], ["winningFaction", "Kubu menang"], ["minutes", "Menit diskusi"]] as const).map(([key, label]) => <div key={key}>
-            <label className="ww-label" htmlFor={`var-${key}`}>{label}</label>
-            <input id={`var-${key}`} className="ww-input" type={typeof vars[key] === "number" ? "number" : "text"} min={1} value={vars[key]} onChange={(event) => setVar(key, event.target.value)} />
+        <section className="ww-panel" aria-labelledby="named-lines">
+          <h2 id="named-lines">Pengumuman bernama</h2>
+          {([["victim", "Korban"], ["victims", "Banyak korban (pisahkan koma)"], ["hunter", "Pemburu"], ["executed", "Dieksekusi"]] as const).map(([key, label]) => <div key={key}>
+            <label className="ww-label" htmlFor={`name-${key}`}>{label}</label>
+            <input id={`name-${key}`} className="ww-input" maxLength={key === "victims" ? 80 : 24} value={names[key]} onChange={(event) => setNames((current) => ({ ...current, [key]: event.target.value }))} />
           </div>)}
+          <div className="ww-actions">{namedLines.map(({ label, line }) => <button key={label} className="ww-button" onClick={() => safeRun(() => [{ line: line() }])}>▶ {label}</button>)}</div>
         </section>
       </div>
 
       <section className="ww-panel ww-stage" aria-live="polite">
         <span className="section-kicker">SEDANG DIBACAKAN</span>
         <p className="ww-subtitle">{subtitle || "—"}</p>
-        {engine && <span className="ww-muted">Mesin suara: {engine === "microsoft" ? "Microsoft Edge Neural" : "browser (cadangan)"}</span>}
+        {engine && <span className="ww-muted">Sumber suara: {ENGINE_LABELS[engine]}</span>}
         {countdown !== null && <time className="ww-countdown" aria-label={`${countdown} detik`}>{countdown}</time>}
         <div className="ww-actions">
-          <button className="ww-button ww-primary" disabled={!supported} onClick={() => safeRun(classicNight)}>Simulasi malam Classic</button>
-          <button className="ww-button ww-primary" disabled={!supported || deck.length === 0} onClick={() => safeRun(onuwNight)}>Simulasi malam ONUW</button>
+          <button className="ww-button ww-primary" onClick={() => safeRun(classicNight)}>Simulasi malam Classic</button>
+          <button className="ww-button ww-primary" disabled={deck.length === 0} onClick={() => safeRun(onuwNight)}>Simulasi malam ONUW</button>
           <button className="ww-button" onClick={stop}>Hentikan</button>
         </div>
         {error && <p className="ww-alert" role="alert">{error}</p>}
@@ -182,15 +150,14 @@ export default function VoicePilot() {
         <div className="ww-chips">{NIGHT_ROLES.map((role) => <label key={role} className="ww-chip"><input type="checkbox" checked={deck.includes(role)} onChange={(event) => setDeck((current) => event.target.checked ? [...current, role] : current.filter((item) => item !== role))} /> {ONUW_ROLE_INFO[role].name}</label>)}</div>
       </section>
 
-      <section className="ww-panel" aria-labelledby="classic-lines">
-        <h2 id="classic-lines">Baris narasi Classic</h2>
-        <ul className="ww-lines">{(Object.keys(CLASSIC_LINES) as ClassicLineKey[]).map((key) => {
-          let text = "";
-          try { text = render(CLASSIC_LINES[key]); } catch (cause) { text = cause instanceof Error ? cause.message : ""; }
-          return <li key={key}><button className="ww-play" aria-label={`Putar ${key}`} disabled={!supported} onClick={() => safeRun(() => [{ text: render(CLASSIC_LINES[key]) }])}>▶</button><span><code>{key}</code>{text}</span></li>;
-        })}</ul>
-      </section>
+      {(["classic", "onuw"] as const).map((mode) => <section key={mode} className="ww-panel" aria-labelledby={`pack-${mode}`}>
+        <h2 id={`pack-${mode}`}>Voice pack · {mode === "classic" ? "Mode 1 Classic" : "Mode 2 ONUW"}</h2>
+        <ul className="ww-lines">{VOICE_PACK.items.filter((item) => item.mode === mode).map((item) => <li key={item.key}>
+          <button className="ww-play" aria-label={`Putar ${item.key}`} onClick={() => safeRun(() => [{ line: { text: item.text, clip: item.file } }])}>▶</button>
+          <span><code>{item.file.replace("/audio/werewolf/", "")}</code>{item.text}</span>
+        </li>)}</ul>
+      </section>)}
     </section>
-    <SiteFooter left="WEREWOLF · PILOT" right="Suara Microsoft Edge Neural · cadangan Web Speech" />
+    <SiteFooter left="WEREWOLF · PILOT" right="Microsoft Edge Neural · cadangan suara browser" />
   </main>;
 }

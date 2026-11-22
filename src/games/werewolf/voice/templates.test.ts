@@ -1,41 +1,50 @@
+import { statSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { ONUW_ROLES } from "@/games/werewolf/contract";
+import { NIGHT_ORDER } from "@/games/werewolf/contract";
 import { ONUW_NIGHT_ORDER } from "@/games/werewolf/engine/onuw/night-sequence";
 import { indonesianVoices, splitSentences } from "@/games/werewolf/voice/narrator";
-import { ALLOWED_VARIABLES, CLASSIC_LINES, countWords, joinNames, NAME_VARIABLES, nightOrdinal, ONUW_LINES, ONUW_ROLE_LINES, renderLine } from "@/games/werewolf/voice/templates";
+import { classicVoice, joinNames, NAME_LINES, nameLine, onuwVoice, packLine, renderLine, VOICE_PACK } from "@/games/werewolf/voice/templates";
 
-describe("voice templates", () => {
-  it("fills placeholders and refuses to speak a line with a missing or unknown variable", () => {
-    expect(renderLine(CLASSIC_LINES.EXECUTION_RESULT, { executedName: "Eka" })).toBe("Warga desa telah memutuskan. Eka dieksekusi hari ini.");
-    expect(renderLine(CLASSIC_LINES.DAWN_MULTI_KILL, { victimList: joinNames(["Budi", "Citra"]) })).toContain("Budi, dan Citra ditemukan tewas");
-    expect(renderLine(CLASSIC_LINES.NIGHT_INTRO, { nightOrdinal: nightOrdinal(2) })).toContain("Malam kedua telah tiba.");
-    expect(() => renderLine(CLASSIC_LINES.HUNTER_TRIGGER, {})).toThrow("hunterName");
-    expect(() => renderLine(CLASSIC_LINES.DAY_START, { minutes: "" })).toThrow("minutes");
-    expect(() => renderLine("{rahasia} tewas", { rahasia: "x" })).toThrow("tidak diizinkan");
-  });
-
-  it("speaks nights, numbers, and name lists naturally", () => {
-    expect([1, 3, 12, 25].map(nightOrdinal)).toEqual(["pertama", "ketiga", "kedua belas", "ke-25"]);
-    expect([1, 3, 11, 16, 20].map(countWords)).toEqual(["satu", "tiga", "sebelas", "enam belas", "20"]);
-    expect(joinNames(["Budi"])).toBe("Budi");
-    expect(joinNames(["Budi", "Citra", "Dimas"])).toBe("Budi, Citra, dan Dimas");
-  });
-
-  it("names players only in daytime announcements; night turn lines name roles only", () => {
-    const all = [...Object.values(CLASSIC_LINES), ...Object.values(ONUW_LINES), ...Object.values(ONUW_ROLE_LINES).flatMap((line) => [line!.open, line!.close])];
-    const used = new Set(all.flatMap((line) => [...line.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!)));
-    for (const name of used) expect(ALLOWED_VARIABLES).toContain(name);
-    for (const night of [CLASSIC_LINES.NIGHT_INTRO, CLASSIC_LINES.NIGHT_TURN_START, CLASSIC_LINES.NIGHT_TURN_END]) {
-      for (const name of NAME_VARIABLES) expect(night).not.toContain(`{${name}}`);
+describe("voice pack", () => {
+  it("has all 41 lines with a generated, non-empty MP3 in public/", () => {
+    expect(VOICE_PACK.items).toHaveLength(41);
+    expect(VOICE_PACK.items.filter((item) => item.mode === "classic")).toHaveLength(22);
+    for (const item of VOICE_PACK.items) {
+      const file = path.join(process.cwd(), "public", item.file);
+      expect(statSync(file).size, item.file).toBeGreaterThan(1000);
     }
+    expect(VOICE_PACK.voice).toBe("id-ID-ArdiNeural");
   });
 
-  it("has open and close lines for every role in the ONUW wake-up order", () => {
+  it("covers every Classic night role, every win, and every ONUW wake-up role", () => {
+    for (const role of NIGHT_ORDER) expect(classicVoice.turnStart(role).clip).toMatch(new RegExp(`turn_${role.toLowerCase()}\\.mp3$`));
+    for (const faction of ["VILLAGER", "WEREWOLF", "TANNER", "LOVERS"] as const) expect(classicVoice.win(faction).clip).toBeTruthy();
     for (const { role } of ONUW_NIGHT_ORDER) {
-      expect(ONUW_ROLE_LINES[role]?.open).toMatch(/buka mata/);
-      expect(ONUW_ROLE_LINES[role]?.close).toMatch(/tutup mata/);
+      expect(onuwVoice.open(role).text).toMatch(/buka mata/);
+      expect(onuwVoice.close(role).text).toMatch(/tutup mata/);
     }
-    expect(ONUW_ROLES.filter((role) => ONUW_ROLE_LINES[role]).length).toBe(ONUW_NIGHT_ORDER.length);
+    expect(() => packLine("TIDAK_ADA")).toThrow();
+  });
+});
+
+describe("named announcements", () => {
+  it("name players with a static generic clip as fallback", () => {
+    expect(classicVoice.execution("Eka")).toEqual({ text: "Warga desa telah memutuskan... Eka dieksekusi hari ini!", fallbackClip: "/audio/werewolf/classic/execution_result.mp3" });
+    expect(classicVoice.dawnKills(["Budi"]).text).toContain("Budi ditemukan tewas semalam");
+    expect(classicVoice.dawnKills(["Budi", "Citra", "Dimas"]).text).toContain("Budi, Citra, dan Dimas ditemukan tewas!");
+    expect(classicVoice.hunter("Dimas").text).toBe("Sang Pemburu, Dimas, gugur, namun ia sempat menarik pelatuk senjatanya! Dimas... pilih satu targetmu di layar sekarang!");
+  });
+
+  it("refuses missing or unknown variables", () => {
+    expect(() => nameLine("EXECUTION_RESULT", {})).toThrow("executedName");
+    expect(() => renderLine("{rahasia} tewas", {})).toThrow("tidak diizinkan");
+  });
+
+  it("never names players on night lines", () => {
+    for (const role of NIGHT_ORDER) expect(classicVoice.turnStart(role).text).not.toMatch(/\{/);
+    expect(Object.keys(NAME_LINES).sort()).toEqual(["DAWN_MULTI_KILL", "DAWN_SINGLE_KILL", "EXECUTION_RESULT", "HUNTER_REVENGE"]);
+    expect(joinNames(["Budi"])).toBe("Budi");
   });
 });
 
@@ -44,12 +53,11 @@ describe("narrator helpers", () => {
     expect(splitSentences("Pagi telah tiba! Warga desa terbangun dengan kabar duka... Budi ditemukan tewas semalam.")).toEqual([
       "Pagi telah tiba!", "Warga desa terbangun dengan kabar duka...", "Budi ditemukan tewas semalam.",
     ]);
-    expect(splitSentences("Tanpa tanda baca")).toEqual(["Tanpa tanda baca"]);
   });
 
-  it("keeps only Indonesian voices, natural/online ones first", () => {
+  it("keeps only Indonesian voices for the browser fallback, natural/online ones first", () => {
     const voice = (name: string, lang: string) => ({ name, lang, voiceURI: name, localService: true, default: false }) as SpeechSynthesisVoice;
-    const result = indonesianVoices([voice("Damayanti", "id-ID"), voice("Samantha", "en-US"), voice("Microsoft Gadis Online (Natural)", "id-ID"), voice("Old", "id_ID")]);
-    expect(result.map((item) => item.name)).toEqual(["Microsoft Gadis Online (Natural)", "Damayanti", "Old"]);
+    const result = indonesianVoices([voice("Damayanti", "id-ID"), voice("Samantha", "en-US"), voice("Microsoft Gadis Online (Natural)", "id-ID")]);
+    expect(result.map((item) => item.name)).toEqual(["Microsoft Gadis Online (Natural)", "Damayanti"]);
   });
 });

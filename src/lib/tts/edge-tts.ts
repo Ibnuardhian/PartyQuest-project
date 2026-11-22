@@ -11,12 +11,15 @@ import { EdgeTTS } from "node-edge-tts";
  * Every rendered line is cached on disk, so a given voice + text is synthesized only once.
  */
 
-export const EDGE_VOICES = ["id-ID-GadisNeural", "id-ID-ArdiNeural"] as const;
+export const EDGE_VOICES = ["id-ID-ArdiNeural", "id-ID-GadisNeural"] as const;
 export type EdgeVoice = (typeof EDGE_VOICES)[number];
+
+/** Same voice settings as the static voice pack, so dynamic (named) lines sound identical. */
+const PROSODY = { rate: "-6%", pitch: "-4Hz" };
 
 export function defaultVoice(): EdgeVoice {
   const configured = process.env.TTS_VOICE;
-  return (EDGE_VOICES as readonly string[]).includes(configured ?? "") ? configured as EdgeVoice : "id-ID-GadisNeural";
+  return (EDGE_VOICES as readonly string[]).includes(configured ?? "") ? configured as EdgeVoice : "id-ID-ArdiNeural";
 }
 
 function cacheDir() {
@@ -26,7 +29,7 @@ function cacheDir() {
 const inFlight = new Map<string, Promise<Buffer>>();
 
 async function synthesize(text: string, voice: EdgeVoice) {
-  const tts = new EdgeTTS({ voice, lang: "id-ID", outputFormat: "audio-24khz-48kbitrate-mono-mp3", timeout: 15_000 });
+  const tts = new EdgeTTS({ voice, lang: "id-ID", outputFormat: "audio-24khz-48kbitrate-mono-mp3", ...PROSODY, timeout: 15_000 });
   const chunks: Buffer[] = [];
   for await (const part of tts.streamAudio(text)) if (Buffer.isBuffer(part)) chunks.push(part);
   const audio = Buffer.concat(chunks);
@@ -35,7 +38,7 @@ async function synthesize(text: string, voice: EdgeVoice) {
 }
 
 export async function edgeSpeech(text: string, voice: EdgeVoice = defaultVoice()): Promise<Buffer> {
-  const key = createHash("sha256").update(`${voice}\n${text}`).digest("hex");
+  const key = createHash("sha256").update(`${voice}\n${PROSODY.rate}\n${PROSODY.pitch}\n${text}`).digest("hex");
   const file = path.join(cacheDir(), voice, `${key}.mp3`);
   try {
     return await readFile(file);

@@ -19,7 +19,7 @@ Werewolf brings social deduction into a physical room without making one person 
 | Drizzle ORM schema | Existing tables (`game_rooms`, `room_members`, `game_sessions`, `game_private_state`, `player_private_state`) + SQL migrations |
 | `sessionToken` in localStorage/cookie | Signed HttpOnly `pq_guest` guest cookie |
 | Caddy auto-HTTPS | Vercel HTTPS (or any TLS proxy for self-hosting) |
-| OpenAI TTS + disk/Redis cache | Microsoft Edge Neural TTS (`node-edge-tts`) on the server with a disk cache; Web Speech API (`id-ID`) as fallback |
+| OpenAI TTS + disk/Redis cache | Microsoft Edge Neural TTS: static voice pack in `public/audio/werewolf/` (`npm run voice:generate`) plus on-demand named lines via `node-edge-tts` with a disk cache; Web Speech (`id-ID`) as last fallback |
 | Framer Motion, lucide-react | CSS transitions/keyframes and inline SVG (no new UI dependencies) |
 | `qrcode.react`, `nanoid` | Room code from `src/lib/room-code.ts`; QR encoder is the only candidate new dependency (justify when implemented) |
 | — | Vitest for all tests |
@@ -28,7 +28,7 @@ Werewolf brings social deduction into a physical room without making one person 
 
 1. **Engine separation.** Classic and ONUW live in separate modules (`engine/classic/`, `engine/onuw/`) and share no state shapes. Do not mix multi-night health/protection with one-night card swaps.
 2. **Server-authoritative state.** Every Classic mutation is a browser *intent* validated by the Werewolf adapter and persisted with the platform's version-checked mutation. The browser never sends game state, roles, or a player id.
-3. **Narration.** Daytime announcements name players (victims, Hunter, executed player) as in the original templates; night turns name roles only, so nobody learns who holds a role. Voice is Microsoft Edge Neural TTS from the server (cached per line, template-only), with Web Speech as fallback.
+3. **Narration.** Voice is Microsoft Edge Neural: a static voice pack of 41 MP3 lines, plus four daytime announcements that name players (victims, Hunter, executed player), generated on demand by the server with the same voice. Night turns name roles only, so nobody learns who holds a role. Fallbacks: the pack's generic clip, then Web Speech.
 4. **Single-source audio.** Only one device narrates: the paired TV when `hasTvScreen` is true, otherwise the Host's phone. Regular player phones never play voice lines.
 5. **Dead players.** `isAlive === false` means no night interaction (no Fake Taps, no actions) and no day vote. The only exception is `HUNTER_REVENGE` right after a Hunter dies. `deadRevealMode` only controls read-only visibility: `SPECTATOR_REVEAL` shows all roles, `KEEP_HIDDEN` hides them until `GAME_OVER`.
 6. **Zero role leakage.** Views are built per player by the adapter. Alive players see only their own role plus known teammates (Werewolves, Masons, and Werewolves for a Minion). Dead players see other roles only under `SPECTATOR_REVEAL`. The TV gets the public view only. Events carry no state.

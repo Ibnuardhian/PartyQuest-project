@@ -1,10 +1,12 @@
 "use client";
 
 /**
- * Browser voice moderator (docs/03 §1.1, docs/04 §9). Microsoft Edge Neural audio comes first
- * (fetched from the server through a clip resolver); the Web Speech API is the fallback.
- * Only the designated audio device should create a Narrator; other phones stay silent.
+ * Browser voice moderator (docs/03 §1.1, docs/04 §9). Plays the static Microsoft Edge Neural
+ * voice pack, asks the server for Microsoft audio of lines that name players, and falls back
+ * to the Web Speech API. Only the designated audio device should create a Narrator.
  */
+
+import type { VoiceLine } from "@/games/werewolf/voice/templates";
 
 /** Returns an audio URL for a line, or null to fall back to browser speech. */
 export type ClipResolver = (text: string) => Promise<string | null>;
@@ -81,7 +83,7 @@ export class Narrator {
   private resolveClip: ClipResolver | null = null;
   private audio: HTMLAudioElement | null = null;
   /** "microsoft" when the last line played from Edge Neural audio, "browser" for Web Speech. */
-  lastEngine: "microsoft" | "browser" | null = null;
+  lastEngine: "pack" | "microsoft" | "browser" | null = null;
 
   setClipResolver(resolver: ClipResolver | null) {
     this.resolveClip = resolver;
@@ -136,13 +138,29 @@ export class Narrator {
     return isSpeechSupported() && window.speechSynthesis.speaking;
   }
 
-  /** Speaks the text; resolves when finished or cancelled. Returns false when cancelled. */
-  async speak(text: string): Promise<boolean> {
+  /**
+   * Speaks a line; resolves when finished or cancelled (false when cancelled).
+   * Order: static voice-pack clip -> Microsoft TTS for named lines -> the pack's generic
+   * fallback clip -> Web Speech.
+   */
+  async speak(input: VoiceLine | string): Promise<boolean> {
+    const line: VoiceLine = typeof input === "string" ? { text: input } : input;
+    const text = line.text;
     const generation = this.generation;
-    const clip = this.resolveClip ? await this.resolveClip(text) : null;
+    if (line.clip && await this.playClip(line.clip, generation)) {
+      this.lastEngine = "pack";
+      return true;
+    }
+    if (generation !== this.generation) return false;
+    const clip = !line.clip && this.resolveClip ? await this.resolveClip(text) : null;
     if (generation !== this.generation) return false;
     if (clip && await this.playClip(clip, generation)) {
       this.lastEngine = "microsoft";
+      return true;
+    }
+    if (generation !== this.generation) return false;
+    if (line.fallbackClip && await this.playClip(line.fallbackClip, generation)) {
+      this.lastEngine = "pack";
       return true;
     }
     if (generation !== this.generation || !isSpeechSupported()) return false;
