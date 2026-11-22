@@ -9,7 +9,9 @@ export const runtime = "nodejs";
 
 // The browser sends only an intent and the version it saw, never game state or a user id.
 const bodySchema = z.object({ expectedVersion: z.number().int().nonnegative(), action: z.record(z.string(), z.unknown()) }).strict();
-const MAX_ATTEMPTS = 3;
+// One writer wins each round, so up to 16 players acting at once may need as many rounds.
+const MAX_ATTEMPTS = 20;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(request: Request, { params }: { params: Promise<{ sessionId: string }> }) {
   const guest = await requireGuest();
@@ -34,7 +36,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
         const updated = { ...stored, publicState: next.publicState, secretState: next.secretState ?? stored.secretState };
         return apiSuccess({ stateVersion: mutation.state_version, ...game.view(updated, viewer) });
       }
-      if (mutation.error_code === "version_conflict" && retryable && attempt < MAX_ATTEMPTS) continue;
+      if (mutation.error_code === "version_conflict" && retryable && attempt < MAX_ATTEMPTS) {
+        // Jittered backoff spreads simultaneous writers apart.
+        await sleep(5 + Math.random() * 20 * Math.min(attempt, 5));
+        continue;
+      }
       const mapped = mapDatabaseError(mutation.error_code ?? "") ?? { status: 409, code: "action_unavailable", message: "Aksi belum dapat disimpan." };
       return apiError(mapped.status, mapped.code, mapped.message);
     }

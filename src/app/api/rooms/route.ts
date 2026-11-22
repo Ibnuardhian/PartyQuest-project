@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 const createRoomSchema = z.object({
   gameKey: z.string().default("undercover"),
   displayName: z.string().trim().min(1).max(24),
-  settings: z.unknown(),
+  settings: z.unknown().optional(),
 }).strict();
 
 export async function POST(request: Request) {
