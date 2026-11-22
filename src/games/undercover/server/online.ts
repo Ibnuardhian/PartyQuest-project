@@ -75,21 +75,26 @@ export const undercoverOnline: OnlineGameServer = {
     const state = undercoverGame.createInitialState(members.map((member) => member.displayName), settings, undefined, members.map((member) => member.userId));
     return { publicState: state.public, secretState: state.secret, playerPrivate: state.secret.assignments };
   },
-  applyIntent(session, userId, rawIntent, now) {
+  applyIntent(session, rawIntent, ctx) {
     const intent = undercoverActionSchema.safeParse(rawIntent);
     if (!intent.success) throw new OnlineGameError(400, "invalid_input", "Aksi permainan tidak valid.");
     const state = restoreState(session);
-    requireSeat(state, userId);
+    requireSeat(state, ctx.userId);
     try {
-      return undercoverGame.applyAction(state, toGameAction(intent.data, userId), now).public;
+      return { publicState: undercoverGame.applyAction(state, toGameAction(intent.data, ctx.userId), ctx.now).public };
     } catch {
       throw new OnlineGameError(400, "invalid_action", "Aksi tidak sesuai dengan fase permainan saat ini.");
     }
   },
-  advance(session, now) {
-    return advanceClueDeadline(restoreState(session), now)?.public ?? null;
+  // Votes in Undercover are also simultaneous; a stale version should not lose a valid vote.
+  retryOnConflict(intent) {
+    return typeof intent === "object" && intent !== null && (intent as { type?: unknown }).type === "cast-vote";
   },
-  view(session, userId) {
+  advance(session, now) {
+    const next = advanceClueDeadline(restoreState(session), now);
+    return next ? { publicState: next.public } : null;
+  },
+  view(session, { userId }) {
     const state = restoreState(session);
     const view = undercoverGame.getPlayerView(state, userId);
     if (!view) return null;

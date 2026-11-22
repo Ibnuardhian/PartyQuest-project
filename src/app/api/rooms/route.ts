@@ -24,14 +24,15 @@ export async function POST(request: Request) {
   if (!game) return apiError(400, "unknown_game", "Game ini belum tersedia untuk Online Room.");
   let settings: unknown;
   try {
-    settings = game.parseSettings(body.data.settings);
+    const requested = body.data.settings === undefined && game.defaultSettings ? game.defaultSettings() : body.data.settings;
+    settings = game.parseSettings(requested);
   } catch (error) {
     if (error instanceof OnlineGameError) return apiError(error.status, error.code, error.message);
     throw error;
   }
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      const room = await createRoom(guest.userId, generateRoomCode(), body.data.displayName, settings);
+      const room = await createRoom(guest.userId, generateRoomCode(), body.data.displayName, settings, game.key, game.maxPlayers);
       if (room) return apiSuccess({ code: room.code, roomId: room.id }, 201);
     } catch (error) {
       // 23505 on game_rooms_code_key: a random code collided, so retry with a new one.

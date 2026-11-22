@@ -2,7 +2,7 @@ import { z } from "zod";
 import { apiError, apiSuccess, databaseErrorResponse, UNAUTHORIZED_MESSAGE } from "@/lib/api";
 import { requireGuest } from "@/lib/auth/require-guest";
 import { ROOM_CODE_PATTERN } from "@/lib/room-code";
-import { joinRoom } from "@/lib/rooms/repository";
+import { joinRoom, touchMember } from "@/lib/rooms/repository";
 
 export const runtime = "nodejs";
 
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   try {
     const room = await joinRoom(guest.userId, body.data.code, body.data.displayName);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
+    await touchMember(room.id, guest.userId);
     return apiSuccess({ code: room.code, roomId: room.id });
   } catch (error) {
     return databaseErrorResponse(error, { status: 503, code: "room_unavailable", message: "Room belum dapat diakses. Periksa koneksi database." });

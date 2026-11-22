@@ -23,11 +23,13 @@ Work through the phases in order. Mark each item `[x]` once it is implemented an
 - Seer: Lycan reads as Werewolf; Minion and an unconverted Cursed read as Villager. Cupid may link themselves.
 
 ## Phase 2: Platform extensions (file 04 §8)
-- [ ] **2.1** Migration: `game_key` adds `werewolf`; `max_players`/`seat_no` up to 16; `create_room` takes `max_players`.
-- [ ] **2.2** `OnlineGameServer`: actor `{ userId, isHost }`, `retryOnConflict`, `publicView`; update Undercover's adapter and tests.
-- [ ] **2.3** Lobby settings editor (`GameModule.RoomSettingsEditor`) and host-only `PATCH /api/rooms/[code]/settings`.
-- [ ] **2.4** Presence via `room_members.last_seen_at`.
-- [ ] **2.5** DB integration tests for the new migration and settings route.
+- [x] **2.1** Migration: `game_key` adds `werewolf`; `max_players`/`seat_no` up to 16; `create_room` takes `max_players`.
+- [x] **2.2** `OnlineGameServer`: actor `{ userId, isHost }`, `retryOnConflict`, `publicView`; update Undercover's adapter and tests.
+- [x] **2.3** Lobby settings editor (`GameModule.RoomSettingsEditor`) and host-only `PATCH /api/rooms/[code]/settings`.
+- [x] **2.4** Presence via `room_members.last_seen_at`.
+- [x] **2.5** DB integration tests for the new migration and settings route.
+
+**Phase 2 notes:** `apply_game_action` also persists secret state (Werewolf changes it on every action). Changing settings resets other players' ready state. Presence counts a member online when seen within 30 s (`PRESENCE_WINDOW_SECONDS`). Undercover votes now use retry-on-conflict too.
 
 ## Phase 3: Classic online adapter
 - [ ] **3.1** `server/online.ts`: settings schema (roster, twist toggles, `deadRevealMode`, timers), `createRound`, intents from file 04 §4, `advance` for every timed phase.

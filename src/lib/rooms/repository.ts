@@ -4,9 +4,12 @@ import { query, queryOne } from "@/lib/db/pool";
 /** Platform-level room/session persistence. Game rules live in src/games/<game>/. */
 
 export interface RoomRow { id: string; code: string; host_user_id: string; game_key: string; status: string; settings: unknown; expires_at: Date; max_players: number }
-export interface MemberRow { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean }
+export interface MemberRow { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean }
 export interface SessionRow<TPublic = unknown> { id: string; room_id: string; round_no: number; status: string; phase: string; state_version: number; public_state: TPublic }
 export interface MutationResult { ok: boolean; state_version: number | null; error_code: string | null }
+
+/** A member counts as online when seen by a lobby/view request within this window. */
+export const PRESENCE_WINDOW_SECONDS = 30;
 
 const ROOM_COLUMNS = "id, code, host_user_id, game_key, status, settings, expires_at, max_players";
 const SESSION_COLUMNS = "id, room_id, round_no, status, phase, state_version, public_state";
@@ -49,7 +52,9 @@ export async function isActiveMember(roomId: string, userId: string) {
 
 export function listActiveMembers(roomId: string) {
   return query<MemberRow>(
-    "select user_id, display_name, seat_no, is_ready, is_alive from room_members where room_id = $1 and left_at is null order by seat_no",
+    `select user_id, display_name, seat_no, is_ready, is_alive,
+       coalesce(last_seen_at > now() - make_interval(secs => ${PRESENCE_WINDOW_SECONDS}), false) as online
+     from room_members where room_id = $1 and left_at is null order by seat_no`,
     [roomId],
   );
 }
@@ -70,8 +75,28 @@ export async function findSessionSecret<TSecret>(sessionId: string) {
   return row?.private_state ?? null;
 }
 
-export function createRoom(hostUserId: string, code: string, displayName: string, settings: unknown) {
-  return queryOne<RoomRow>(`select ${ROOM_COLUMNS} from create_room($1, $2, $3, $4::jsonb)`, [hostUserId, code, displayName, JSON.stringify(settings)]);
+export function createRoom(hostUserId: string, code: string, displayName: string, settings: unknown, gameKey: string, maxPlayers: number) {
+  return queryOne<RoomRow>(
+    `select ${ROOM_COLUMNS} from create_room($1, $2, $3, $4::jsonb, $5, $6)`,
+    [hostUserId, code, displayName, JSON.stringify(settings), gameKey, maxPlayers],
+  );
+}
+
+export function updateRoomSettings(roomId: string, hostUserId: string, settings: unknown) {
+  return queryOne<RoomRow>(`select ${ROOM_COLUMNS} from update_room_settings($1, $2, $3::jsonb)`, [roomId, hostUserId, JSON.stringify(settings)]);
+}
+
+/** Presence heartbeat; throttled in SQL to one write per 5 seconds per member. */
+export function touchMember(roomId: string, userId: string) {
+  return query("select touch_member($1, $2)", [roomId, userId]);
+}
+
+export async function listOnlineMemberIds(roomId: string) {
+  const rows = await query<{ user_id: string }>(
+    `select user_id from room_members where room_id = $1 and left_at is null and last_seen_at > now() - make_interval(secs => ${PRESENCE_WINDOW_SECONDS})`,
+    [roomId],
+  );
+  return rows.map((row) => row.user_id);
 }
 
 export function joinRoom(userId: string, code: string, displayName: string) {
@@ -97,10 +122,10 @@ export function startRound(kind: "start" | "rematch", roomId: string, hostUserId
 }
 
 /** Atomic compare-and-set: locks the session row and compares expectedVersion before persisting. */
-export async function applyGameAction(sessionId: string, userId: string, expectedVersion: number, publicState: unknown) {
+export async function applyGameAction(sessionId: string, userId: string, expectedVersion: number, publicState: unknown, secretState?: unknown) {
   const row = await queryOne<MutationResult>(
-    "select ok, state_version, error_code from apply_game_action($1, $2, $3, $4::jsonb)",
-    [sessionId, userId, expectedVersion, JSON.stringify(publicState)],
+    "select ok, state_version, error_code from apply_game_action($1, $2, $3, $4::jsonb, $5::jsonb)",
+    [sessionId, userId, expectedVersion, JSON.stringify(publicState), secretState === undefined ? null : JSON.stringify(secretState)],
   );
   return row ?? { ok: false, state_version: null, error_code: "action_unavailable" };
 }

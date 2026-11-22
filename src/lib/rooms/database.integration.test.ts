@@ -34,9 +34,12 @@ suite("PostgreSQL room functions", () => {
 
   const code = () => Array.from({ length: 6 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join("");
 
-  async function roomWithPlayers(count = 3) {
+  async function roomWithPlayers(count = 3, gameKey = "undercover", maxPlayers = 12) {
     const ids = [await guest()];
-    const room = (await client.query<{ id: string; code: string }>("select id, code from create_room($1, $2, 'Host', $3::jsonb)", [ids[0], code(), JSON.stringify({ category: "makanan", undercoverCount: 1, mrWhiteEnabled: false })])).rows[0]!;
+    const room = (await client.query<{ id: string; code: string }>(
+      "select id, code from create_room($1, $2, 'Host', $3::jsonb, $4, $5)",
+      [ids[0], code(), JSON.stringify({ category: "makanan", undercoverCount: 1, mrWhiteEnabled: false }), gameKey, maxPlayers],
+    )).rows[0]!;
     for (let index = 1; index < count; index += 1) {
       const id = await guest();
       ids.push(id);
@@ -116,6 +119,64 @@ suite("PostgreSQL room functions", () => {
       await client.query("delete from guest_users where id = any($1::uuid[])", [ids]);
       await listener.end();
     }
+  });
+
+  it("allows Werewolf rooms of up to 16 players and rejects unknown games", async () => {
+    await inRollback(async () => {
+      const { room, ids } = await roomWithPlayers(16, "werewolf", 16);
+      expect(ids).toHaveLength(16);
+      const seats = await client.query<{ max: number }>("select max(seat_no) as max from room_members where room_id = $1", [room.id]);
+      expect(seats.rows[0]!.max).toBe(16);
+      await client.query("savepoint s");
+      expect(await errorOf(client.query("select join_room($1, $2, 'Ketujuh belas')", [await guest(), room.code]))).toContain("room_full");
+      await client.query("rollback to savepoint s");
+      expect(await errorOf(client.query("select create_room($1, $2, 'Host', '{}'::jsonb, 'catur', 12)", [await guest(), code()]))).toContain("game_rooms_game_key_check");
+    });
+  });
+
+  it("lets only the host change settings, only in the lobby, and resets other players' ready state", async () => {
+    await inRollback(async () => {
+      const { room, ids } = await roomWithPlayers(3);
+      for (const id of ids) await client.query("select set_room_ready($1, $2, true)", [room.id, id]);
+      await client.query("savepoint s");
+      expect(await errorOf(client.query("select update_room_settings($1, $2, '{\"x\":1}'::jsonb)", [room.id, ids[1]]))).toContain("host_required");
+      await client.query("rollback to savepoint s");
+      await client.query("select update_room_settings($1, $2, '{\"x\":1}'::jsonb)", [room.id, ids[0]]);
+      const settings = await client.query<{ settings: unknown }>("select settings from game_rooms where id = $1", [room.id]);
+      expect(settings.rows[0]!.settings).toEqual({ x: 1 });
+      const ready = await client.query<{ user_id: string; is_ready: boolean }>("select user_id, is_ready from room_members where room_id = $1 order by seat_no", [room.id]);
+      expect(ready.rows.map((row) => row.is_ready)).toEqual([true, false, false]);
+      await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
+      expect(await errorOf(client.query("select update_room_settings($1, $2, '{}'::jsonb)", [room.id, ids[0]]))).toContain("room_not_in_lobby");
+    });
+  });
+
+  it("persists secret state atomically with the public state when given", async () => {
+    await inRollback(async () => {
+      const { session, ids, publicState } = await startedSession();
+      const result = await client.query<{ ok: boolean }>(
+        "select ok from apply_game_action($1, $2, 0, $3::jsonb, $4::jsonb)",
+        [session.id, ids[0], JSON.stringify({ ...publicState, phase: "NIGHT_TURN" }), JSON.stringify({ votes: { a: "b" } })],
+      );
+      expect(result.rows[0]!.ok).toBe(true);
+      const secret = await client.query<{ private_state: unknown }>("select private_state from game_private_state where session_id = $1", [session.id]);
+      expect(secret.rows[0]!.private_state).toEqual({ votes: { a: "b" } });
+      await client.query("select apply_game_action($1, $2, 1, $3::jsonb)", [session.id, ids[0], JSON.stringify({ ...publicState, phase: "GAME_OVER" })]);
+      const after = await client.query<{ private_state: unknown }>("select private_state from game_private_state where session_id = $1", [session.id]);
+      expect(after.rows[0]!.private_state).toEqual({ votes: { a: "b" } });
+      const status = await client.query<{ status: string }>("select r.status from game_rooms r join game_sessions s on s.room_id = r.id where s.id = $1", [session.id]);
+      expect(status.rows[0]!.status).toBe("finished");
+    });
+  });
+
+  it("records presence with touch_member", async () => {
+    await inRollback(async () => {
+      const { room, ids } = await roomWithPlayers(3);
+      await client.query("update room_members set last_seen_at = now() - interval '1 hour' where room_id = $1", [room.id]);
+      await client.query("select touch_member($1, $2)", [room.id, ids[2]]);
+      const online = await client.query<{ user_id: string }>("select user_id from room_members where room_id = $1 and last_seen_at > now() - interval '30 seconds'", [room.id]);
+      expect(online.rows.map((row) => row.user_id)).toEqual([ids[2]]);
+    });
   });
 
   it("ignores unknown ids without leaking a session", async () => {

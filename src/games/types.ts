@@ -4,6 +4,13 @@ import type { ComponentType } from "react";
  * What a game folder (src/games/<game>/index.ts) exposes to the platform UI.
  * The catalog, lobby, and play route only talk to games through this shape.
  */
+export interface RoomSettingsEditorProps {
+  settings: unknown;
+  playerCount: number;
+  disabled: boolean;
+  onSave(settings: unknown): Promise<void>;
+}
+
 export interface GameModule {
   key: string;
   title: string;
@@ -15,6 +22,8 @@ export interface GameModule {
   CatalogCard: ComponentType;
   /** In-game screen for Online Room. */
   OnlineGame?: ComponentType<{ roomCode: string; sessionId: string }>;
+  /** Host-only lobby editor for room settings; saved through PATCH /api/rooms/[code]/settings. */
+  RoomSettingsEditor?: ComponentType<RoomSettingsEditorProps>;
   /** Human-readable room settings for the lobby. */
   describeRoomSettings?(settings: unknown): Array<{ label: string; value: string }>;
 }

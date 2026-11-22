@@ -44,6 +44,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Register UI modules in `src/games/registry.ts` and online adapters (`OnlineGameServer`) in `src/games/online-registry.ts`.
 - Platform code (`src/components/catalog`, `src/components/lobby`, `src/components/site`, `src/lib`, `src/app/api`) must not contain game rules or game-specific labels; it reaches games only through these contracts.
 - A new online game also needs its `game_key` allowed by a migration.
+- `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`. The voice moderator never speaks player names.
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
 ## Game Rules
@@ -122,7 +123,7 @@ Never claim tests passed unless they were actually executed.
 - Provide `.env.example` containing variable names and safe placeholders only.
 - Document local Docker setup and PostgreSQL configuration.
 - Pass `DATABASE_URL` and `GUEST_SESSION_SECRET` as runtime environment values only, never as Docker build arguments.
-- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()`; guest row retention is an operator policy.
+- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()`; `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. Guest row retention is an operator policy.
 - `LISTEN/NOTIFY` needs a direct or session-pooled connection; with transaction pooling, clients fall back to polling.
 - Ensure the application can also be deployed to Vercel.
 - Do not claim deployment is complete without verifying it.
