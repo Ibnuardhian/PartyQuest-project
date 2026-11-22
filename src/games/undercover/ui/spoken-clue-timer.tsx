@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CLUE_TURN_DURATION_MS } from "@/games/game-contract";
+import { CLUE_TURN_DURATION_MS } from "@/games/undercover/contract";
 
 const MAX_SECONDS = CLUE_TURN_DURATION_MS / 1000;
 

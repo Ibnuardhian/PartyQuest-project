@@ -1,5 +1,5 @@
-import PartyQuestHome from "@/components/game/partyquest-home";
+import UndercoverLocalGame from "@/games/undercover/ui/undercover-local-game";
 
 export default function LocalUndercoverPage() {
-  return <PartyQuestHome />;
+  return <UndercoverLocalGame />;
 }

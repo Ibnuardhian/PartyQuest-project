@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CLUE_TURN_DURATION_MS } from "@/games/game-contract";
+import { CLUE_TURN_DURATION_MS } from "@/games/undercover/contract";
 import type {
   GameAction,
   GameDefinition,
@@ -10,7 +10,7 @@ import type {
   PublicState,
   Role,
   Winner,
-} from "@/games/game-contract";
+} from "@/games/undercover/contract";
 import { getWordPairs } from "@/games/undercover/words";
 
 const settingsSchema = z.object({

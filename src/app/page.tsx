@@ -1,5 +1,5 @@
-import PartyQuestHome from "@/components/game/partyquest-home";
+import GameCatalog from "@/components/catalog/game-catalog";
 
 export default function HomePage() {
-  return <PartyQuestHome />;
+  return <GameCatalog />;
 }

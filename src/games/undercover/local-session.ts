@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GameState } from "@/games/game-contract";
+import type { GameState } from "@/games/undercover/contract";
 
 export const LOCAL_GAME_PATH = "/games/undercover/local";
 export const LOCAL_GAME_STORAGE_KEY = "partyquest:undercover:local:v2";

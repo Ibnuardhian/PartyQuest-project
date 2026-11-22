@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GameAction, GameSettings, GameState } from "@/games/game-contract";
+import type { GameAction, GameSettings, GameState } from "@/games/undercover/contract";
 import { confirmOfflineElimination, finishOfflineClueRound, undercoverGame } from "@/games/undercover/engine";
 import { parseLocalGameState } from "@/games/undercover/local-session";
 

@@ -1,4 +1,4 @@
-import type { Category } from "@/games/game-contract";
+import type { Category } from "@/games/undercover/contract";
 
 export const WORD_PAIRS: Record<Exclude<Category, "campuran">, ReadonlyArray<readonly [string, string]>> = {
   makanan: [["Nasi goreng", "Mi goreng"], ["Sate ayam", "Sate kambing"], ["Es teh", "Es jeruk"]],

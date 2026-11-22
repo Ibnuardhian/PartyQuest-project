@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { GamePhase, PlayerView, Role } from "@/games/game-contract";
-import { createClient } from "@/lib/supabase/client";
-import { SpokenClueTimer } from "@/components/game/spoken-clue-timer";
+import type { GamePhase, PlayerView } from "@/games/undercover/contract";
+import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
+import { SpokenClueTimer } from "@/games/undercover/ui/spoken-clue-timer";
+import { ROLE_LABELS as roleNames } from "@/games/undercover/ui/labels";
 
 interface ViewResponse {
   sessionId: string;
@@ -20,7 +21,6 @@ interface ViewResponse {
   serverNow: number;
 }
 interface ApiPayload { data?: ViewResponse; error?: { message?: string; code?: string } }
-const roleNames: Record<Role, string> = { civilian: "Civilian", undercover: "Undercover", "mr-white": "Mr. White" };
 
 export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; sessionId: string }) {
   const router = useRouter();
@@ -55,15 +55,8 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
     return () => { window.clearTimeout(initialLoad); window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
   }, [load]);
 
-  useEffect(() => {
-    if (!snapshot?.roomId) return;
-    let supabaseClient: ReturnType<typeof createClient>;
-    try { supabaseClient = createClient(); } catch { return; }
-    const channel = supabaseClient.channel(`room:${snapshot.roomId}`, { config: { private: true } })
-      .on("broadcast", { event: "state_changed" }, () => void load())
-      .subscribe((status: "SUBSCRIBED" | "TIMED_OUT" | "CLOSED" | "CHANNEL_ERROR") => setConnection(status === "SUBSCRIBED" ? "Terhubung" : "Menyambungkan ulang…"));
-    return () => { void supabaseClient.removeChannel(channel); };
-  }, [snapshot?.roomId, load]);
+  const onEventStatus = useCallback((status: RoomEventStatus) => setConnection(status === "live" ? "Terhubung" : status === "connecting" ? "Menghubungkan…" : "Menyambungkan ulang…"), []);
+  useRoomEvents(snapshot ? roomCode : null, load, onEventStatus);
 
   async function perform(action: Record<string, unknown>) {
     if (!snapshot) return;

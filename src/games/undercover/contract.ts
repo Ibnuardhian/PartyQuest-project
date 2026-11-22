@@ -78,7 +78,7 @@ export interface PlayerView {
 }
 
 export interface GameDefinition {
-  key: "undercover";
+  key: string;
   minPlayers: number;
   maxPlayers: number;
   validateSettings(input: unknown, playerCount: number): GameSettings;
