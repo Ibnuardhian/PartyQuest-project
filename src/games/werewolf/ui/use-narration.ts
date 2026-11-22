@@ -24,6 +24,7 @@ export function useNarration(view: WerewolfView | null, sessionId: string) {
     void loadVoiceConfig().then((config) => {
       if (cancelled || !config) return;
       narrator.setStaticBase(config.staticBase);
+      narrator.setNamedLines(config.namedLines);
       narrator.setEffects(config.dramaticEffects);
     });
     return () => { cancelled = true; narrator.cancel(); };

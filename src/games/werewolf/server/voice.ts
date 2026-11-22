@@ -27,12 +27,24 @@ export function elevenLabsPackReady() {
   return VOICE_PACK.items.every((item) => existsSync(path.join(process.cwd(), "public", item.file.replace(STATIC_PACK_BASE.microsoft, STATIC_PACK_BASE.elevenlabs))));
 }
 
+/**
+ * How the four named announcements are voiced: "tts" speaks player names on demand,
+ * "generic" plays the pack's nameless clip (no API call during play). TTS_NAMED_LINES overrides;
+ * by default ElevenLabs uses "generic" (keeps one voice and avoids paid-plan or quota limits).
+ */
+export function configuredNamedLines(env: Record<string, string | undefined> = process.env): "tts" | "generic" {
+  const value = env.TTS_NAMED_LINES?.trim().toLowerCase();
+  if (value === "tts" || value === "generic") return value;
+  return configuredProvider(env) === "elevenlabs" ? "generic" : "tts";
+}
+
 /** Public narrator settings for the browser (no secrets). */
 export function voiceConfig() {
   const provider = configuredProvider();
   const packReady = provider === "elevenlabs" && elevenLabsPackReady();
   return {
     provider,
+    namedLines: configuredNamedLines(),
     elevenLabsConfigured: elevenLabsConfig() !== null,
     elevenLabsPackReady: elevenLabsPackReady(),
     /** Static clips come from the ElevenLabs pack only when it exists; otherwise the Microsoft pack. */

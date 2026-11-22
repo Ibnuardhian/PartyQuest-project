@@ -17,6 +17,8 @@ const BILINGUAL = VOICE_PACK.bilingual;
 const BILINGUAL_SAMPLES = VOICE_PACK.items.filter((item) => BILINGUAL.sampleKeys.includes(item.key));
 /** Indonesian-heavy line voiced by en-US-BrianMultilingualNeural (samples/brian, generated on request). */
 const BRIAN_SAMPLE = VOICE_PACK.items.find((item) => item.key === "ONUW_SEER_OPEN")!;
+/** Named announcement voiced by Brian (samples/brian/classic/dawn_single_kill_named.mp3). */
+const BRIAN_NAMED_TEXT = classicVoice.dawnKills(["Budi"]).text;
 const MICROSOFT_VOICES = [{ id: "id-ID-ArdiNeural", label: "Ardi (laki-laki, sesuai voice pack)" }, { id: "id-ID-GadisNeural", label: "Gadis (perempuan)" }] as const;
 const NIGHT_ROLES = ONUW_ROLES.filter((role) => VOICE_PACK.items.some((item) => item.key === `ONUW_${role}_OPEN`));
 const ENGINE_LABELS = { pack: "Voice pack MP3 (statis)", microsoft: "Dibuat server (Microsoft atau ElevenLabs)", browser: "Suara browser (cadangan)" } as const;
@@ -95,6 +97,8 @@ export default function VoicePilot() {
         const stepPreset = step.preset ?? preset;
         narrator.setClipResolver(resolverFor(stepPreset));
         narrator.setStaticBase(elevenLabsPack ? "/audio/werewolf/elevenlabs/" : "/audio/werewolf/");
+        // Same rule as the game: with the ElevenLabs pack, named announcements use the nameless clip.
+        narrator.setNamedLines(elevenLabsPack ? "generic" : "tts");
         setSubtitle(step.label ? `[${step.label}] ${step.line.text}` : step.line.text);
         await narrator.speak(adapt(step.line, stepPreset));
         setEngine(narrator.lastEngine);
@@ -227,6 +231,12 @@ export default function VoicePilot() {
             <button className="ww-button ww-primary" onClick={() => void playSample(BRIAN_SAMPLE.file.replace("/audio/werewolf/", "/audio/werewolf/samples/brian/"), BRIAN_SAMPLE.text, "Brian")}>Brian</button>
           </span>
           <span><code>Contoh Brian (en-US-BrianMultilingualNeural), kalimat banyak bahasa Indonesia</code>{BRIAN_SAMPLE.text}</span>
+        </li>
+        <li>
+          <span className="ww-sample-buttons">
+            <button className="ww-button ww-primary" onClick={() => void playSample("/audio/werewolf/samples/brian/classic/dawn_single_kill_named.mp3", BRIAN_NAMED_TEXT, "Brian, dengan nama")}>Brian</button>
+          </span>
+          <span><code>Contoh Brian dengan nama pemain (pengumuman korban)</code>{BRIAN_NAMED_TEXT}</span>
         </li>
         <li>
           <span className="ww-sample-buttons">

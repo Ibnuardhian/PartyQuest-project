@@ -13,7 +13,8 @@ export const ELEVENLABS_DEFAULTS = {
   /** eleven_v4 supports audio tags ([sad], [laughs], ...) and Indonesian. */
   modelId: "eleven_v4",
   outputFormat: "mp3_44100_128",
-  voiceSettings: { stability: 0.5, similarity_boost: 0.75 },
+  /** Matches the dashboard settings chosen for this project (stability 50 %, similarity 25 %). */
+  voiceSettings: { stability: 0.5, similarity_boost: 0.25 },
 } as const;
 
 export interface ElevenLabsConfig { apiKey: string; voiceId: string; modelId: string; baseUrl: string }

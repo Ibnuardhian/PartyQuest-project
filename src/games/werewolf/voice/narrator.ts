@@ -11,7 +11,7 @@ import type { VoiceLine } from "@/games/werewolf/voice/templates";
 const DEFAULT_STATIC_BASE = "/audio/werewolf/";
 
 /** Public narrator settings from GET /api/games/werewolf/voice-config. */
-export interface VoiceConfig { provider: "microsoft" | "elevenlabs"; staticBase: string; elevenLabsConfigured: boolean; elevenLabsPackReady: boolean; dramaticEffects: boolean }
+export interface VoiceConfig { provider: "microsoft" | "elevenlabs"; namedLines: "tts" | "generic"; staticBase: string; elevenLabsConfigured: boolean; elevenLabsPackReady: boolean; dramaticEffects: boolean }
 
 export async function loadVoiceConfig(): Promise<VoiceConfig | null> {
   try {
@@ -154,6 +154,12 @@ export class Narrator {
   }
 
   private staticBase = DEFAULT_STATIC_BASE;
+  private namedLines: "tts" | "generic" = "tts";
+
+  /** "generic" plays the nameless pack clip for named announcements instead of asking the server. */
+  setNamedLines(mode: "tts" | "generic") {
+    this.namedLines = mode;
+  }
 
   /** Plays static clips from another pack folder (e.g. the ElevenLabs pack) with the same file names. */
   setStaticBase(base: string) {
@@ -223,7 +229,9 @@ export class Narrator {
    */
   async speak(input: VoiceLine | string): Promise<boolean> {
     const raw: VoiceLine = typeof input === "string" ? { text: input } : input;
-    const line: VoiceLine = { text: raw.text, clip: this.mapClip(raw.clip), fallbackClip: this.mapClip(raw.fallbackClip) };
+    // In "generic" mode a named announcement becomes its nameless static clip.
+    const source = this.namedLines === "generic" && !raw.clip && raw.fallbackClip ? { text: raw.text, clip: raw.fallbackClip } : raw;
+    const line: VoiceLine = { text: source.text, clip: this.mapClip(source.clip), fallbackClip: this.mapClip(source.fallbackClip) };
     const text = line.text;
     const generation = this.generation;
     if (line.clip && await this.playClip(line.clip, generation)) {
