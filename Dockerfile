@@ -14,7 +14,8 @@ CMD ["npm", "run", "dev"]
 FROM base AS builder
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY package*.json ./
-RUN npm ci
+# Build tools (TypeScript, Tailwind/PostCSS) are devDependencies; NODE_ENV=production would skip them.
+RUN npm ci --include=dev
 COPY . .
 RUN npm run build
 
