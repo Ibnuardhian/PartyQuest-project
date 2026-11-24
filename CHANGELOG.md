@@ -16,8 +16,7 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
   - penyedia default (`TTS_PROVIDER` di `.env` masih `microsoft`).
 - [ ] **ElevenLabs "Eyang"** (`tX4zpyB6s34no1FgD0Mm`) hanya bisa dipakai lewat API dengan paket berbayar (HTTP 402 di paket gratis). Pack ElevenLabs yang ter-commit memakai suara premade **Adam** (eleven_v4, dengan emosi). Setelah upgrade: `docker compose run --rm --no-deps web npm run voice:generate -- --provider elevenlabs --force`.
 - [ ] **Lisensi ElevenLabs paket gratis**: periksa ketentuan ElevenLabs (atribusi/penggunaan komersial) sebelum merilis audio yang dibuat dengan paket gratis.
-- [ ] **Layar TV**: belum ada panah animasi SVG untuk hasil voting (sekarang daftar "pemilih → target"), belum ada QR code untuk penonton atau join, dan TV hanya membaca (fase dimajukan oleh request pemain, bukan TV).
-- [ ] **Lobi**: QR code untuk join room (spesifikasi Fase 2.4) belum dibuat; butuh library QR (belum ditambahkan sebagai dependency).
+- [ ] **Layar TV**: belum ada panah animasi SVG untuk hasil voting (sekarang daftar "pemilih → target"), dan TV hanya membaca (fase dimajukan oleh request pemain, bukan TV).
 - [ ] **ONUW**: pemenang tidak dihitung otomatis (kartu fisik bisa tertukar di malam hari); aplikasi hanya mencatat siapa yang tertunjuk.
 - [ ] **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
@@ -35,6 +34,8 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 - **ONUW lokal** (Fase 6): `/games/werewolf/onuw`, deck builder, pendaftaran oper HP dengan semua role selalu tampil, alur pilih ulang saat tidak cocok, malam khusus suara dengan cincin hitung mundur, diskusi, hitung mundur tunjuk.
 - **Layar TV** (Fase 7): kode pairing host sekali pakai, token TV baca-saja (hash SHA-256, migration `202611230002`), halaman `/games/werewolf/tv` dan `/games/werewolf/tv/<kode>` dengan subtitle moderator; suara pindah ke TV saat terhubung.
 - Peringatan suara "satu menit lagi" saat diskusi siang.
+- QR code untuk bergabung ke room di lobi dan di layar TV saat menunggu pemain (`qrcode-generator`, MIT, tanpa dependency; dirender sebagai SVG hitam-putih agar terbaca pemindai di tema gelap).
+- Baris ONUW "pagi tiba" baru: pemain menggesek kartu sambil tutup mata lalu membuka mata (Microsoft dengan jeda 1000/800 ms, ElevenLabs Adam). Generator mendukung jeda `<break time="..."/>` lewat field `edgeText`.
 - Rate limit route TTS: 30 permintaan/menit per room (game) dan 60/menit per tamu (pilot).
 
 ### Diubah
@@ -54,6 +55,6 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 
 ### Verifikasi terakhir
 
-- `npm test`: 118 test lolos (termasuk test integrasi PostgreSQL), `typecheck` dan `lint` lolos.
+- `npm test`: 121 test lolos (termasuk test integrasi PostgreSQL), `typecheck` dan `lint` lolos.
 - Image produksi (`docker build --target runner`) dibangun dan dijalankan: halaman, sesi tamu, room, file MP3, dan Edge TTS berfungsi.
 - Smoke test API pada server lokal: alur Werewolf penuh hingga pemenang, vote serentak, rematch ronde 2, pairing TV dan privasi payload TV, route TTS (host/TV/non-host).

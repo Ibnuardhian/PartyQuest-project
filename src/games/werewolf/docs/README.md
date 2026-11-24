@@ -21,7 +21,7 @@ Werewolf brings social deduction into a physical room without making one person 
 | Caddy auto-HTTPS | Vercel HTTPS (or any TLS proxy for self-hosting) |
 | OpenAI TTS + disk/Redis cache | Microsoft Edge Neural TTS: static voice pack in `public/audio/werewolf/` (`npm run voice:generate`) plus on-demand named lines via `node-edge-tts` with a disk cache; Web Speech (`id-ID`) as last fallback |
 | Framer Motion, lucide-react | CSS transitions/keyframes and inline SVG (no new UI dependencies) |
-| `qrcode.react`, `nanoid` | Room code from `src/lib/room-code.ts`; QR encoder is the only candidate new dependency (justify when implemented) |
+| `qrcode.react`, `nanoid` | Room code from `src/lib/room-code.ts`; QR codes use `qrcode-generator` (MIT, zero dependencies; the only added UI dependency) rendered as inline SVG by `src/components/site/qr-code.tsx` for the lobby and TV join links |
 | — | Vitest for all tests |
 
 ## 3. Guardrails (from the spec, adapted)

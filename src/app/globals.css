@@ -63,3 +63,8 @@ h1 em, h2 em { color: var(--green); font-weight: 500; }
 @media (max-width: 800px) { .catalog-wrap { margin: 48px auto 62px; }.catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.catalog-card:first-child { grid-column: 1 / -1; }.catalog-card:first-child .catalog-art { height: 205px; }.online-layout { grid-template-columns: 1fr; gap: 26px; padding: 45px 0; max-width: 550px; }.online-intro { padding: 0; }.online-intro h1 { margin-top: 15px; }.left-note { margin-top: 14px; }.lobby-wrap { margin-top: 37px; }.lobby-grid { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .catalog-grid { grid-template-columns: 1fr; gap: 13px; margin-top: 28px; }.catalog-card:first-child { grid-column: auto; }.catalog-card .catalog-art, .catalog-card:first-child .catalog-art { height: 165px; }.catalog-card-body p { min-height: 0; }.catalog-heading h1 { font-size: 47px; } }
 .presence-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #c9d2cd; }.presence-dot.online { background: #4f9a6c; box-shadow: 0 0 0 3px #e3f1e7; }
+
+/* Join QR code (platform): black on white for scanners, whatever the game theme. */
+.qr-code { display: flex; align-items: center; gap: 14px; margin: 14px 0 4px; }
+.qr-code svg { width: 132px; height: 132px; flex: none; border-radius: 6px; }
+.qr-code figcaption { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }

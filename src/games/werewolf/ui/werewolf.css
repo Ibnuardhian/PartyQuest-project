@@ -185,3 +185,8 @@ body:has(.ww-is-night) { background: #000; }
 .catalog-werewolf .primary-button { background: transparent; border: 1px solid #0ea5e959; color: #e2e8f0; text-decoration: none; }
 .catalog-werewolf .primary-button:hover { background: #0f172a; }
 @media (max-width: 760px) { .ww-setup { grid-template-columns: 1fr; margin-top: 28px; } .ww-timer { font-size: 24px; } }
+
+/* TV lobby join QR: large enough to scan from the sofa. */
+.ww-tv-qr { margin: 0 0 18px; }
+.ww-tv-qr svg { width: min(28vh, 240px); height: min(28vh, 240px); }
+.werewolf-theme .qr-code figcaption { color: var(--ww-text); }

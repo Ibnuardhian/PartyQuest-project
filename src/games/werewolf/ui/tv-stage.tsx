@@ -3,6 +3,7 @@
 import "./werewolf.css";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { QrCode } from "@/components/site/qr-code";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import type { ClassicRole } from "@/games/werewolf/contract";
 import { WEREWOLF_TV_PATH } from "@/games/werewolf/paths";
@@ -60,7 +61,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
           {!narration.enabled ? <button type="button" className="ww-button ww-primary" onClick={() => void narration.enable()}>Aktifkan suara</button> : <button type="button" className="ww-button" onClick={narration.disable}>Matikan suara</button>}
         </header>
 
-        {!view && <div className="ww-panel"><h2>Menunggu pemain</h2><ul className="ww-tv-grid">{data.members.map((member) => <li key={member.name} className={member.ready ? "is-ready" : ""}><strong>{member.name}</strong><small>{member.ready ? "Siap" : member.online ? "Online" : "Offline"}</small></li>)}</ul></div>}
+        {!view && <div className="ww-panel"><h2>Menunggu pemain</h2>{data.room.status === "lobby" && <QrCode className="ww-tv-qr" path={`/room/${data.room.code}`} label={`Pindai untuk bergabung · kode ${data.room.code}`} />}<ul className="ww-tv-grid">{data.members.map((member) => <li key={member.name} className={member.ready ? "is-ready" : ""}><strong>{member.name}</strong><small>{member.ready ? "Siap" : member.online ? "Online" : "Offline"}</small></li>)}</ul></div>}
 
         {view && <>
           <ul className="ww-tv-grid" aria-label="Pemain">{view.players.map((player) => <li key={player.id} className={`${player.alive ? "" : "is-dead"} ${view.votedPlayerIds.includes(player.id) ? "has-voted" : ""} ${view.tiedPlayerIds.includes(player.id) ? "is-tied" : ""}`}>
