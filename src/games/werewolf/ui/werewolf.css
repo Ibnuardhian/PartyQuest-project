@@ -1,5 +1,6 @@
-/* Werewolf: Dark Outline night palette (docs/03 §2.1). Owned by the Werewolf game folder. */
-body:has(.werewolf-theme) { background-color: #000; color: #94a3b8; }
+/* Werewolf: Dark Outline palette (docs/03 §2.1). Owned by the Werewolf game folder.
+   Day screens and the lobby use the catalog card's midnight navy; night phases use pure black. */
+body:has(.werewolf-theme) { background-color: #020617; color: #94a3b8; }
 .werewolf-theme { --ww-bg: #000; --ww-line: #1e293b; --ww-accent: #0ea5e959; --ww-accent-solid: #0ea5e9; --ww-muted: #64748b; --ww-text: #94a3b8; color: var(--ww-text); }
 .werewolf-theme .topbar, .werewolf-theme .footer { border-color: var(--ww-line); }
 .werewolf-theme .brand, .werewolf-theme .topbar-note { color: var(--ww-text); }
@@ -142,17 +143,36 @@ body:has(.ww-is-night) { background: #000; }
 /* Lobby editor (rendered inside the light platform lobby) */
 .ww-editor { display: grid; gap: 10px; }
 .ww-editor .ww-check { color: inherit; }
-.ww-editor .ww-input { background: #fff; color: #152126; border-color: #dce7df; }
-.ww-editor .ww-label { color: #647477; }
-.ww-editor .ww-button { color: #285b47; border-color: #dce7df; background: #f8faf8; }
-.ww-editor .ww-primary { color: #fff; background: #3c745d; border-color: #3c745d; }
-.ww-editor .ww-muted { color: #647477; }
 .ww-composer { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.ww-composer li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; border-bottom: 1px solid #edf1ee; padding: 4px 0; }
-.ww-composer small { color: #8a9790; }
+.ww-composer li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; border-bottom: 1px solid var(--ww-line); padding: 4px 0; color: var(--ww-text); }
+.ww-composer small { color: var(--ww-muted); }
 .ww-stepper { display: inline-flex; align-items: center; gap: 8px; }
-.ww-stepper button { width: 26px; height: 26px; border: 1px solid #dce7df; border-radius: 4px; background: #f8faf8; color: #285b47; }
+.ww-stepper button { width: 26px; height: 26px; border: 1px solid var(--ww-line); border-radius: 3px; background: transparent; color: var(--ww-text); }
 .ww-stepper button:disabled { opacity: .4; }
+
+/* Platform lobby in the Werewolf theme (matches the catalog card: midnight navy, slate lines, sky accent). */
+.werewolf-theme .lobby-heading h1 { color: var(--ww-text); font-family: Georgia, serif; font-weight: 400; }
+.werewolf-theme .lobby-heading h1 em { color: #38bdf8; }
+.werewolf-theme .hero-description, .werewolf-theme .status-note, .werewolf-theme .privacy-note { color: var(--ww-muted); }
+.werewolf-theme .setup-card, .werewolf-theme .lobby-card, .werewolf-theme .rules-card { border: 1px solid var(--ww-line); border-radius: 6px; background: #0b1220; box-shadow: none; color: var(--ww-text); }
+.werewolf-theme .lobby-card h2, .werewolf-theme .room-code { color: var(--ww-text); font-family: Georgia, serif; }
+.werewolf-theme .member-row { border-color: var(--ww-line); background: transparent; }
+.werewolf-theme .member-name { color: var(--ww-text); }
+.werewolf-theme .member-name small { color: var(--ww-muted); }
+.werewolf-theme .avatar-dot { color: #e2e8f0; background: #1e293b; }
+.werewolf-theme .ready-tag { color: var(--ww-muted); background: #111827; }
+.werewolf-theme .ready-tag.ready { color: #38bdf8; background: #0c1f33; }
+.werewolf-theme .presence-dot { background: #334155; }
+.werewolf-theme .presence-dot.online { background: #38bdf8; box-shadow: 0 0 0 3px #0ea5e922; }
+.werewolf-theme .primary-button { border: 1px solid #0ea5e959; background: #0c1f33; color: #e2e8f0; }
+.werewolf-theme .primary-button:hover { background: #102a44; }
+.werewolf-theme .secondary-button, .werewolf-theme .secondary-wide { border: 1px solid var(--ww-line); background: transparent; color: var(--ww-text); }
+.werewolf-theme .rules-card p { border-color: var(--ww-line); color: var(--ww-muted); }
+.werewolf-theme .rules-card p strong { color: var(--ww-text); }
+.werewolf-theme .field-label { color: var(--ww-muted); }
+.werewolf-theme .action-form input, .werewolf-theme .ww-input, .werewolf-theme .ww-editor select { border: 1px solid var(--ww-line); background: #020617; color: var(--ww-text); }
+.werewolf-theme .error-message { border: 1px solid #7f1d1d; background: #1c0a0a; color: #fca5a5; }
+.werewolf-theme .tv-code { color: #38bdf8; letter-spacing: .2em; }
 /* Catalog card */
 .catalog-werewolf { border: 1px solid #1e293b; background: #020617; }
 .catalog-werewolf .werewolf-art { color: #cbd5e1; background: radial-gradient(circle at 75% 30%, #0f172a 0, #020617 60%); border-bottom: 1px solid #1e293b; }

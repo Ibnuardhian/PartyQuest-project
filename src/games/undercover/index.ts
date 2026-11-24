@@ -10,6 +10,7 @@ export const undercoverModule: GameModule = {
   key: "undercover",
   title: "Undercover",
   setupHref: UNDERCOVER_SETUP_PATH,
+  themeClass: "undercover-theme",
   onlineSetupHref: UNDERCOVER_ONLINE_SETUP_PATH,
   CatalogCard: UndercoverCatalogCard,
   OnlineGame: UndercoverOnlineGame,

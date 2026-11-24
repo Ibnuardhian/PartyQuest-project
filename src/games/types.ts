@@ -16,6 +16,8 @@ export interface GameModule {
   title: string;
   /** Setup page for the game (e.g. /games/<key>). */
   setupHref: string;
+  /** CSS class for the game's visual theme; the platform lobby applies it so the lobby matches the catalog card. */
+  themeClass?: string;
   /** Setup page opened in Online Room mode, when the game supports it. */
   onlineSetupHref?: string;
   /** The game's own catalog card, so each game keeps its visual identity. */

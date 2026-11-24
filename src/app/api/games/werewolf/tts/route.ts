@@ -8,10 +8,12 @@ import { isAllowedNarration } from "@/games/werewolf/voice/allowed-lines";
 import { findRoomById, findSession, isActiveMember } from "@/lib/rooms/repository";
 import { TV_COOKIE_NAME, verifyTvToken } from "@/lib/rooms/tv";
 import { EDGE_VOICES } from "@/lib/tts/edge-tts";
+import { RateLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const bodySchema = z.object({ sessionId: z.string().uuid(), text: z.string().min(1).max(400), voice: z.enum(EDGE_VOICES).optional() }).strict();
+const ttsLimiter = new RateLimiter(30, 60_000);
 
 /**
  * Narrator audio for a Werewolf session (ElevenLabs when configured, else Microsoft Edge Neural).
@@ -31,6 +33,8 @@ export async function POST(request: Request) {
     const isHost = Boolean(guest && room.host_user_id === guest.userId && await isActiveMember(room.id, guest.userId));
     const isTv = !isHost && await verifyTvToken((await cookies()).get(TV_COOKIE_NAME)?.value, room.id);
     if (!isHost && !isTv) return apiError(403, "host_required", "Suara moderator hanya diputar di perangkat host atau TV.");
+    // A game needs only a handful of named lines per minute; more means a runaway client.
+    if (!ttsLimiter.allow(room.id)) return apiError(429, "rate_limited", "Terlalu banyak permintaan suara. Coba lagi sebentar.");
     const names = new Set(session.public_state.players.map((player) => player.name));
     if (!isAllowedNarration(body.data.text, (value) => names.has(value))) return apiError(400, "text_not_allowed", "Teks bukan bagian dari naskah moderator.");
     const { audio, provider } = await werewolfSpeech(body.data.text, { voice: body.data.voice });

@@ -114,7 +114,8 @@ export default function RoomLobby({ code }: { code: string }) {
   const game = room ? getGameModule(room.room.gameKey) : null;
   const me = room?.members.find((member) => member.user_id === room.currentUserId);
 
-  return <main className="page-shell"><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
+  // The lobby wears the game's own theme so it matches its catalog card and in-game screens.
+  return <main className={`page-shell${game?.themeClass ? ` ${game.themeClass}` : ""}`}><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
     <section className="lobby-wrap">
       <div className="lobby-heading"><span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span><h1>Room <em>{code}</em></h1><p className="hero-description">Bagikan kode ini ke temanmu. Siapkan semua pemain sebelum host memulai.</p></div>
       {!room ? <section className="setup-card lobby-card">{error && <p className="error-message" role="alert">{error}</p>}<h2>Gabung ke room</h2><form className="action-form" onSubmit={joinRoom}><label className="field-label" htmlFor="lobby-name">Nama tampilan</label><input id="lobby-name" maxLength={24} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" /><button className="primary-button" disabled={busy || !displayName.trim()}>Gabung <span>→</span></button></form></section>

@@ -11,6 +11,7 @@ export const werewolfModule: GameModule = {
   key: "werewolf",
   title: "Werewolf",
   setupHref: WEREWOLF_SETUP_PATH,
+  themeClass: "werewolf-theme",
   tvSetupHref: WEREWOLF_TV_PATH,
   CatalogCard: WerewolfCatalogCard,
   OnlineGame: WerewolfOnlineGame,

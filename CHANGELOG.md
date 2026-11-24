@@ -20,7 +20,8 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 - [ ] **Lobi**: QR code untuk join room (spesifikasi Fase 2.4) belum dibuat; butuh library QR (belum ditambahkan sebagai dependency).
 - [ ] **ONUW**: pemenang tidak dihitung otomatis (kartu fisik bisa tertukar di malam hari); aplikasi hanya mencatat siapa yang tertunjuk.
 - [ ] **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
-- [ ] **Batas pemakaian route TTS**: route hanya untuk host atau TV dan hanya teks naskah, tetapi belum ada rate limit per menit; cache TTS di disk belum punya kebijakan pembersihan.
+- [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
+- [ ] **Tema lobi saat belum bergabung**: form gabung room belum tahu game-nya, jadi masih bertema platform (hijau).
 - [ ] **File `werewolf-tts-voice-pack.zip`** masih ada di root proyek (tidak di-commit). Isinya sudah dilebur; tunggu konfirmasi untuk dihapus.
 - [ ] **Push dan merge** ke `main` menunggu persetujuan.
 
@@ -35,6 +36,7 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 - **ONUW lokal** (Fase 6): `/games/werewolf/onuw`, deck builder, pendaftaran oper HP dengan semua role selalu tampil, alur pilih ulang saat tidak cocok, malam khusus suara dengan cincin hitung mundur, diskusi, hitung mundur tunjuk.
 - **Layar TV** (Fase 7): kode pairing host sekali pakai, token TV baca-saja (hash SHA-256, migration `202611230002`), halaman `/games/werewolf/tv` dan `/games/werewolf/tv/<kode>` dengan subtitle moderator; suara pindah ke TV saat terhubung.
 - Peringatan suara "satu menit lagi" saat diskusi siang.
+- Rate limit route TTS: 30 permintaan/menit per room (game) dan 60/menit per tamu (pilot).
 
 ### Diubah
 
@@ -44,6 +46,8 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 
 ### Diperbaiki
 
+- Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (), dan latar siang/lobi Werewolf memakai navy  seperti kartu katalog (malam tetap hitam pekat).
+
 - Membuat room tanpa field `settings` ditolak; sekarang memakai pengaturan default game.
 - Vote serentak bisa gagal karena konflik versi; sekarang dicoba ulang hingga 20 kali dengan jeda acak.
 - Build image Docker produksi gagal karena devDependencies tidak terpasang di tahap builder.
@@ -51,6 +55,6 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 
 ### Verifikasi terakhir
 
-- `npm test`: 116 test lolos (termasuk test integrasi PostgreSQL), `typecheck` dan `lint` lolos.
+- `npm test`: 118 test lolos (termasuk test integrasi PostgreSQL), `typecheck` dan `lint` lolos.
 - Image produksi (`docker build --target runner`) dibangun dan dijalankan: halaman, sesi tamu, room, file MP3, dan Edge TTS berfungsi.
 - Smoke test API pada server lokal: alur Werewolf penuh hingga pemenang, vote serentak, rematch ronde 2, pairing TV dan privasi payload TV, route TTS (host/TV/non-host).

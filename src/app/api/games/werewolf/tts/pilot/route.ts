@@ -6,6 +6,7 @@ import { isAllowedNarration } from "@/games/werewolf/voice/allowed-lines";
 import { isPackText, isVoicePreset } from "@/games/werewolf/voice/templates";
 import { EDGE_VOICES } from "@/lib/tts/edge-tts";
 import { elevenLabsConfig } from "@/lib/tts/elevenlabs";
+import { RateLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,7 @@ const bodySchema = z.object({
   preset: z.string().refine(isVoicePreset).optional(),
 }).strict();
 const SAMPLE_NAME = /^[\p{L}\p{N} .'-]{1,24}$/u;
+const pilotLimiter = new RateLimiter(60, 60_000);
 
 /**
  * Voice pilot audio, used to compare providers, voices, and presets. Disabled in production unless
@@ -28,6 +30,7 @@ export async function POST(request: Request) {
   if (!guest) return apiError(401, "unauthorized", "Buat sesi tamu terlebih dahulu.");
   const body = bodySchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return apiError(400, "invalid_input", "Permintaan suara tidak valid.");
+  if (!pilotLimiter.allow(guest.userId)) return apiError(429, "rate_limited", "Terlalu banyak permintaan suara. Coba lagi sebentar.");
   const { text, provider } = body.data;
   if (!isPackText(text) && !isAllowedNarration(text, (value) => SAMPLE_NAME.test(value))) return apiError(400, "text_not_allowed", "Teks bukan bagian dari naskah moderator.");
   if (provider === "elevenlabs" && !elevenLabsConfig()) return apiError(503, "elevenlabs_not_configured", "ELEVENLABS_API_KEY belum diisi di .env.");

@@ -101,3 +101,24 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .secondary-button { border: 1px solid #1b263b; border-radius: 0; color: #e5e0d8; background: #1b263b; text-transform: uppercase; letter-spacing: .1em; }
 .undercover-theme .secondary-button:hover { background: #101923; }
 .undercover-theme .status-note { color: #625d56; }
+
+/* Platform lobby and online game in the noir dossier theme (matches the catalog card). */
+.undercover-theme .lobby-card h2, .undercover-theme .room-code { color: #161412; font-family: Cinzel, "Playfair Display", Georgia, serif; letter-spacing: .08em; }
+.undercover-theme .lobby-card .section-kicker, .undercover-theme .rules-card .section-kicker { color: #8b0000; }
+.undercover-theme .member-row { border: 1px solid #b9afa3; border-radius: 0; background: #eee9e0; }
+.undercover-theme .member-name { color: #24211e; }
+.undercover-theme .member-name small { color: #6c665e; }
+.undercover-theme .ready-tag { border-radius: 0; color: #514c46; background: #d8d0c4; }
+.undercover-theme .ready-tag.ready { color: #e5e0d8; background: #8b0000; }
+.undercover-theme .presence-dot { background: #9a9288; box-shadow: none; }
+.undercover-theme .presence-dot.online { background: #8b0000; box-shadow: 0 0 0 3px #8b000022; }
+.undercover-theme .secondary-wide { border: 1px solid #1b263b; border-radius: 0; color: #e5e0d8; background: #1b263b; text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
+.undercover-theme .rules-card p { border-color: #c1b7a9; color: #625d56; }
+.undercover-theme .rules-card p strong { color: #171513; }
+.undercover-theme .left-note { color: #625d56; }
+.undercover-theme .lobby-actions .text-button { color: #8b0000; }
+.undercover-theme .clue-item { border: 1px solid #c1b7a9; border-radius: 0; background: #eee9e0; color: #282522; }
+.undercover-theme .clue-item > span:nth-child(2) { color: #514c46; }
+.undercover-theme .clue-item strong { color: #8b0000; font-family: Cinzel, "Playfair Display", Georgia, serif; }
+.undercover-theme .role-pill { border-radius: 0; color: #e5e0d8; background: #8b0000; letter-spacing: .12em; text-transform: uppercase; }
+.undercover-theme .tv-code { color: #8b0000; letter-spacing: .2em; }
