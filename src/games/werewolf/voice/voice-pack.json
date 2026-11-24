@@ -323,9 +323,9 @@
       "key": "ONUW_ONUW_DAY_START",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_day_start.mp3",
-      "text": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... Buka mata sambil tetap menggesekkan kartu di depan kalian... Cukup, pagi telah tiba!",
-      "edgeText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang. <break time=\"1000ms\"/> Buka mata sambil tetap menggesekkan kartu di depan kalian. <break time=\"800ms\"/> Cukup, pagi telah tiba!",
-      "elevenlabsText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... — ... Buka mata sambil tetap menggesekkan kartu di depan kalian... cukup, pagi telah tiba!"
+      "text": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... Buka mata sambil tetap menggesekkan kartu di depan kalian... Cukup! Berhenti menggesek kartu. Pagi telah tiba!",
+      "edgeText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang. <break time=\"1000ms\"/> Buka mata sambil tetap menggesekkan kartu di depan kalian. <break time=\"1500ms\"/> Cukup! Berhenti menggesek kartu. <break time=\"500ms\"/> Pagi telah tiba!",
+      "elevenlabsText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... — ... Buka mata sambil tetap menggesekkan kartu di depan kalian... — ... [firmly] Cukup! Berhenti menggesek kartu. Pagi telah tiba!"
     },
     {
       "key": "ONUW_ONUW_VOTE_COUNTDOWN",

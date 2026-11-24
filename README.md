@@ -35,6 +35,8 @@ Salin `.env.example` ke `.env` bila perlu mengubah nilai default.
 
 ### ONUW satu HP: menentukan pemenang
 
+Di malam hari narator memanggil role sesuai urutan resmi dengan jeda hening 3 detik setelah setiap "… tutup mata" (`ONUW_ROLE_GAP_SECONDS`). Saat pagi, pemain diminta menggesek kartu sambil menutup mata (menyamarkan suara kartu), lalu membuka mata, dan narator memerintahkan berhenti menggesek.
+
 Setelah tunjuk serentak, ketuk pemain yang paling banyak ditunjuk (semua jika seri; tidak memilih berarti tidak ada yang mati, misalnya bila setiap pemain hanya ditunjuk sekali). Lalu semua kartu dibalik dan kartu terakhir tiap pemain dikoreksi di aplikasi, karena Robber, Troublemaker, atau Drunk bisa menukarnya. Hunter yang mati diminta menunjuk satu pemain yang ikut mati. Aturan pemenang ada di `src/games/werewolf/engine/onuw/winner.ts`:
 - ada Werewolf di antara pemain: warga menang jika minimal satu Werewolf mati; tim Werewolf (Werewolf + Minion) menang jika tidak ada Werewolf dan tidak ada Tanner yang mati;
 - tidak ada Werewolf di antara pemain: warga menang jika tidak ada yang mati atau hanya Minion yang mati; Minion menang jika pemain lain mati;

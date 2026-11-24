@@ -6,7 +6,7 @@ import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { ONUW_MAX_PLAYERS, ONUW_MIN_PLAYERS, ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { deckSize, ONUW_CENTER_CARDS, validateOnuwSelections, type OnuwDeck, type OnuwMismatch } from "@/games/werewolf/engine/onuw/deck";
-import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-sequence";
+import { buildOnuwNightSequence, ONUW_ROLE_GAP_SECONDS } from "@/games/werewolf/engine/onuw/night-sequence";
 import { onuwFinalCardOptions, validOnuwFinalCards } from "@/games/werewolf/engine/onuw/final-cards";
 import { onuwOutcome, pendingHunters, type OnuwOutcome } from "@/games/werewolf/engine/onuw/winner";
 import { adjustOnuwDeck, onuwDeckRoles, ONUW_ROLE_MAX, recommendedOnuwDeck, validateOnuwNames } from "@/games/werewolf/engine/onuw/setup";
@@ -154,6 +154,12 @@ export default function OnuwLocalGame() {
     return id === runRef.current;
   }
 
+  /** Silent pause with no countdown ring, so the screen gives nothing away between roles. */
+  async function pause(seconds: number, id: number) {
+    await new Promise((resolve) => window.setTimeout(resolve, seconds * 1000));
+    return id === runRef.current;
+  }
+
   async function runNight() {
     narrator.unlock();
     await requestWakeLock();
@@ -166,6 +172,8 @@ export default function OnuwLocalGame() {
         if (!(await speak(onuwVoice.dayStart(), id))) return;
       } else {
         if (!(await speak(onuwVoice.open(step.key), id)) || !(await wait(step.seconds, id)) || !(await speak(onuwVoice.close(step.key), id))) return;
+        setStepLabel("");
+        if (!(await pause(ONUW_ROLE_GAP_SECONDS, id))) return;
       }
     }
     if (id !== runRef.current) return;

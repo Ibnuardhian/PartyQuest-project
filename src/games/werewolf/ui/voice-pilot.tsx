@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
-import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-sequence";
+import { buildOnuwNightSequence, ONUW_ROLE_GAP_SECONDS } from "@/games/werewolf/engine/onuw/night-sequence";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 import { loadVoiceConfig, microsoftClipResolver, Narrator, requestWakeLock, type ClipResolver, type VoiceConfig } from "@/games/werewolf/voice/narrator";
@@ -165,7 +165,7 @@ export default function VoicePilot() {
     return buildOnuwNightSequence(counts).flatMap((step): Step[] => {
       if (step.key === "ONUW_START") return [{ line: onuwVoice.intro(), wait: quick ? 2 : step.seconds }];
       if (step.key === "ONUW_DAY") return [{ line: onuwVoice.dayStart(), wait: quick ? 3 : 5 }, { line: onuwVoice.voteCountdown() }];
-      return [{ line: onuwVoice.open(step.key), wait: quick ? 3 : step.seconds }, { line: onuwVoice.close(step.key), wait: 1 }];
+      return [{ line: onuwVoice.open(step.key), wait: quick ? 3 : step.seconds }, { line: onuwVoice.close(step.key), wait: ONUW_ROLE_GAP_SECONDS }];
     });
   }
 

@@ -15,6 +15,9 @@ export const ONUW_NIGHT_ORDER: ReadonlyArray<{ role: OnuwRole; seconds: number }
 
 export const ONUW_START_SECONDS = 5;
 
+/** Silent gap after a role closes its eyes, before the next role is called (lets hands settle back). */
+export const ONUW_ROLE_GAP_SECONDS = 3;
+
 export type OnuwNightStep = { key: "ONUW_START"; seconds: number } | { key: OnuwRole; seconds: number } | { key: "ONUW_DAY"; seconds: 0 };
 
 /**
