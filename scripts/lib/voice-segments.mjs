@@ -32,6 +32,25 @@ export function splitBilingual(text, englishTerms) {
   return segments.filter((segment) => segment.pause === undefined || segment.pause > 0);
 }
 
+/**
+ * Splits a line at SSML-style `<break time="800ms"/>` markers (node-edge-tts escapes SSML, so the
+ * pauses are rendered as silence between separately spoken parts). Returns { text } and { pause }.
+ */
+export function splitBreaks(text) {
+  const parts = [];
+  let last = 0;
+  for (const match of text.matchAll(/<break\s+time="(\d+(?:\.\d+)?)(ms|s)"\s*\/>/g)) {
+    const chunk = text.slice(last, match.index).trim();
+    if (chunk) parts.push({ text: chunk });
+    const seconds = Number(match[1]) / (match[2] === "ms" ? 1000 : 1);
+    if (seconds > 0) parts.push({ pause: Math.min(seconds, 10) });
+    last = match.index + match[0].length;
+  }
+  const tail = text.slice(last).trim();
+  if (tail) parts.push({ text: tail });
+  return parts;
+}
+
 function pauseFor(punctuation) {
   if (/\.\.\.|…/.test(punctuation)) return 0.45;
   if (/[.!?]/.test(punctuation)) return 0.3;

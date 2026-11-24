@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { splitBilingual } from "./voice-segments.mjs";
+import { splitBilingual, splitBreaks } from "./voice-segments.mjs";
+
+describe("splitBreaks", () => {
+  it("turns break markers into pauses between spoken parts", () => {
+    expect(splitBreaks('Tutup mata. <break time="1000ms"/> Buka mata. <break time="0.8s"/> Pagi!')).toEqual([
+      { text: "Tutup mata." }, { pause: 1 }, { text: "Buka mata." }, { pause: 0.8 }, { text: "Pagi!" },
+    ]);
+  });
+
+  it("leaves lines without markers as one part", () => {
+    expect(splitBreaks("Pagi telah tiba.")).toEqual([{ text: "Pagi telah tiba." }]);
+  });
+});
 
 const TERMS = ["Seer", "Werewolf", "Hunter", "Troublemaker", "Lovers"];
 

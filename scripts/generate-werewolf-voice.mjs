@@ -17,7 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { EdgeTTS } from "node-edge-tts";
-import { splitBilingual } from "./lib/voice-segments.mjs";
+import { splitBilingual, splitBreaks } from "./lib/voice-segments.mjs";
 
 const run = promisify(execFile);
 
@@ -69,6 +69,14 @@ if (provider === "microsoft") {
   } else {
     render = (text, file) => edge(voice, "id-ID", text, file);
   }
+  // `edgeText` may carry <break time="..."/> pauses: speak each part, then join with exact silences.
+  textFor = (item) => item.edgeText ?? item.text;
+  const speakLine = render;
+  render = async (text, file) => {
+    const parts = splitBreaks(text);
+    if (!parts.some((part) => part.pause !== undefined)) return speakLine(parts[0]?.text ?? text, file);
+    await joinSegments(parts, file, (part, out) => speakLine(part.text, out));
+  };
 } else if (provider === "elevenlabs") {
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
