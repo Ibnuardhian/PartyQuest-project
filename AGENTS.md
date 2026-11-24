@@ -97,7 +97,17 @@ Before using Ponytail or RTK:
 
 RTK may be used to reduce noisy terminal output when available. If unavailable, use ordinary shell commands with focused output.
 
-Do not use the Agency Agents repository or introduce multi-agent orchestration for this MVP.
+Do not use the Agency Agents repository or introduce multi-agent orchestration frameworks for this MVP. The four Claude Code subagents below are allowed.
+
+## Model routing (who cooks what)
+
+Subagents live in `.claude/agents/`; each pins its own model and effort in frontmatter.
+- Search, lookups, renames, boilerplate → `code-searcher` subagent (Haiku 5.5, low).
+- Build a planned feature → `implementer` subagent (Sonnet 5.5, medium).
+- Tests → `test-runner` subagent (Sonnet 5.5, low).
+- UI, auth/guest sessions, hard bugs → the main session on Opus 5.5 (xhigh for auth; max only when stuck).
+- Plans and security audits → Fable 5.2 (`/model fable`; high, xhigh for audits).
+- Code review → `reviewer` subagent (Opus 5.5, high) before every merge. Never review with the model that wrote the code.
 
 ## Testing
 
