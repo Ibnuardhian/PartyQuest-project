@@ -4,26 +4,20 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ## [Belum dirilis] — branch `werewolf-game` (2026-11-23)
 
-Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
-
 ### Belum selesai / perlu keputusan
 
 - [ ] **Uji langsung multi-perangkat** (Fase 7.2): Werewolf Classic, ONUW, dan layar TV belum dicoba dengan beberapa HP dan TV sungguhan di browser. Semua aturan, API, halaman, dan image produksi sudah diuji otomatis atau lewat smoke test.
-- [ ] **Pilihan suara dari pemilik proyek:**
-  - preset Microsoft (`standar` / `berat` / `sangat-berat` / `gelap`); `activePreset` masih `standar`;
-  - efek dramatis default (`dramaticEffects` masih `false`);
-  - cara pelafalan nama role (`off` / `segments` / `multilingual` / Brian); pack masih `off` dan hanya ada sampel di `public/audio/werewolf/samples/` (tidak di-commit);
-  - penyedia default (`TTS_PROVIDER` di `.env` masih `microsoft`).
-- [ ] **ElevenLabs "Eyang"** (`tX4zpyB6s34no1FgD0Mm`) hanya bisa dipakai lewat API dengan paket berbayar (HTTP 402 di paket gratis). Pack ElevenLabs yang ter-commit memakai suara premade **Adam** (eleven_v4, dengan emosi). Setelah upgrade: `docker compose run --rm --no-deps web npm run voice:generate -- --provider elevenlabs --force`.
-- [ ] **Lisensi ElevenLabs paket gratis**: periksa ketentuan ElevenLabs (atribusi/penggunaan komersial) sebelum merilis audio yang dibuat dengan paket gratis.
+- [ ] **Karakter suara Microsoft dan pelafalan nama role** di game masih `standar` dan Ardi untuk semua kata; keduanya hanya bisa dicoba di bagian "Eksperimen" halaman suara. Menggantinya di game perlu membuat ulang voice pack.
+- [ ] **Lisensi ElevenLabs paket gratis**: periksa ketentuan ElevenLabs (atribusi/penggunaan komersial) sebelum merilis audio Adam yang dibuat dengan paket gratis.
 - [ ] **Layar TV**: TV hanya membaca (fase dimajukan oleh request pemain, bukan TV).
-- [ ] **ONUW**: pemenang tidak dihitung otomatis (kartu fisik bisa tertukar di malam hari); aplikasi hanya mencatat siapa yang tertunjuk.
 - [ ] **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
-- [ ] **File `werewolf-tts-voice-pack.zip`** masih ada di root proyek (tidak di-commit). Isinya sudah dilebur; tunggu konfirmasi untuk dihapus.
-- [ ] **Push dan merge** ke `main` menunggu persetujuan.
 
 ### Ditambahkan
+
+- **ONUW: pemenang dihitung otomatis.** Setelah tunjuk, pemain membalik kartu dan mengoreksi kartu terakhirnya (bisa tertukar oleh Robber/Troublemaker/Drunk); Hunter yang mati diminta menunjuk korbannya; aplikasi lalu menampilkan tim pemenang dan setiap pemain yang menang (`engine/onuw/winner.ts`, aturan resmi termasuk Tanner, Minion tanpa Werewolf, dan "tidak ada yang mati").
+- **Pilihan suara dengan radio button** di `/games/werewolf/suara`: Microsoft Ardi (menyebut nama pemain) atau ElevenLabs Adam (emosi, tanpa nama), efek dramatis mati/nyala, lalu aksi "Dengarkan" dan "Simpan untuk perangkat ini". Pilihan disimpan di perangkat narator (HP host/TV) dan dipakai di game online dan ONUW lokal. ElevenLabs hanya memakai suara Adam.
+- **Subagent Claude Code** di `.claude/agents/` (code-searcher, implementer, test-runner, reviewer) dan tabel routing model di `AGENTS.md`.
 
 - **Werewolf: spesifikasi** (`src/games/werewolf/docs/`) dari zip PRD, diadaptasi ke stack PartyQuest (Postgres, SSE, cookie tamu, folder per game).
 - **Werewolf: engine aturan** (Fase 1): Classic (giliran malam tetap, Guardian Angel/Doctor, Seer, Witch, Cupid, Cursed, Disease, Hunter, Tanner, Lovers, Mayor, voting terbuka dengan pembelaan/voting ulang, AFK + promosi Villager, 2 strike) dan ONUW (validasi deck N + 3, urutan narasi malam).
