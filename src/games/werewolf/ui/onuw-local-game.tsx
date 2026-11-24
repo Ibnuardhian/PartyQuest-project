@@ -4,17 +4,21 @@ import "./werewolf.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
+import { GameButton, GameCard, GameCardHeading, StepperGrid, StepperTile, ThemedSlider, ValidationBanner, type TileTone } from "@/components/ui/game-ui";
 import { ONUW_MAX_PLAYERS, ONUW_MIN_PLAYERS, ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { deckSize, ONUW_CENTER_CARDS, validateOnuwSelections, type OnuwDeck, type OnuwMismatch } from "@/games/werewolf/engine/onuw/deck";
 import { buildOnuwNightSequence, ONUW_ROLE_GAP_SECONDS } from "@/games/werewolf/engine/onuw/night-sequence";
 import { onuwFinalCardOptions, validOnuwFinalCards } from "@/games/werewolf/engine/onuw/final-cards";
-import { onuwOutcome, pendingHunters, type OnuwOutcome } from "@/games/werewolf/engine/onuw/winner";
+import { onuwOutcome, onuwTeam, pendingHunters, type OnuwOutcome, type OnuwTeam } from "@/games/werewolf/engine/onuw/winner";
 import { adjustOnuwDeck, onuwDeckRoles, ONUW_ROLE_MAX, recommendedOnuwDeck, validateOnuwNames } from "@/games/werewolf/engine/onuw/setup";
 import { WEREWOLF_SETUP_PATH } from "@/games/werewolf/paths";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
 import { loadVoiceConfig, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
 import { onuwVoice, type VoiceLine } from "@/games/werewolf/voice/templates";
 import { applyVoiceChoice, loadVoiceChoice } from "@/games/werewolf/voice/voice-choice";
+
+const TEAM_TONE: Record<OnuwTeam, TileTone> = { werewolf: "danger", village: "ally", tanner: "neutral" };
+const TEAM_LABEL: Record<OnuwTeam, string> = { werewolf: "Kubu Werewolf", village: "Kubu warga", tanner: "Tanner (sendiri)" };
 
 type Phase = "setup" | "register" | "handoff" | "mismatch" | "repick" | "ready" | "night" | "day" | "vote" | "reveal" | "hunter" | "end";
 
@@ -218,25 +222,14 @@ export default function OnuwLocalGame() {
     <section className="ww-game">
       <div className="ww-topline"><Link className="text-button" href={WEREWOLF_SETUP_PATH}>← Werewolf</Link><span>MODE 2 · ONE NIGHT</span></div>
 
-      {phase === "setup" && <div className="ww-panel">
-        <span className="section-kicker">DECK KARTU FISIK</span>
-        <h2>Atur deck</h2>
-        <p className="ww-muted">Masukkan jumlah pemain dan kartu yang benar-benar dipakai: {playerCount} kartu dibagikan dan {ONUW_CENTER_CARDS} kartu tertutup di tengah meja.</p>
-        <label className="ww-label" htmlFor="onuw-players">Jumlah pemain <span>{playerCount}</span></label>
-        <input id="onuw-players" type="range" min={ONUW_MIN_PLAYERS} max={ONUW_MAX_PLAYERS} value={playerCount} onChange={(event) => changePlayers(Number(event.target.value))} />
-        <ul className="ww-onuw-deck">{ONUW_ROLES.map((role) => <li key={role}>
-          <span>{ONUW_ROLE_INFO[role].name}</span>
-          <span className="ww-onuw-stepper">
-            <button type="button" aria-label={`Kurangi ${ONUW_ROLE_INFO[role].name}`} disabled={(deck[role] ?? 0) === 0} onClick={() => setDeck(adjustOnuwDeck(deck, role, -1))}>−</button>
-            <strong>{deck[role] ?? 0}</strong>
-            <button type="button" aria-label={`Tambah ${ONUW_ROLE_INFO[role].name}`} disabled={(deck[role] ?? 0) >= ONUW_ROLE_MAX[role]} onClick={() => setDeck(adjustOnuwDeck(deck, role, 1))}>+</button>
-          </span>
-        </li>)}</ul>
-        <p className={total === target ? "ww-muted" : "ww-warning"}>{total} dari {target} kartu{total === target ? " ✓" : ` — harus tepat ${target}`}</p>
-        <label className="ww-label" htmlFor="onuw-discussion">Diskusi siang <span>{discussionMinutes} menit</span></label>
-        <input id="onuw-discussion" type="range" min={1} max={10} value={discussionMinutes} onChange={(event) => setDiscussionMinutes(Number(event.target.value))} />
-        <button type="button" className="ww-button ww-primary" disabled={total !== target} onClick={startRegistration}>Mulai pendaftaran (oper HP)</button>
-      </div>}
+      {phase === "setup" && <GameCard aria-labelledby="onuw-deck-title">
+        <GameCardHeading kicker="DECK KARTU FISIK" title="Atur deck" id="onuw-deck-title" description={<>Masukkan jumlah pemain dan kartu yang benar-benar dipakai: {playerCount} kartu dibagikan dan {ONUW_CENTER_CARDS} kartu tertutup di tengah meja.</>} />
+        <ThemedSlider id="onuw-players" label="Jumlah pemain" value={playerCount} min={ONUW_MIN_PLAYERS} max={ONUW_MAX_PLAYERS} onChange={changePlayers} />
+        <StepperGrid label="Kartu di deck">{ONUW_ROLES.map((role) => <StepperTile key={role} label={ONUW_ROLE_INFO[role].name} count={deck[role] ?? 0} max={ONUW_ROLE_MAX[role]} tone={TEAM_TONE[onuwTeam(role)]} toneLabel={TEAM_LABEL[onuwTeam(role)]} onChange={(next) => setDeck(adjustOnuwDeck(deck, role, next > (deck[role] ?? 0) ? 1 : -1))} />)}</StepperGrid>
+        <ValidationBanner status={total === target ? "ok" : "warn"} detail={total === target ? "Siap dibagikan" : total < target ? `Tambah ${target - total} kartu lagi` : `Kurangi ${total - target} kartu`}>{total} dari {target} kartu</ValidationBanner>
+        <ThemedSlider id="onuw-discussion" label="Diskusi siang" value={discussionMinutes} min={1} max={10} unit="menit" onChange={setDiscussionMinutes} />
+        <GameButton variant="primary" wide type="button" disabled={total !== target} onClick={startRegistration}>Mulai pendaftaran (oper HP)</GameButton>
+      </GameCard>}
 
       {phase === "register" && <div className="ww-panel">
         <span className="section-kicker">PEMAIN {current + 1} DARI {playerCount}</span>

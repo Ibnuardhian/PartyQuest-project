@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { GameButton, GameField, StepperGrid, StepperTile, ThemedSlider, ValidationBanner, type TileTone } from "@/components/ui/game-ui";
 import type { RoomSettingsEditorProps } from "@/games/types";
 import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, CLASSIC_ROLES, type ClassicRole } from "@/games/werewolf/contract";
 import { CLASSIC_ROLE_INFO, recommendedComposition } from "@/games/werewolf/roles";
 import { DEFAULT_ROOM_SETTINGS, type WerewolfRoomSettings } from "@/games/werewolf/server/online";
 
 type Roles = Partial<Record<ClassicRole, number>>;
+
+const ALIGNMENT_TONE: Record<string, TileTone> = { WEREWOLF: "danger", VILLAGER: "ally", INDEPENDENT: "neutral" };
+const ALIGNMENT_LABEL: Record<string, string> = { WEREWOLF: "Kubu Werewolf", VILLAGER: "Kubu warga", INDEPENDENT: "Independen" };
 
 function recommended(playerCount: number): Roles {
   const count = Math.min(CLASSIC_MAX_PLAYERS, Math.max(CLASSIC_MIN_PLAYERS, playerCount));
@@ -41,31 +45,24 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
     }
   }
 
-  return <div className="ww-editor">
+  return <div className="ww-editor gx-stack">
     <label className="ww-check"><input type="checkbox" checked={auto} onChange={(event) => setAuto(event.target.checked)} /> Komposisi otomatis sesuai jumlah pemain</label>
-    <ul className="ww-composer">{CLASSIC_ROLES.map((role) => {
+    <StepperGrid label="Komposisi role">{CLASSIC_ROLES.map((role) => {
       const count = preview[role] ?? 0;
       if (auto && count === 0) return null;
-      return <li key={role}>
-        <span>{CLASSIC_ROLE_INFO[role].name}{CLASSIC_ROLE_INFO[role].twist ? <small> twist</small> : null}</span>
-        {auto ? <strong>{count}</strong> : <span className="ww-stepper">
-          <button type="button" aria-label={`Kurangi ${CLASSIC_ROLE_INFO[role].name}`} disabled={disabled || count === 0} onClick={() => change(role, -1)}>−</button>
-          <strong>{count}</strong>
-          <button type="button" aria-label={`Tambah ${CLASSIC_ROLE_INFO[role].name}`} disabled={disabled || count >= CLASSIC_ROLE_INFO[role].max} onClick={() => change(role, 1)}>+</button>
-        </span>}
-      </li>;
-    })}</ul>
-    {!auto && <p className={total === playerCount ? "ww-muted" : "ww-warning"}>{total} role untuk {playerCount} pemain{total === playerCount ? "" : " — harus sama saat permainan dimulai"}.</p>}
-    {!auto && <button type="button" className="ww-button" disabled={disabled} onClick={() => setRoles(recommended(playerCount))}>Pakai rekomendasi</button>}
-    <label className="ww-label" htmlFor="ww-dead">Pemain tereliminasi</label>
-    <select id="ww-dead" className="ww-input" value={deadRevealMode} onChange={(event) => setDeadRevealMode(event.target.value as WerewolfRoomSettings["deadRevealMode"])}>
-      <option value="KEEP_HIDDEN">Role tetap rahasia sampai akhir</option>
-      <option value="SPECTATOR_REVEAL">Bisa melihat semua role (penonton)</option>
-    </select>
-    <label className="ww-label" htmlFor="ww-night">Giliran malam per role <span>{nightTurnSeconds} detik</span></label>
-    <input id="ww-night" type="range" min={10} max={30} step={1} value={nightTurnSeconds} onChange={(event) => setNightTurnSeconds(Number(event.target.value))} />
-    <label className="ww-label" htmlFor="ww-day">Diskusi siang <span>{Math.round(dayDiscussionSeconds / 60)} menit</span></label>
-    <input id="ww-day" type="range" min={60} max={600} step={60} value={dayDiscussionSeconds} onChange={(event) => setDayDiscussionSeconds(Number(event.target.value))} />
-    <button type="button" className="ww-button ww-primary" disabled={disabled || saving} onClick={() => void save()}>{saving ? "Menyimpan…" : "Simpan pengaturan"}</button>
+      const alignment = CLASSIC_ROLE_INFO[role].alignment;
+      return <StepperTile key={role} label={CLASSIC_ROLE_INFO[role].name} badge={CLASSIC_ROLE_INFO[role].twist ? "twist" : undefined} count={count} max={CLASSIC_ROLE_INFO[role].max} readOnly={auto} disabled={disabled} tone={ALIGNMENT_TONE[alignment]} toneLabel={ALIGNMENT_LABEL[alignment]} onChange={(next) => change(role, next - count)} />;
+    })}</StepperGrid>
+    {!auto && <ValidationBanner status={total === playerCount ? "ok" : "warn"} detail={total === playerCount ? "Cocok dengan jumlah pemain" : total < playerCount ? `Tambah ${playerCount - total} role` : `Kurangi ${total - playerCount} role`}>{total} role untuk {playerCount} pemain</ValidationBanner>}
+    {!auto && <GameButton type="button" disabled={disabled} onClick={() => setRoles(recommended(playerCount))}>Pakai rekomendasi</GameButton>}
+    <GameField label="Pemain tereliminasi" htmlFor="ww-dead">
+      <select id="ww-dead" className="gx-input gx-select" value={deadRevealMode} onChange={(event) => setDeadRevealMode(event.target.value as WerewolfRoomSettings["deadRevealMode"])}>
+        <option value="KEEP_HIDDEN">Role tetap rahasia sampai akhir</option>
+        <option value="SPECTATOR_REVEAL">Bisa melihat semua role (penonton)</option>
+      </select>
+    </GameField>
+    <ThemedSlider id="ww-night" label="Giliran malam per role" value={nightTurnSeconds} min={10} max={30} unit="detik" onChange={setNightTurnSeconds} />
+    <ThemedSlider id="ww-day" label="Diskusi siang" value={Math.round(dayDiscussionSeconds / 60)} min={1} max={10} unit="menit" onChange={(minutes) => setDayDiscussionSeconds(minutes * 60)} />
+    <GameButton variant="primary" wide type="button" disabled={disabled || saving} onClick={() => void save()}>{saving ? "Menyimpan…" : "Simpan pengaturan"}</GameButton>
   </div>;
 }

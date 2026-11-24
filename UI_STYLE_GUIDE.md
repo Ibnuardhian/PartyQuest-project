@@ -44,6 +44,15 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 - Kartu privat Pass-and-Play menampilkan kata saja; jangan menampilkan label role sebelum permainan selesai. Tetap gunakan hand-off sebelum membuka kartu.
 - Online Room tetap memakai clue bergiliran dan voting online dengan state server dan deadline server.
 
+## Kit UI game (landing & setup)
+
+- Komponen bersama ada di `src/components/ui/game-ui.tsx` (platform, tanpa aturan game): `GameCard`, `GameCardSection`, `GameCardHeading`, `GameField`, `FilledInput`, `GameButton`/`GameLinkButton`, `AccentPill`, `StepperGrid`/`StepperTile`, `ThemedSlider`, `ValidationBanner`.
+- Tema game cukup mengisi `--game-accent` dan `--game-accent-ink` (warna teks di atas aksen), misalnya Werewolf `#38BDF8`/`#020617`. Tint, focus ring, isian slider, dan tombol utama diturunkan dari aksen dengan `color-mix`.
+- Tiga tingkat permukaan: kanvas `#050914`, kartu `#0B1224` (sudut 16 px), kontrol terbenam `#060B17`. Hindari tampilan "semua garis tipis": input terisi, tombol utama solid aksen, tombol sekunder solid slate.
+- Tile counter: redup saat 0, ber-border aksen saat > 0; titik kubu merah (lawan), aksen (kawan), kuning (netral) selalu punya label aksesibel. Tombol stepper 36 px.
+- Validasi memakai `ValidationBanner` (hijau saat cocok, kuning dengan jumlah yang kurang/lebih); tombol utama nonaktif sampai valid.
+- Grid tile mengikuti lebar wadahnya (`auto-fill`, min 240 px), jadi satu kolom di ponsel dan di sidebar lobi yang sempit.
+
 ## Tema per game
 
 - Setiap game memiliki satu tema yang dipakai konsisten dari kartu katalog, halaman setup, lobi, hingga layar dalam game. Modul game menyediakan `themeClass` dan lobi platform menerapkannya; jangan menampilkan layar game dengan tema hijau platform.

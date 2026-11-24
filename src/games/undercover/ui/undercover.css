@@ -1,6 +1,6 @@
 /* Undercover: Classic Noir / dossier theme. Owned by the Undercover game folder. */
 body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
-.undercover-theme { --ink: #e5e0d8; --muted: #aca69d; --paper: #0a0a0a; --green: #8b0000; --green-dark: #640000; --line: #34312e; --mint: #222222; color: var(--ink); background: transparent; }
+.undercover-theme { --game-accent: #b22222; --game-accent-ink: #f5f0e8; --ink: #e5e0d8; --muted: #aca69d; --paper: #0a0a0a; --green: #8b0000; --green-dark: #640000; --line: #34312e; --mint: #222222; color: var(--ink); background: transparent; }
 .undercover-theme::before { opacity: .55; }
 .catalog-wrap, .hero-grid, .game-wrap { animation: undercover-view-enter .58s cubic-bezier(.2,.72,.25,1) both; }
 @keyframes undercover-view-enter { from { opacity: 0; transform: translateY(12px); filter: saturate(.55); } to { opacity: 1; transform: translateY(0); filter: saturate(1); } }

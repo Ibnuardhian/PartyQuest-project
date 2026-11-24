@@ -15,6 +15,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Kit UI game** (`src/components/ui/game-ui.tsx`) dengan token `--game-accent` dan tiga tingkat permukaan: kartu terangkat, input terisi, tombol utama solid aksen, tombol sekunder solid, tile counter role dengan titik kubu dan stepper 36 px, slider bertema dengan nilai dalam pill, dan banner validasi. Dipakai di halaman setup Werewolf, layar "Atur deck" ONUW (2 kolom di desktop, 1 di ponsel), dan editor komposisi role di lobi.
 - **Halaman setup Werewolf dan Undercover**: tombol "Main ONUW" tidak lagi menimpa teks; kartu kanan memakai permukaan terangkat, input terisi dengan fokus cyan, tombol utama solid (biru langit), tombol sekunder solid (slate) yang menyala saat kode room lengkap, tautan "Coba suara moderator" berbentuk pill dengan ikon; Undercover mendapat ritme jarak, kode room mono, dan tombol Gabung merah saat kode lengkap. Responsif sampai lebar 375 px.
 - **ONUW**: jeda hening 3 detik di antara giliran role malam; baris pagi kini memerintahkan "Cukup! Berhenti menggesek kartu." setelah buka mata (Microsoft dan ElevenLabs Adam dibuat ulang).
 - **ONUW: pemenang dihitung otomatis.** Setelah tunjuk, pemain membalik kartu dan mengoreksi kartu terakhirnya (bisa tertukar oleh Robber/Troublemaker/Drunk); Hunter yang mati diminta menunjuk korbannya; aplikasi lalu menampilkan tim pemenang dan setiap pemain yang menang (`engine/onuw/winner.ts`, aturan resmi termasuk Tanner, Minion tanpa Werewolf, dan "tidak ada yang mati").
