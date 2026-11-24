@@ -47,6 +47,40 @@ docker compose -f compose.prod.yaml --env-file .env.production up -d --build
 
 Migrasi baru dijalankan otomatis sebelum `web` dimulai ulang.
 
+## Deploy otomatis dengan GitHub Actions
+
+`.github/workflows/deploy.yml` berjalan di setiap push ke `main` (atau manual lewat **Actions → Verify and deploy → Run workflow**):
+
+1. **verify**: PostgreSQL sementara, `npm ci`, migrasi, typecheck, lint, semua test (termasuk test integrasi database), dan build image produksi.
+2. **deploy** (hanya jika verify lolos dan variabel `DEPLOY_ENABLED` = `true`): SSH ke VPS, `git fetch`, checkout **commit yang sama** yang sudah diuji, lalu `docker compose -f compose.prod.yaml --env-file .env.production up -d --build`. Migrasi berjalan otomatis sebelum `web` dimulai ulang. Terakhir health check ke `DEPLOY_URL`.
+
+Penyiapan sekali saja:
+
+1. **Di VPS**, buat user deploy yang boleh menjalankan Docker, lalu clone repo ke folder aplikasi dan isi `.env.production` (langkah 2 di atas):
+   ```bash
+   adduser --disabled-password --gecos "" deploy && usermod -aG docker deploy
+   mkdir -p /opt/partyquest && chown deploy:deploy /opt/partyquest
+   su - deploy -c "git clone https://github.com/<akun>/<repo>.git /opt/partyquest"
+   ```
+   Repo privat: buat deploy key **read-only** di VPS (`ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N ""` sebagai user `deploy`), tambahkan isi `.pub` di GitHub **Settings → Deploy keys**, dan clone dengan URL `git@github.com:<akun>/<repo>.git`.
+2. **Kunci SSH untuk Actions** (di komputer Anda): `ssh-keygen -t ed25519 -f partyquest_actions -N "" -C github-actions`. Tambahkan isi `partyquest_actions.pub` ke `/home/deploy/.ssh/authorized_keys` di VPS.
+3. **Host key VPS**: `ssh-keyscan -p 22 IP_VPS` (salin seluruh outputnya). Bandingkan dengan sidik jari di VPS bila perlu: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`.
+4. Di GitHub **Settings → Environments → New environment `production`** (opsional: aktifkan *Required reviewers* agar setiap deploy minta persetujuan), isi:
+
+   | Jenis | Nama | Isi |
+   |---|---|---|
+   | Secret | `VPS_HOST` | IP atau hostname VPS |
+   | Secret | `VPS_USER` | `deploy` |
+   | Secret | `VPS_SSH_KEY` | isi file `partyquest_actions` (kunci privat) |
+   | Secret | `VPS_KNOWN_HOSTS` | output `ssh-keyscan` |
+   | Variable | `VPS_PORT` | opsional, default `22` |
+   | Variable | `VPS_APP_DIR` | opsional, default `/opt/partyquest` |
+   | Variable | `DEPLOY_URL` | opsional, misalnya `https://partyquest.domainanda.com` (untuk health check) |
+
+5. Di **Settings → Secrets and variables → Actions → Variables** (tingkat repo), buat `DEPLOY_ENABLED` = `true`. Sebelum itu, workflow hanya menjalankan verify.
+
+Rahasia aplikasi (`POSTGRES_PASSWORD`, `GUEST_SESSION_SECRET`, `ELEVENLABS_API_KEY`) tetap hanya di `.env.production` di VPS; workflow tidak pernah membaca atau mengirimnya. Hapus kunci `partyquest_actions` dari komputer Anda setelah disalin ke GitHub.
+
 ## Operasional
 
 - Log: `docker compose -f compose.prod.yaml --env-file .env.production logs -f web`

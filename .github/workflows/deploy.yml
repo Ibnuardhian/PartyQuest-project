@@ -1,0 +1,116 @@
+# Verify every push to main, then deploy that exact commit to the VPS with Docker Compose.
+# Setup (once): see deploy/HOSTINGER.md, section "Deploy otomatis dengan GitHub Actions".
+name: Verify and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: partyquest
+          POSTGRES_USER: partyquest
+          POSTGRES_PASSWORD: ci_only_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U partyquest -d partyquest"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://partyquest:ci_only_password@localhost:5432/partyquest
+      GUEST_SESSION_SECRET: ci-only-guest-session-secret-not-used-in-production
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Build the production image
+        run: docker build --target runner -t partyquest-web:ci .
+
+  deploy:
+    needs: verify
+    # Off until the repository variable DEPLOY_ENABLED is "true" (after the VPS and secrets are ready).
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      APP_DIR: ${{ vars.VPS_APP_DIR || '/opt/partyquest' }}
+      DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+    steps:
+      - name: Check deploy settings
+        run: |
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ]; then
+            echo "::error::Set the VPS_HOST, VPS_USER, VPS_SSH_KEY and VPS_KNOWN_HOSTS secrets (see deploy/HOSTINGER.md)."
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned host key: the job refuses to connect if the server key changes.
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy the verified commit
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$VPS_USER@$VPS_HOST" bash -s -- "$APP_DIR" "$GITHUB_SHA" <<'REMOTE'
+          set -euo pipefail
+          app_dir="$1"
+          sha="$2"
+          cd "$app_dir"
+          test -f .env.production || { echo ".env.production is missing in $app_dir"; exit 1; }
+          git fetch --prune origin main
+          # Deploy exactly the commit that passed verification; .env.production is untracked and kept.
+          git checkout --force --detach "$sha"
+          docker compose -f compose.prod.yaml --env-file .env.production up -d --build --remove-orphans
+          docker compose -f compose.prod.yaml --env-file .env.production ps
+          docker image prune -f >/dev/null
+          echo "Deployed $sha"
+          REMOTE
+
+      - name: Health check
+        if: env.DEPLOY_URL != ''
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null "$DEPLOY_URL/api/games/werewolf/voice-config"; then
+              echo "Healthy: $DEPLOY_URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::$DEPLOY_URL did not answer after deploy."
+          exit 1
+
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
