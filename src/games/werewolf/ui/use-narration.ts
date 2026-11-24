@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadVoiceConfig, microsoftClipResolver, Narrator, requestWakeLock } from "@/games/werewolf/voice/narrator";
 import { classicVoice, VOICE_PACK, type VoiceLine } from "@/games/werewolf/voice/templates";
+import { applyVoiceChoice, loadVoiceChoice } from "@/games/werewolf/voice/voice-choice";
 import { narrationKey, narrationLines, type NarrationKey } from "@/games/werewolf/ui/narration";
 import type { WerewolfView } from "@/games/werewolf/ui/labels";
 
@@ -28,14 +29,13 @@ export function useNarration(publicView: WerewolfView["public"] | null, sessionI
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;
-    // Named lines come from the server (ElevenLabs when configured, else Microsoft Edge Neural).
-    narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts", { sessionId }));
+    // Named lines (Microsoft choice) are voiced by the server with Microsoft Edge Neural.
+    narrator.setClipResolver(microsoftClipResolver("/api/games/werewolf/tts", { sessionId, provider: "microsoft" }));
     narrator.setEffects(VOICE_PACK.dramaticEffects);
     void loadVoiceConfig().then((config) => {
-      if (cancelled || !config) return;
-      narrator.setStaticBase(config.staticBase);
-      narrator.setNamedLines(config.namedLines);
-      narrator.setEffects(config.dramaticEffects);
+      if (cancelled) return;
+      // The voice this device saved on /games/werewolf/suara, else the server default.
+      applyVoiceChoice(narrator, loadVoiceChoice(config));
     });
     return () => { cancelled = true; narrator.cancel(); };
   }, [narrator, sessionId]);

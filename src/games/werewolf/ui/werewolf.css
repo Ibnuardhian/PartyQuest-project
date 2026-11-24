@@ -205,3 +205,23 @@ body:has(.ww-is-night) { background: #000; }
 .ww-vote-seat.is-dead { opacity: .35; }
 @media (max-width: 760px) { .ww-vote-reveal { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .ww-vote-arrow { animation: none; stroke-dashoffset: 0; opacity: .85; } }
+
+/* Voice page: radio choices with a description, then explicit actions. */
+.ww-radio-group { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; }
+.ww-radio-group legend { margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ww-muted); }
+.ww-radio { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--ww-line); border-radius: 6px; cursor: pointer; }
+.ww-radio:has(input:checked) { border-color: var(--ww-accent-solid); background: #0ea5e914; }
+.ww-radio:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.ww-radio input { margin-top: 3px; accent-color: var(--ww-accent-solid); }
+.ww-radio span { display: grid; gap: 2px; }
+.ww-radio strong { color: #e2e8f0; font-weight: 600; }
+.ww-radio small { color: var(--ww-text); }
+.ww-radio input:focus-visible { outline: 2px solid var(--ww-accent-solid); outline-offset: 2px; }
+.ww-details { margin-top: 14px; }
+.ww-details > summary { cursor: pointer; color: var(--ww-text); }
+.ww-details > summary h2 { display: inline; }
+
+/* ONUW results: final card per player, winners highlighted with a text label too. */
+.ww-final-card { max-width: 220px; margin: 0; }
+.ww-role-list li.is-winner { border-color: var(--ww-accent-solid); background: #0ea5e914; }
+.ww-role-list li.is-winner strong { color: #e2e8f0; }

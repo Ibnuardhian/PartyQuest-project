@@ -9,6 +9,7 @@ import { buildOnuwNightSequence } from "@/games/werewolf/engine/onuw/night-seque
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 import { loadVoiceConfig, microsoftClipResolver, Narrator, requestWakeLock, type ClipResolver, type VoiceConfig } from "@/games/werewolf/voice/narrator";
+import { loadVoiceChoice, saveVoiceChoice } from "@/games/werewolf/voice/voice-choice";
 import { ACTIVE_PRESET, classicVoice, onuwVoice, VOICE_PACK, VOICE_PRESETS, type VoiceLine, type VoicePresetId } from "@/games/werewolf/voice/templates";
 
 type Step = { line?: VoiceLine; wait?: number; preset?: VoicePresetId; label?: string };
@@ -41,10 +42,18 @@ export default function VoicePilot() {
   const resolvers = useRef(new Map<string, ClipResolver>());
   const [provider, setProvider] = useState<"microsoft" | "elevenlabs">("microsoft");
   const [config, setConfig] = useState<VoiceConfig | null>(null);
+  /** true = saved, false = unsaved change, null = storage refused. */
+  const [saved, setSaved] = useState<boolean | null>(false);
 
   useEffect(() => {
     let cancelled = false;
-    void loadVoiceConfig().then((loaded) => { if (!cancelled) setConfig(loaded); });
+    void loadVoiceConfig().then((loaded) => {
+      if (cancelled) return;
+      setConfig(loaded);
+      const choice = loadVoiceChoice(loaded);
+      setProvider(choice.provider);
+      setEffects(choice.effects);
+    });
     return () => { cancelled = true; narrator.cancel(); };
   }, [narrator]);
   useEffect(() => { narrator.setEffects(effects); }, [narrator, effects]);
@@ -166,29 +175,41 @@ export default function VoicePilot() {
       <Link className="text-button" href="/games/werewolf">← Kembali ke Werewolf</Link>
       <span className="section-kicker">WEREWOLF · PILOT SUARA</span>
       <h1>Moderator <em>suara.</em></h1>
-      <p className="ww-muted">Semua baris memakai Microsoft Edge Neural. {VOICE_PACK.items.length} baris tanpa nama sudah berupa MP3 statis dari voice pack ({VOICE_PACK.voice}, kecepatan {VOICE_PACK.rate}, nada {VOICE_PACK.pitch}). Empat pengumuman siang yang menyebut nama pemain dibuat server saat dibutuhkan dengan suara yang sama; jika gagal, dipakai MP3 umum lalu suara browser.</p>
+      <p className="ww-muted">Pilih suara di bawah, dengarkan, lalu simpan di HP host atau TV yang akan menjadi narator. Kedua pilihan memakai {VOICE_PACK.items.length} MP3 siap pakai; jika gagal, dipakai suara browser.</p>
 
       <div className="ww-grid">
         <section className="ww-panel" aria-labelledby="voice-settings">
-          <h2 id="voice-settings">Pengaturan</h2>
-          <label className="ww-label" htmlFor="provider">Penyedia suara</label>
-          <select id="provider" className="ww-input" value={provider} onChange={(event) => setProvider(event.target.value as "microsoft" | "elevenlabs")}>
-            <option value="microsoft">Microsoft Edge Neural (gratis)</option>
-            <option value="elevenlabs" disabled={!config?.elevenLabsConfigured}>ElevenLabs{config?.elevenLabsConfigured ? (config.elevenLabsPackReady ? " (voice pack siap)" : " (dibuat saat diputar)") : " — isi ELEVENLABS_API_KEY di .env"}</option>
-          </select>
-          {provider === "elevenlabs" && !config?.elevenLabsPackReady && <p className="ww-muted">Voice pack ElevenLabs belum dibuat; setiap baris dibuat saat diputar dan memakai kuota akun. Buat sekaligus dengan <code>npm run voice:generate -- --provider elevenlabs</code>.</p>}
-          <label className="ww-label" htmlFor="ms-voice">Suara Microsoft</label>
-          <select id="ms-voice" className="ww-input" value={microsoftVoice} onChange={(event) => setMicrosoftVoice(event.target.value)}>
-            {MICROSOFT_VOICES.map((voice) => <option key={voice.id} value={voice.id}>{voice.label}</option>)}
-          </select>
-          <label className="ww-label" htmlFor="preset">Karakter suara</label>
-          <select id="preset" className="ww-input" value={preset} disabled={provider === "elevenlabs"} onChange={(event) => setPreset(event.target.value as VoicePresetId)}>
-            {PRESET_IDS.map((id) => <option key={id} value={id}>{VOICE_PRESETS[id].label} · kecepatan {VOICE_PRESETS[id].rate}, nada {VOICE_PRESETS[id].pitch}{id === ACTIVE_PRESET ? " (dipakai voice pack)" : ""}</option>)}
-          </select>
-          <label className="ww-check"><input type="checkbox" checked={effects} onChange={(event) => setEffects(event.target.checked)} /> Efek dramatis (gema ruangan + bass tebal)</label>
-          <button className="ww-button" onClick={() => safeRun(() => PRESET_IDS.map((id) => ({ line: classicVoice.nightIntro(), preset: id, label: VOICE_PRESETS[id].label, wait: 1 })))}>Bandingkan semua preset</button>
-          <button className="ww-button ww-primary" onClick={() => void activate()}>{unlocked ? "Suara aktif ✓" : "Aktifkan suara"}</button>
+          <h2 id="voice-settings">Pilih suara moderator</h2>
+          <p className="ww-muted">Pilihan disimpan di perangkat ini dan dipakai saat perangkat ini menjadi narator (HP host atau layar TV).</p>
+          <fieldset className="ww-radio-group">
+            <legend>1 · Suara</legend>
+            <label className="ww-radio"><input type="radio" name="voice-provider" checked={provider === "microsoft"} onChange={() => { setProvider("microsoft"); setSaved(false); }} /><span><strong>Microsoft · Ardi</strong><small>Gratis. Pengumuman siang menyebut nama pemain.</small></span></label>
+            <label className="ww-radio"><input type="radio" name="voice-provider" checked={provider === "elevenlabs"} disabled={!config?.elevenLabsPackReady} onChange={() => { setProvider("elevenlabs"); setSaved(false); }} /><span><strong>ElevenLabs · Adam</strong><small>{config?.elevenLabsPackReady ? "Lebih dramatis dengan emosi (sedih, tawa jahat). Tidak menyebut nama pemain." : "Voice pack Adam belum tersedia di server ini."}</small></span></label>
+          </fieldset>
+          <fieldset className="ww-radio-group">
+            <legend>2 · Efek dramatis</legend>
+            <label className="ww-radio"><input type="radio" name="voice-effects" checked={!effects} onChange={() => { setEffects(false); setSaved(false); }} /><span><strong>Mati</strong><small>Suara bersih.</small></span></label>
+            <label className="ww-radio"><input type="radio" name="voice-effects" checked={effects} onChange={() => { setEffects(true); setSaved(false); }} /><span><strong>Nyala</strong><small>Gema ruangan dan bass tebal.</small></span></label>
+          </fieldset>
+          <div className="ww-actions">
+            <button className="ww-button" onClick={() => safeRun(() => [{ line: classicVoice.nightIntro(), wait: 1 }, { line: classicVoice.dawnKills([names.victim.trim() || "Budi"]) }])}>▶ Dengarkan pilihan ini</button>
+            <button className="ww-button ww-primary" onClick={() => setSaved(saveVoiceChoice({ provider, effects }) ? true : null)}>{saved ? "Tersimpan ✓" : "Simpan untuk perangkat ini"}</button>
+          </div>
+          {saved === null && <p className="ww-alert" role="alert">Browser ini menolak penyimpanan lokal; pilihan tidak tersimpan.</p>}
           <label className="ww-check"><input type="checkbox" checked={quick} onChange={(event) => setQuick(event.target.checked)} /> Jeda singkat untuk uji cepat</label>
+          <details className="ww-details">
+            <summary>Eksperimen Microsoft (hanya untuk mendengar, belum dipakai di game)</summary>
+            <fieldset className="ww-radio-group">
+              <legend>Karakter suara</legend>
+              {PRESET_IDS.map((id) => <label key={id} className="ww-radio"><input type="radio" name="voice-preset" checked={preset === id} disabled={provider === "elevenlabs"} onChange={() => setPreset(id)} /><span><strong>{VOICE_PRESETS[id].label}{id === ACTIVE_PRESET ? " · dipakai game" : ""}</strong><small>kecepatan {VOICE_PRESETS[id].rate}, nada {VOICE_PRESETS[id].pitch}</small></span></label>)}
+            </fieldset>
+            <fieldset className="ww-radio-group">
+              <legend>Penutur</legend>
+              {MICROSOFT_VOICES.map((voice) => <label key={voice.id} className="ww-radio"><input type="radio" name="voice-speaker" checked={microsoftVoice === voice.id} disabled={provider === "elevenlabs"} onChange={() => setMicrosoftVoice(voice.id)} /><span><strong>{voice.label}</strong></span></label>)}
+            </fieldset>
+            <button className="ww-button" disabled={provider === "elevenlabs"} onClick={() => safeRun(() => PRESET_IDS.map((id) => ({ line: classicVoice.nightIntro(), preset: id, label: VOICE_PRESETS[id].label, wait: 1 })))}>▶ Bandingkan semua karakter</button>
+            <p className="ww-muted">Game memakai voice pack {VOICE_PRESETS[ACTIVE_PRESET].label}. Untuk mengganti karakter di game, buat ulang pack: <code>TTS_PRESET=&lt;karakter&gt; npm run voice:generate -- --force</code>.</p>
+          </details>
         </section>
 
         <section className="ww-panel" aria-labelledby="named-lines">
@@ -214,8 +235,8 @@ export default function VoicePilot() {
         {error && <p className="ww-alert" role="alert">{error}</p>}
       </section>
 
-      <section className="ww-panel" aria-labelledby="bilingual">
-        <h2 id="bilingual">Pelafalan nama role (Microsoft)</h2>
+      <details className="ww-panel ww-details" aria-labelledby="bilingual">
+        <summary><h2 id="bilingual">Sampel lain: pelafalan nama role (Microsoft)</h2></summary>
         <p className="ww-muted">Bandingkan cara nama role diucapkan. <strong>Sekarang</strong>: Ardi membaca semuanya. <strong>Segmen</strong>: Ardi untuk bahasa Indonesia, {BILINGUAL.englishVoice} untuk nama role, digabung jadi satu MP3. <strong>Multibahasa</strong>: {BILINGUAL.multilingualVoice} membaca seluruh kalimat.</p>
         <ul className="ww-lines">{BILINGUAL_SAMPLES.map((item) => <li key={item.key}>
           <span className="ww-sample-buttons">
@@ -244,7 +265,7 @@ export default function VoicePilot() {
           </span>
           <span><code>Uji emosi ElevenLabs (eleven_v4, suara Adam): [evil laugh] … [laughs]</code>Desa telah dikuasai kegelapan... Para Werewolf menang!</span>
         </li></ul>
-      </section>
+      </details>
 
       <section className="ww-panel" aria-labelledby="onuw-deck">
         <h2 id="onuw-deck">Role ONUW yang dipanggil</h2>

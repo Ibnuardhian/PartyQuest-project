@@ -12,7 +12,7 @@ import { RateLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
-const bodySchema = z.object({ sessionId: z.string().uuid(), text: z.string().min(1).max(400), voice: z.enum(EDGE_VOICES).optional() }).strict();
+const bodySchema = z.object({ sessionId: z.string().uuid(), text: z.string().min(1).max(400), voice: z.enum(EDGE_VOICES).optional(), provider: z.literal("microsoft").optional() }).strict();
 const ttsLimiter = new RateLimiter(30, 60_000);
 
 /**
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (!ttsLimiter.allow(room.id)) return apiError(429, "rate_limited", "Terlalu banyak permintaan suara. Coba lagi sebentar.");
     const names = new Set(session.public_state.players.map((player) => player.name));
     if (!isAllowedNarration(body.data.text, (value) => names.has(value))) return apiError(400, "text_not_allowed", "Teks bukan bagian dari naskah moderator.");
-    const { audio, provider } = await werewolfSpeech(body.data.text, { voice: body.data.voice });
+    const { audio, provider } = await werewolfSpeech(body.data.text, { voice: body.data.voice, provider: body.data.provider });
     return new Response(new Uint8Array(audio), { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400", "X-TTS-Provider": provider } });
   } catch {
     return apiError(503, "tts_unavailable", "Suara moderator belum tersedia; memakai suara cadangan.");
