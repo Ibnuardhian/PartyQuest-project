@@ -10,12 +10,14 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 - [ ] **Karakter suara Microsoft dan pelafalan nama role** di game masih `standar` dan Ardi untuk semua kata; keduanya hanya bisa dicoba di bagian "Eksperimen" halaman suara. Menggantinya di game perlu membuat ulang voice pack.
 - [ ] **Lisensi ElevenLabs paket gratis**: periksa ketentuan ElevenLabs (atribusi/penggunaan komersial) sebelum merilis audio Adam yang dibuat dengan paket gratis.
 - [ ] **Layar TV**: TV hanya membaca (fase dimajukan oleh request pemain, bukan TV).
-- [ ] **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
+- [ ] **Deploy ke VPS Hostinger** belum dilakukan (stack produksi sudah diuji lokal). **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
 
 ### Ditambahkan
 
 - **ONUW: pemenang dihitung otomatis.** Setelah tunjuk, pemain membalik kartu dan mengoreksi kartu terakhirnya (bisa tertukar oleh Robber/Troublemaker/Drunk); Hunter yang mati diminta menunjuk korbannya; aplikasi lalu menampilkan tim pemenang dan setiap pemain yang menang (`engine/onuw/winner.ts`, aturan resmi termasuk Tanner, Minion tanpa Werewolf, dan "tidak ada yang mati").
+- **Deploy VPS (Hostinger) dengan Docker**: `compose.prod.yaml` (Postgres, migrasi sekali jalan, web, Caddy HTTPS otomatis), `.env.production.example`, panduan `deploy/HOSTINGER.md`; image produksi kini membawa script migrasi dan folder cache TTS. Diuji lokal, belum dideploy ke VPS.
+- **ONUW buka kartu**: dropdown hanya berisi kartu yang mungkin dipegang pemain (kartu tengah hanya lewat Drunk) dan berkurang sesuai pilihan pemain lain.
 - **Suara bawaan ElevenLabs Adam** (`TTS_PROVIDER` default `elevenlabs`, tanpa API key saat bermain); Microsoft Ardi dipilih dengan `TTS_PROVIDER=microsoft` atau per perangkat.
 - **Pilihan suara dengan radio button** di `/games/werewolf/suara`: Microsoft Ardi (menyebut nama pemain) atau ElevenLabs Adam (emosi, tanpa nama), efek dramatis mati/nyala, lalu aksi "Dengarkan" dan "Simpan untuk perangkat ini". Pilihan disimpan di perangkat narator (HP host/TV) dan dipakai di game online dan ONUW lokal. ElevenLabs hanya memakai suara Adam.
 - **Subagent Claude Code** di `.claude/agents/` (code-searcher, implementer, test-runner, reviewer) dan tabel routing model di `AGENTS.md`.

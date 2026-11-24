@@ -1,0 +1,80 @@
+# Production stack for a single VPS (for example Hostinger VPS with Docker):
+#   docker compose -f compose.prod.yaml --env-file .env.production up -d --build
+# Caddy serves HTTPS for $DOMAIN with automatic Let's Encrypt certificates and proxies to Next.js.
+# Postgres is not published to the internet; only Caddy listens on ports 80 and 443.
+name: partyquest
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-partyquest}
+      POSTGRES_USER: ${POSTGRES_USER:-partyquest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-partyquest} -d ${POSTGRES_DB:-partyquest}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: applies db/migrations before the web server starts (safe to rerun on every deploy).
+  migrate:
+    image: partyquest-web:latest
+    build:
+      context: .
+      target: runner
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-partyquest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-partyquest}
+    command: ["node", "scripts/migrate.mjs"]
+
+  web:
+    image: partyquest-web:latest
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # Runtime-only secrets: never build args, never NEXT_PUBLIC_.
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-partyquest}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-partyquest}
+      GUEST_SESSION_SECRET: ${GUEST_SESSION_SECRET:?Set GUEST_SESSION_SECRET in .env.production}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      TTS_PROVIDER: ${TTS_PROVIDER:-elevenlabs}
+      TTS_VOICE: ${TTS_VOICE:-id-ID-ArdiNeural}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
+      ELEVENLABS_MODEL_ID: ${ELEVENLABS_MODEL_ID:-}
+      WEREWOLF_VOICE_PILOT: ${WEREWOLF_VOICE_PILOT:-}
+    volumes:
+      - tts_cache:/var/cache/partyquest-tts
+    expose:
+      - "3000"
+    init: true
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.production}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  tts_cache:
+  caddy_data:
+  caddy_config:

@@ -139,6 +139,10 @@ Platform (katalog, lobi, API room, auth, database) tidak berisi aturan game. Unt
 2. Daftarkan modul di `src/games/registry.ts`; katalog menampilkan `CatalogCard` milik game.
 3. Untuk Online Room, implementasikan `OnlineGameServer` di `src/games/<game>/server/` dan daftarkan di `src/games/online-registry.ts`, lalu izinkan `game_key` baru lewat migration (constraint `game_rooms.game_key`).
 
+## Deploy ke VPS dengan Docker (Hostinger)
+
+`compose.prod.yaml` menjalankan PostgreSQL, migrasi sekali jalan, Next.js standalone (target `runner`), dan Caddy (HTTPS otomatis untuk `DOMAIN`). Salin `.env.production.example` ke `.env.production` di server, isi rahasianya, lalu jalankan `docker compose -f compose.prod.yaml --env-file .env.production up -d --build`. Langkah lengkap untuk Hostinger VPS: [deploy/HOSTINGER.md](deploy/HOSTINGER.md).
+
 ## Deploy ke Vercel
 
 1. Siapkan PostgreSQL terkelola, jalankan `npm run db:migrate` dengan `DATABASE_URL` produksi (dari mesin lokal/CI via Docker).

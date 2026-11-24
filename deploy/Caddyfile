@@ -1,0 +1,6 @@
+# HTTPS for the PartyQuest domain; certificates are issued and renewed automatically.
+{$DOMAIN} {
+	encode zstd gzip
+	# Server-Sent Events (/api/rooms/<code>/events) stream immediately; Caddy flushes text/event-stream.
+	reverse_proxy web:3000
+}
