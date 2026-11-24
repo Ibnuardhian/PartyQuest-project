@@ -46,7 +46,7 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 
 ## Tema per game
 
-- Setiap game memiliki satu tema yang dipakai konsisten dari kartu katalog, halaman setup, lobi, hingga layar dalam game. Modul game menyediakan  dan lobi platform menerapkannya; jangan menampilkan layar game dengan tema hijau platform.
+- Setiap game memiliki satu tema yang dipakai konsisten dari kartu katalog, halaman setup, lobi, hingga layar dalam game. Modul game menyediakan `themeClass` dan lobi platform menerapkannya; jangan menampilkan layar game dengan tema hijau platform.
 
 ## Werewolf
 

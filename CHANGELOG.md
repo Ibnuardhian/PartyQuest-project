@@ -46,7 +46,7 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 
 ### Diperbaiki
 
-- Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (), dan latar siang/lobi Werewolf memakai navy  seperti kartu katalog (malam tetap hitam pekat).
+- Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).
 
 - Membuat room tanpa field `settings` ditolak; sekarang memakai pengaturan default game.
 - Vote serentak bisa gagal karena konflik versi; sekarang dicoba ulang hingga 20 kali dengan jeda acak.
