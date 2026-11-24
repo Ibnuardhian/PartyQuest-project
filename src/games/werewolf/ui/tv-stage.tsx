@@ -10,6 +10,7 @@ import { WEREWOLF_TV_PATH } from "@/games/werewolf/paths";
 import { FACTION_LABELS, isNightPhase, PHASE_LABELS, roleName, type WerewolfView } from "@/games/werewolf/ui/labels";
 import { formatSeconds, useCountdown } from "@/games/werewolf/ui/use-countdown";
 import { useNarration } from "@/games/werewolf/ui/use-narration";
+import { VoteArrows } from "@/games/werewolf/ui/vote-arrows";
 
 interface TvData {
   room: { code: string; status: string; gameKey: string };
@@ -70,7 +71,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
             {view.finalRoles && <em>{roleName(view.finalRoles[player.id] as ClassicRole)}</em>}
           </li>)}</ul>
           {view.phase === "GAME_OVER" && view.winner && <div className="ww-panel ww-center"><h2>{FACTION_LABELS[view.winner.faction]} menang!</h2><p className="ww-muted">{view.winReason}</p></div>}
-          {view.lastVoteReveal && view.lastVoteReveal.length > 0 && ["TIE_DEFENSE", "NIGHT_INTRO", "HUNTER_REVENGE", "GAME_OVER"].includes(view.phase) && <div className="ww-panel"><span className="section-kicker">HASIL VOTING TERBUKA</span><ul className="ww-matrix">{view.lastVoteReveal.map((vote) => <li key={vote.voterId}><span>{nameOf(vote.voterId)}</span><span aria-hidden="true">→</span><strong>{vote.targetId ? nameOf(vote.targetId) : "Abstain"}</strong>{vote.weight > 1 && <small>×{vote.weight}</small>}</li>)}</ul></div>}
+          {view.lastVoteReveal && view.lastVoteReveal.length > 0 && ["TIE_DEFENSE", "NIGHT_INTRO", "HUNTER_REVENGE", "GAME_OVER"].includes(view.phase) && <div className="ww-panel ww-vote-reveal"><span className="section-kicker">HASIL VOTING TERBUKA</span><VoteArrows players={view.players} votes={view.lastVoteReveal} /><ul className="ww-matrix">{view.lastVoteReveal.map((vote) => <li key={vote.voterId}><span>{nameOf(vote.voterId)}</span><span aria-hidden="true">→</span><strong>{vote.targetId ? nameOf(vote.targetId) : "Abstain"}</strong>{vote.weight > 1 && <small>×{vote.weight}</small>}</li>)}</ul></div>}
           {view.phase === "DAY_DISCUSSION" && lastDawn?.type === "DAWN" && <p className="ww-tv-ticker">{lastDawn.deadPlayerIds.length ? `Korban semalam: ${lastDawn.deadPlayerIds.map(nameOf).join(", ")}` : "Tidak ada korban semalam."}</p>}
         </>}
         {/* Live moderator subtitle bar (docs/03 §3). */}

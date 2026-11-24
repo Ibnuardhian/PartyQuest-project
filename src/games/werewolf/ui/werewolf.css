@@ -190,3 +190,18 @@ body:has(.ww-is-night) { background: #000; }
 .ww-tv-qr { margin: 0 0 18px; }
 .ww-tv-qr svg { width: min(28vh, 240px); height: min(28vh, 240px); }
 .werewolf-theme .qr-code figcaption { color: var(--ww-text); }
+
+/* TV open-vote reveal: arrows from voter to target, drawn one after another. */
+.ww-vote-reveal { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: center; }
+.ww-vote-reveal > .section-kicker { grid-column: 1 / -1; }
+.ww-vote-arrows { width: 100%; max-height: 56vh; color: var(--ww-accent-solid); }
+.ww-vote-arrow { fill: none; stroke: currentColor; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; animation: ww-draw-arrow .7s ease-out forwards; }
+@keyframes ww-draw-arrow { 0% { opacity: 0; } 20% { opacity: .85; } 100% { opacity: .85; stroke-dashoffset: 0; } }
+.ww-vote-seat circle { fill: #020617; stroke: var(--ww-line); stroke-width: 2; }
+.ww-vote-seat text { fill: #e2e8f0; font: 700 20px Arial, sans-serif; }
+.ww-vote-seat .ww-vote-name { fill: var(--ww-text); font-size: 15px; font-weight: 400; }
+.ww-vote-seat.is-target circle { stroke: #ef4444; stroke-width: 3; }
+.ww-vote-seat .ww-vote-count { fill: #ef4444; font-size: 18px; }
+.ww-vote-seat.is-dead { opacity: .35; }
+@media (max-width: 760px) { .ww-vote-reveal { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .ww-vote-arrow { animation: none; stroke-dashoffset: 0; opacity: .85; } }
