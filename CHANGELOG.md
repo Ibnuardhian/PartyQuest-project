@@ -16,6 +16,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 ### Ditambahkan
 
 - **ONUW: pemenang dihitung otomatis.** Setelah tunjuk, pemain membalik kartu dan mengoreksi kartu terakhirnya (bisa tertukar oleh Robber/Troublemaker/Drunk); Hunter yang mati diminta menunjuk korbannya; aplikasi lalu menampilkan tim pemenang dan setiap pemain yang menang (`engine/onuw/winner.ts`, aturan resmi termasuk Tanner, Minion tanpa Werewolf, dan "tidak ada yang mati").
+- **Suara bawaan ElevenLabs Adam** (`TTS_PROVIDER` default `elevenlabs`, tanpa API key saat bermain); Microsoft Ardi dipilih dengan `TTS_PROVIDER=microsoft` atau per perangkat.
 - **Pilihan suara dengan radio button** di `/games/werewolf/suara`: Microsoft Ardi (menyebut nama pemain) atau ElevenLabs Adam (emosi, tanpa nama), efek dramatis mati/nyala, lalu aksi "Dengarkan" dan "Simpan untuk perangkat ini". Pilihan disimpan di perangkat narator (HP host/TV) dan dipakai di game online dan ONUW lokal. ElevenLabs hanya memakai suara Adam.
 - **Subagent Claude Code** di `.claude/agents/` (code-searcher, implementer, test-runner, reviewer) dan tabel routing model di `AGENTS.md`.
 

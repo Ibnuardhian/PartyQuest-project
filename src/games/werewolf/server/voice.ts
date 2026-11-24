@@ -6,9 +6,9 @@ import { edgeSpeech, type EdgeVoice } from "@/lib/tts/edge-tts";
 import { elevenLabsConfig, elevenLabsSpeech } from "@/lib/tts/elevenlabs";
 
 /**
- * Chooses how the Werewolf narrator sounds.
- * TTS_PROVIDER=elevenlabs + ELEVENLABS_API_KEY -> ElevenLabs; otherwise Microsoft Edge Neural.
- * ElevenLabs failures fall back to Microsoft so the narrator keeps talking.
+ * Chooses how the Werewolf narrator sounds. Default is ElevenLabs (the committed Adam pack, which
+ * needs no API key during play); TTS_PROVIDER=microsoft selects Microsoft Edge Neural. Lines made on
+ * demand use ElevenLabs only with ELEVENLABS_API_KEY and otherwise fall back to Microsoft.
  */
 
 export type VoiceProvider = "microsoft" | "elevenlabs";
@@ -19,7 +19,7 @@ export const STATIC_PACK_BASE: Record<VoiceProvider, string> = {
 };
 
 export function configuredProvider(env: Record<string, string | undefined> = process.env): VoiceProvider {
-  return env.TTS_PROVIDER?.trim().toLowerCase() === "elevenlabs" && elevenLabsConfig(env) ? "elevenlabs" : "microsoft";
+  return env.TTS_PROVIDER?.trim().toLowerCase() === "microsoft" ? "microsoft" : "elevenlabs";
 }
 
 /** True once `npm run voice:generate -- --provider elevenlabs` has produced every file of the ElevenLabs pack. */
