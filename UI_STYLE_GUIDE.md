@@ -55,7 +55,7 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 - Kartu role memakai flip 3D yang dimatikan bila `prefers-reduced-motion`. Label kubu memakai badge berwarna (warga cyan, Werewolf merah, independen kuning) yang juga diberi teks, bukan warna saja.
 - Layar TV (`/games/werewolf/tv/<kode>`) memakai tipografi besar, grid pemain, dan bilah subtitle moderator di bawah; tidak pernah menampilkan role sebelum permainan selesai.
 - Nama role yang tampil diambil dari `CLASSIC_ROLE_INFO` (misalnya Doctor tampil sebagai "Guardian Angel"); jangan menulis nama role langsung di komponen.
-- Editor pengaturan Werewolf dirender di lobi platform yang terang, sehingga kelas `.ww-editor` memakai warna platform.
+- Editor pengaturan Werewolf dirender di lobi yang memakai tema Werewolf, sehingga `.ww-editor` mewarisi warna gelap tema tersebut. Form gabung room juga memakai tema game, karena `GET /api/rooms/<kode>` mengembalikan `gameKey` publik bersama error `not_a_member`.
 - Pass-and-Play memakai `/games/undercover/local#<hash-sesi>`. ID sesi dan salt acak berada di `sessionStorage`; hanya hash SHA-256 yang tampil di fragment URL. Kata dan peran tetap privat dari URL. Hash berfungsi sebagai penanda sesi, bukan batas keamanan. Beri jalur “Lanjutkan permainan” jika pemain kembali ke katalog selama sesi tab masih tersedia.
 - Deadline Online Room berasal dari server dan tetap sama setelah refresh. UI menampilkan sisa waktu dari deadline tersebut; UI klien tidak boleh membuat ulang atau memperpanjang deadline.
 - Layout harus tetap berfungsi tanpa scroll horizontal pada lebar ponsel. Pertahankan hierarki konten dan aksi utama ketika grid berubah menjadi satu kolom.

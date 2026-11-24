@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-export function apiError(status: number, code: string, message: string) {
-  return NextResponse.json({ error: { code, message } }, { status, headers: { "Cache-Control": "no-store" } });
+export function apiError(status: number, code: string, message: string, details?: Record<string, string>) {
+  return NextResponse.json({ error: { code, message, ...details } }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export function apiSuccess<T>(data: T, status = 200) {

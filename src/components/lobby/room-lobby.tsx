@@ -27,19 +27,23 @@ export default function RoomLobby({ code }: { code: string }) {
   const [error, setError] = useState("");
   const [connection, setConnection] = useState("Menghubungkan…");
   const [tvCode, setTvCode] = useState<{ code: string; minutes: number } | null>(null);
+  const [gameKey, setGameKey] = useState<string | null>(null);
 
   const load = useCallback(async (redirect = true) => {
     try {
       const response = await fetch(`/api/rooms/${code}`, { cache: "no-store" });
-      const payload = await response.json() as { data?: RoomData; error?: { message?: string; code?: string } };
+      const payload = await response.json() as { data?: RoomData; error?: { message?: string; code?: string; gameKey?: string } };
       if (!response.ok || !payload.data) {
         setRoom(null);
+        // The game key is public (anyone with the code can join), so the join form can wear the game's theme.
+        if (payload.error?.gameKey) setGameKey(payload.error.gameKey);
         if (payload.error?.code === "not_a_member") setError("");
         else setError(payload.error?.message ?? "Room belum dapat dimuat.");
         setConnection("Belum terhubung");
         return;
       }
       setRoom(payload.data);
+      setGameKey(payload.data.room.gameKey);
       setError("");
       if (redirect && payload.data.session?.status === "in_progress") router.replace(`/room/${code}/play?session=${payload.data.session.id}`);
     } catch {
@@ -111,7 +115,7 @@ export default function RoomLobby({ code }: { code: string }) {
     catch { setError(`Bagikan kode room: ${code}`); }
   }
 
-  const game = room ? getGameModule(room.room.gameKey) : null;
+  const game = gameKey ? getGameModule(gameKey) : null;
   const me = room?.members.find((member) => member.user_id === room.currentUserId);
 
   // The lobby wears the game's own theme so it matches its catalog card and in-game screens.

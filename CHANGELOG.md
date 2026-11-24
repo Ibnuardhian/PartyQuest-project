@@ -21,7 +21,6 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 - [ ] **ONUW**: pemenang tidak dihitung otomatis (kartu fisik bisa tertukar di malam hari); aplikasi hanya mencatat siapa yang tertunjuk.
 - [ ] **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
-- [ ] **Tema lobi saat belum bergabung**: form gabung room belum tahu game-nya, jadi masih bertema platform (hijau).
 - [ ] **File `werewolf-tts-voice-pack.zip`** masih ada di root proyek (tidak di-commit). Isinya sudah dilebur; tunggu konfirmasi untuk dihapus.
 - [ ] **Push dan merge** ke `main` menunggu persetujuan.
 
@@ -47,7 +46,7 @@ Semua commit di bawah ini lokal di branch `werewolf-game` dan **belum di-push**.
 ### Diperbaiki
 
 - Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).
-
+- Form gabung room kini memakai tema game sebelum pemain bergabung (`gameKey` publik ikut dalam error `not_a_member`).
 - Membuat room tanpa field `settings` ditolak; sekarang memakai pengaturan default game.
 - Vote serentak bisa gagal karena konflik versi; sekarang dicoba ulang hingga 20 kali dengan jeda acak.
 - Build image Docker produksi gagal karena devDependencies tidak terpasang di tahap builder.

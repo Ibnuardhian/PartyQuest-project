@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
     const room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
     if (room.expires_at.getTime() <= Date.now()) return apiError(410, "room_expired", "Room ini sudah kedaluwarsa.");
-    if (!(await isActiveMember(room.id, guest.userId))) return apiError(403, "not_a_member", "Gabung ke room ini untuk melihat lobi.");
+    if (!(await isActiveMember(room.id, guest.userId))) return apiError(403, "not_a_member", "Gabung ke room ini untuk melihat lobi.", { gameKey: room.game_key });
     await touchMember(room.id, guest.userId);
     const [members, session, tvConnected] = await Promise.all([listActiveMembers(room.id), findLatestSession(room.id), isTvConnected(room.id)]);
     return apiSuccess({
