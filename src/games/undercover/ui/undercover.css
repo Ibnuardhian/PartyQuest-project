@@ -122,3 +122,24 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .clue-item strong { color: #8b0000; font-family: Cinzel, "Playfair Display", Georgia, serif; }
 .undercover-theme .role-pill { border-radius: 0; color: #e5e0d8; background: #8b0000; letter-spacing: .12em; text-transform: uppercase; }
 .undercover-theme .tv-code { color: #8b0000; letter-spacing: .2em; }
+
+/* Setup card rhythm and hierarchy (same rules as the Werewolf landing, in the noir palette):
+   flex stacks instead of stacked margins, a recessed tactile code field, and a Gabung button that
+   lights up in red once the room code is complete. */
+.undercover-theme .hero-description { color: #d4cec4; }
+.uc-online-stack { display: flex; flex-direction: column; gap: 16px; margin: 0; }
+.uc-field { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.uc-online-stack .field-label, .uc-field .field-label { margin-bottom: 0; }
+.uc-online-stack .subheading { margin: 6px 0 0; }
+.uc-online-stack .divider-label { margin: 4px 0; }
+.uc-online-stack .primary-button { width: 100%; margin: 0; }
+.uc-online-stack .privacy-note, .uc-online-stack .status-note, .uc-online-stack .error-message { margin: 0; }
+.undercover-theme .online-text-input { min-height: 44px; padding: 11px 14px; background: #e8e2d8; box-shadow: inset 0 1px 2px #0000001f; font-size: 14px; }
+.undercover-theme .online-text-input:focus, .undercover-theme .names-input:focus, .undercover-theme .form-field select:focus { border-color: #8b0000; box-shadow: inset 0 1px 2px #0000001f, 0 0 0 3px #8b000033; }
+.undercover-theme .code-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; }
+.undercover-theme .join-row .code-input { flex: 1; min-width: 0; }
+.undercover-theme .join-row .secondary-button { min-height: 44px; padding: 0 20px; }
+.undercover-theme .secondary-button.is-ready { border-color: #a53a3a; background: #8b0000; }
+.undercover-theme .secondary-button.is-ready:hover:not(:disabled) { background: #650000; }
+.undercover-theme .secondary-button:focus-visible, .undercover-theme .mode-option:focus-visible { outline: 2px solid #8b0000; outline-offset: 2px; }
+@media (max-width: 480px) { .undercover-theme .join-row { flex-direction: column; } .undercover-theme .join-row .secondary-button { width: 100%; } }

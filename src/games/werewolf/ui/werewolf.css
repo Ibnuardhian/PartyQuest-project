@@ -81,10 +81,8 @@ body:has(.werewolf-theme) { background-color: #020617; color: #94a3b8; }
 .ww-roster li { display: grid; gap: 2px; font-size: 12px; }
 .ww-roster small { color: var(--ww-muted); line-height: 1.5; }
 .ww-wide { width: 100%; }
-.ww-join { display: grid; gap: 8px; margin-top: 8px; }
 .ww-join-row { display: flex; gap: 8px; }
 .ww-code { letter-spacing: .18em; text-transform: uppercase; font-weight: 700; }
-.ww-soon { border-top: 1px solid var(--ww-line); padding-top: 12px; margin-top: 4px; }
 .ww-warning { margin: 0; color: #fbbf24; font-size: 12px; }
 .ww-game { flex: 1; width: min(720px, 100%); margin: 28px auto 60px; display: grid; gap: 14px; align-content: start; }
 .ww-topline { display: flex; justify-content: space-between; align-items: center; color: var(--ww-muted); font-size: 10px; letter-spacing: .14em; }
@@ -184,7 +182,7 @@ body:has(.ww-is-night) { background: #000; }
 .catalog-werewolf .catalog-card-body p { color: #94a3b8; }
 .catalog-werewolf .primary-button { background: transparent; border: 1px solid #0ea5e959; color: #e2e8f0; text-decoration: none; }
 .catalog-werewolf .primary-button:hover { background: #0f172a; }
-@media (max-width: 760px) { .ww-setup { grid-template-columns: 1fr; margin-top: 28px; } .ww-timer { font-size: 24px; } }
+@media (max-width: 760px) { .ww-setup { grid-template-columns: 1fr; align-content: start; margin-top: 28px; } .ww-timer { font-size: 24px; } }
 
 /* TV lobby join QR: large enough to scan from the sofa. */
 .ww-tv-qr { margin: 0 0 18px; }
@@ -225,3 +223,41 @@ body:has(.ww-is-night) { background: #000; }
 .ww-final-card { max-width: 220px; margin: 0; }
 .ww-role-list li.is-winner { border-color: var(--ww-accent-solid); background: #0ea5e914; }
 .ww-role-list li.is-winner strong { color: #e2e8f0; }
+
+/* ---------- Setup / landing (create, join, ONUW) ----------
+   Elevated card, recessed filled inputs, and a clear button hierarchy: primary (solid sky),
+   secondary (solid slate), all scoped to the setup page so the dim night UI is untouched. */
+.ww-setup-lead { margin: 0; max-width: 560px; color: #cbd5e1; font-size: 14px; line-height: 1.7; }
+.ww-setup .ww-facts { color: #94a3b8; }
+.ww-pill-link { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 8px 14px; border-radius: 8px; background: #0ea5e91a; color: #38bdf8; font-size: 13px; font-weight: 600; text-decoration: none; transition: background-color .15s ease; }
+.ww-pill-link:hover { background: #0ea5e933; }
+.ww-pill-link:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.ww-icon { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.ww-setup-card { display: flex; flex-direction: column; gap: 24px; padding: 28px; border: 1px solid #1e293bcc; border-radius: 16px; background: #0b1224; box-shadow: 0 24px 60px #00000066; }
+.ww-setup-block { display: flex; flex-direction: column; gap: 20px; }
+.ww-setup-heading { display: flex; flex-direction: column; gap: 8px; }
+.ww-setup-heading h2 { margin: 0; color: #e2e8f0; font-size: 24px; }
+.ww-setup-divider { margin: 0; border: 0; border-top: 1px solid #1e293b; }
+.ww-field { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.ww-field-label { color: #cbd5e1; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.ww-field-hint { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.6; }
+.ww-field-input { width: 100%; min-height: 46px; padding: 11px 14px; border: 1px solid #334155b3; border-radius: 10px; background: #060a15; color: #f1f5f9; font-size: 15px; transition: border-color .15s ease, box-shadow .15s ease; }
+.ww-field-input::placeholder { color: #64748b; }
+.ww-field-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px #38bdf833; }
+.ww-field-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 600; letter-spacing: .25em; text-transform: uppercase; }
+.ww-field-code::placeholder { letter-spacing: .25em; }
+.ww-join-row { display: flex; gap: 10px; }
+.ww-join-row .ww-field-input { flex: 1; min-width: 0; }
+
+.ww-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 0 20px; border: 1px solid transparent; border-radius: 10px; font-size: 14px; font-weight: 600; letter-spacing: .01em; text-decoration: none; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease; }
+.ww-btn:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.ww-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.ww-setup-card .ww-btn-primary, .ww-setup-card a.ww-btn { width: 100%; }
+.ww-btn-primary { background: #0ea5e9; color: #020617; box-shadow: 0 10px 24px #0ea5e933; }
+.ww-btn-primary:hover:not(:disabled) { background: #38bdf8; }
+.ww-btn-secondary { border-color: #334155; background: #1e293b; color: #f1f5f9; font-weight: 500; }
+.ww-btn-secondary:hover:not(:disabled) { background: #334155; }
+.ww-btn-secondary.is-ready { border-color: #0ea5e966; background: #0ea5e933; color: #7dd3fc; }
+.ww-btn-secondary.is-ready:hover:not(:disabled) { background: #0ea5e94d; }
+@media (max-width: 480px) { .ww-setup-card { padding: 22px 18px; } .ww-join-row { flex-direction: column; } .ww-join-row .ww-btn { width: 100%; } }

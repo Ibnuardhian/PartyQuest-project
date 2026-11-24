@@ -51,6 +51,7 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 ## Werewolf
 
 - Tema "Dark Outline" (`src/games/werewolf/ui/werewolf.css`): siang dan lobi memakai navy `#020617` seperti kartu katalog, malam memakai hitam pekat `#000000`, garis tipis slate `#1E293B`, aksen cyan `#0EA5E9` pada opasitas rendah, teks `#94A3B8`/`#64748B`. Jangan memakai permukaan putih atau terang selama fase malam agar layar tidak menerangi wajah pemain.
+- Halaman setup Werewolf (`.ww-setup-card`): kartu terangkat `#0B1224` dengan sudut 16 px, input terisi `#060A15` dengan fokus cyan, satu tombol utama solid biru langit (`.ww-btn-primary`), tombol sekunder solid slate (`.ww-btn-secondary`, menyala cyan saat kode room lengkap), dan susunan flex dengan `gap` (bukan margin bertumpuk) agar teks dan tombol tidak pernah bertumpuk. Gaya terang ini hanya untuk setup; layar malam tetap redup.
 - Fase malam (`.ww-is-night`): header dan footer diredupkan; pemain hidup yang bukan giliran melihat mini-game Fake Tap, pemegang role aktif melihat panel `GILIRANMU` dengan fade 200 ms, pemain tereliminasi melihat tampilan pasif tanpa kontrol.
 - Kartu role memakai flip 3D yang dimatikan bila `prefers-reduced-motion`. Label kubu memakai badge berwarna (warga cyan, Werewolf merah, independen kuning) yang juga diberi teks, bukan warna saja.
 - Layar TV (`/games/werewolf/tv/<kode>`) memakai tipografi besar, grid pemain, dan bilah subtitle moderator di bawah; tidak pernah menampilkan role sebelum permainan selesai.
