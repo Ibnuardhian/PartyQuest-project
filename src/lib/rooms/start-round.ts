@@ -4,15 +4,15 @@ import { requireGuest } from "@/lib/auth/require-guest";
 import { OnlineGameError } from "@/games/online-game";
 import { getOnlineGame } from "@/games/online-registry";
 import { normalizeRoomCode } from "@/lib/room-code";
-import { findRoomByCode, listActiveMembers, listUnreadyNewcomers, startRound } from "@/lib/rooms/repository";
+import { findRoomByCode, listActiveMembers, startRound } from "@/lib/rooms/repository";
 
-/** Shared by start and rematch: host check, member checks, game deals the round, DB re-validates atomically. */
-export async function handleStartRound(kind: "start" | "rematch", rawCode: string) {
+/** Starts a round from the lobby (a finished room only becomes a lobby once everyone is back): host check, member checks, game deals the round, DB re-validates atomically. */
+export async function handleStartRound(rawCode: string) {
   const guest = await requireGuest();
   if (!guest) return apiError(401, "unauthorized", UNAUTHORIZED_MESSAGE);
   const code = normalizeRoomCode(rawCode);
   if (!code) return apiError(404, "room_not_found", "Room tidak ditemukan.");
-  const failure = { status: 503, code: "game_unavailable", message: kind === "start" ? "Permainan belum dapat dimulai." : "Rematch belum dapat dimulai." };
+  const failure = { status: 503, code: "game_unavailable", message: "Permainan belum dapat dimulai." };
   try {
     const room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
@@ -22,10 +22,9 @@ export async function handleStartRound(kind: "start" | "rematch", rawCode: strin
     const members = await listActiveMembers(room.id);
     if (members.length < game.minPlayers || members.length > game.maxPlayers) return apiError(409, "invalid_player_count", `Permainan memerlukan ${game.minPlayers}–${game.maxPlayers} pemain aktif.`);
     if (new Set(members.map((member) => member.display_name.trim().toLocaleLowerCase("id-ID"))).size !== members.length) return apiError(409, "duplicate_name", "Nama pemain di room harus berbeda.");
-    if (kind === "start" && members.some((member) => !member.is_ready)) return apiError(409, "players_not_ready", "Semua pemain harus siap sebelum mulai.");
-    if (kind === "rematch" && (await listUnreadyNewcomers(room.id)).length > 0) return apiError(409, "players_not_ready", "Pemain baru harus menandai siap sebelum main ulang.");
+    if (members.some((member) => !member.is_ready)) return apiError(409, "players_not_ready", "Semua pemain harus siap sebelum mulai.");
     const round = game.createRound(members.map((member) => ({ userId: member.user_id, displayName: member.display_name })), room.settings);
-    const session = await startRound(kind, room.id, guest.userId, round);
+    const session = await startRound(room.id, guest.userId, round);
     if (!session) return apiError(failure.status, failure.code, failure.message);
     return apiSuccess({ sessionId: session.id, stateVersion: session.state_version }, 201);
   } catch (error) {
