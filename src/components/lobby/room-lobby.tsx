@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CatalogLink } from "@/components/site/catalog-link";
 import { QrCode } from "@/components/site/qr-code";
 import { ConnectionNote, SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { getGameModule } from "@/games/registry";
@@ -122,6 +123,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   // The lobby wears the game's own theme so it matches its catalog card and in-game screens.
   return <main className={`page-shell${game?.themeClass ? ` ${game.themeClass}` : ""}`}><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
     <section className="lobby-wrap">
+      <CatalogLink className="text-button catalog-back">← Kembali ke katalog</CatalogLink>
       <div className="lobby-heading"><span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span><h1>Room <em>{code}</em></h1><p className="hero-description">Bagikan kode ini ke temanmu. Siapkan semua pemain sebelum host memulai.</p></div>
       {!room ? <section className="setup-card lobby-card">{error && <p className="error-message" role="alert">{error}</p>}<h2>Gabung ke room</h2><form className="action-form" onSubmit={joinRoom}><label className="field-label" htmlFor="lobby-name">Nama tampilan</label><input id="lobby-name" maxLength={24} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" /><button className="primary-button" disabled={busy || !displayName.trim()}>Gabung <span>→</span></button></form></section>
         : <div className="lobby-grid"><section className="setup-card lobby-card"><div className="lobby-card-head"><div><span className="section-kicker">KODE ROOM</span><strong className="room-code">{room.room.code}</strong></div><button className="secondary-button" onClick={shareRoom}>Salin tautan</button></div>{room.room.status === "lobby" && <QrCode path={`/room/${room.room.code}`} label="Pindai untuk bergabung" />}<p className="status-note">{room.room.status === "finished" ? "Ronde selesai" : room.room.status === "in_progress" ? "Permainan berjalan" : "Menunggu pemain"} · {room.members.length}/{room.room.maxPlayers} pemain</p><div className="member-list">{room.members.map((member) => <div className="member-row" key={member.user_id}><span className="avatar-dot">{member.display_name.slice(0, 1).toUpperCase()}</span><span className={member.online ? "presence-dot online" : "presence-dot"} role="img" aria-label={member.online ? "Online" : "Offline"} title={member.online ? "Online" : "Offline"} /><span className="member-name">{member.display_name}{member.user_id === room.currentUserId && <small> (kamu)</small>}{member.user_id === room.hostUserId && <small> · host</small>}</span>{member.user_id === room.currentUserId ? <span className={member.is_ready ? "ready-tag ready" : "ready-tag"}>{member.is_ready ? "Siap" : "Belum siap"}</span> : <span className="ready-tag">{member.is_ready ? "Siap" : "Menunggu"}</span>}</div>)}</div>

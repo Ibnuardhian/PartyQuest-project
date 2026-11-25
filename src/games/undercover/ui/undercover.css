@@ -32,7 +32,10 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .field-label, .undercover-theme .toggle-row strong { color: #282522; }
 .undercover-theme .field-label span, .undercover-theme .toggle-row small { color: #6c665e; }
 .undercover-theme .names-input, .undercover-theme .form-field select, .undercover-theme .action-form input { border: 1px solid #aaa194; border-radius: 0; color: #201d1a; background: #eee9e0; }
-.undercover-theme .names-input { min-height: 130px; border-left: 3px solid #8b0000; padding-left: 14px; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 25px, #1b263b17 26px); font-family: Cinzel, "Playfair Display", Georgia, serif; line-height: 26px; letter-spacing: .035em; }
+/* Ruled notebook: one --row-height drives the line box, the rule spacing, and the box size, so each name sits on
+   its own line. --row-offset lowers the text so the baseline lands a few px above the rule under it.
+   background-attachment: local makes the rules scroll with the names once the list is longer than the box. */
+.undercover-theme .names-input { --row-height: 36px; --row-offset: 5px; min-height: calc(var(--row-height) * 5 + var(--row-offset)); max-height: calc(var(--row-height) * 8 + var(--row-offset)); height: calc(var(--row-height) * 5 + var(--row-offset)); border-left: 3px solid #8b0000; padding: var(--row-offset) 14px 0; resize: none; overflow-y: auto; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--row-height) - 1px), rgba(120, 113, 108, 0.22) calc(var(--row-height) - 1px), rgba(120, 113, 108, 0.22) var(--row-height)); background-attachment: local; font-family: Cinzel, "Playfair Display", Georgia, serif; font-size: 17px; line-height: var(--row-height); letter-spacing: .035em; }
 .undercover-theme .names-input::placeholder { color: #8a8175; }
 .undercover-theme .names-input:focus, .undercover-theme .form-field select:focus, .undercover-theme .action-form input:focus { border-color: #8b0000; box-shadow: 0 0 0 2px #8b000022; }
 .undercover-theme .input-caption { color: #625d56; }

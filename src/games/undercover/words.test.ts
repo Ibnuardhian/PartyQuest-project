@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { undercoverGame } from "@/games/undercover/engine";
 import type { Category, GameSettings } from "@/games/undercover/contract";
-import { GENERAL_WORD_PAIRS, getWordPairs, WORD_PAIRS } from "@/games/undercover/words";
+import { countWordPairs, GENERAL_WORD_PAIRS, getWordPairs, WORD_PAIRS } from "@/games/undercover/words";
 
 const THEMED = Object.keys(WORD_PAIRS) as Array<Exclude<Category, "campuran">>;
 const pairKey = ([a, b]: readonly [string, string]) => [a, b].map((word) => word.toLocaleLowerCase("id-ID")).sort().join("|");
@@ -34,6 +34,13 @@ describe("Undercover word library", () => {
   it("mixes every category and the general pairs for 'campuran'", () => {
     expect(getWordPairs("campuran")).toHaveLength(allPairs.length);
     for (const category of THEMED) expect(getWordPairs(category)).toBe(WORD_PAIRS[category]);
+  });
+});
+
+describe("category word counts", () => {
+  it("counts the pairs that can actually be drawn, with campuran as the whole pool", () => {
+    for (const category of THEMED) expect(countWordPairs(category)).toBe(WORD_PAIRS[category].length);
+    expect(countWordPairs("campuran")).toBe(THEMED.reduce((sum, category) => sum + countWordPairs(category), 0) + GENERAL_WORD_PAIRS.length);
   });
 });
 

@@ -46,6 +46,11 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 
 ## Kit UI game (katalog, landing & setup)
 
+- Header katalog: merek di kiri; di kanan indikator status dan tombol **Gabung Room** (`QuickJoinRoom`), popover kecil untuk memasukkan kode room 6 karakter dari game mana pun. Kode diperiksa dulu (`GET /api/rooms/<kode>`: 404 tidak ditemukan, 410 kedaluwarsa), lalu diarahkan ke `/room/<kode>`; lobi mengenali game dari kode. Tidak ada tombol "Online Room" global karena tiap game mengatur mode Online/Pass-and-Play sendiri. Di ponsel teks status disembunyikan agar header seimbang.
+- Setiap layar game (setup, lobi, dalam game online/lokal, ONUW) punya tautan kembali ke katalog (`CatalogLink`: "Kembali ke katalog" atau "Katalog game" di topline); layar TV baca-saja dikecualikan.
+- Textarea nama pemain Undercover berbentuk buku catatan: `--row-height` (36 px) mengatur tinggi baris, jarak garis (`repeating-linear-gradient`), dan tinggi kotak; `--row-offset` (5 px) menurunkan teks sehingga baseline duduk sekitar 6 px di atas garis; `background-attachment: local` membuat garis ikut ter-scroll; tinggi tetap 5 baris dan maksimal 8.
+- Dropdown kategori kata memakai `CategorySelect` (bukan `<select>` bawaan OS): tint merah tua untuk aktif/hover, tanda ✓ pada pilihan, badge jumlah pasangan kata di kanan (Campuran = seluruh pustaka). Menu dirender lewat portal dengan posisi `fixed` agar tidak terpotong kartu, membuka ke atas bila ruang bawah kurang, minimal 260 px lebar di ponsel, dan mengikuti pola keyboard combobox/listbox.
+
 - Katalog memakai satu `GameCatalogCard` (`src/components/catalog/game-catalog-card.tsx`) untuk semua game: tinggi sama, sudut 16 px, banner 192 px dengan eyebrow `GAME 01/02`, baris genre + pill jumlah pemain (ikon pengguna berwarna aksen), judul Title Case, deskripsi maksimal 2 baris, dan tombol di dasar kartu (tint aksen saat diam, solid aksen saat hover). Game hanya mengisi metadata, `accentColor`, dan motif banner (`artwork`). Grid: 1 kolom di ponsel, 2 di tablet, 3 di layar lebar. Canvas katalog gelap `#050914`.
 
 - Komponen bersama ada di `src/components/ui/game-ui.tsx` (platform, tanpa aturan game): `GameCard`, `GameCardSection`, `GameCardHeading`, `GameField`, `FilledInput`, `GameButton`/`GameLinkButton`, `AccentPill`, `StepperGrid`/`StepperTile`, `ThemedSlider`, `ValidationBanner`.

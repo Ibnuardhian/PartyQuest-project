@@ -12,7 +12,7 @@ import { WEREWOLF_ONUW_PATH, WEREWOLF_VOICE_PILOT_PATH } from "@/games/werewolf/
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 
 /** Werewolf setup: create or join a Classic room. Composition and timers are set by the host in the lobby. */
-export default function WerewolfSetup() {
+export default function WerewolfSetup({ showVoicePilot = false }: { showVoicePilot?: boolean }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -57,7 +57,8 @@ export default function WerewolfSetup() {
         <p className="ww-setup-lead">Tidak ada yang perlu jadi moderator. Narator suara memandu malam, setiap pemain beraksi dari HP masing-masing, dan layar malam yang gelap serta mini-game ketuk membuat tidak ada yang bisa menebak role dari gerak-gerik.</p>
         <ul className="ww-facts"><li>5–16 pemain</li><li>Satu HP per pemain</li><li>Narator suara di HP host atau TV</li></ul>
         <details className="ww-roster"><summary>Daftar role ({CLASSIC_ROLES.length})</summary><ul>{CLASSIC_ROLES.map((role) => <li key={role}><strong>{CLASSIC_ROLE_INFO[role].name}</strong>{CLASSIC_ROLE_INFO[role].twist ? " · twist" : ""}<small>{CLASSIC_ROLE_INFO[role].description}</small></li>)}</ul></details>
-        <AccentPill href={WEREWOLF_VOICE_PILOT_PATH}><SpeakerIcon /> Coba suara moderator <span aria-hidden="true">→</span></AccentPill>
+        {/* Hidden for now: the default narrator is the ElevenLabs pack. Set WEREWOLF_VOICE_PILOT=1 to show the voice page link. */}
+        {showVoicePilot && <AccentPill href={WEREWOLF_VOICE_PILOT_PATH}><SpeakerIcon /> Coba suara moderator <span aria-hidden="true">→</span></AccentPill>}
       </div>
 
       <GameCard aria-labelledby="ww-setup-title">
