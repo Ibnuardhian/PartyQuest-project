@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { makeTapGrid } from "@/games/werewolf/ui/fake-tap-layout";
+import { useCooldown } from "@/games/werewolf/ui/use-cooldown";
 
 /**
  * Fake Tap mini-game for alive players outside their turn (docs/03 §2.2). It uses the same tile grid as the
@@ -13,6 +14,8 @@ export function FakeTap({ size }: { size: number }) {
   const [grid, setGrid] = useState(() => makeTapGrid(size, Math.random));
   const [next, setNext] = useState(1);
   const timer = useRef<number | null>(null);
+  // Every tap (right or wrong) locks the grid briefly, like a real action, so it cannot be mashed.
+  const { cooling, start: cool } = useCooldown();
 
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
 
@@ -22,6 +25,8 @@ export function FakeTap({ size }: { size: number }) {
   }
 
   function tap(number: number) {
+    if (cooling) return;
+    cool();
     if (number !== next) return;
     setNext(number + 1);
     if (number < grid.goal) return;
@@ -37,9 +42,10 @@ export function FakeTap({ size }: { size: number }) {
         type="button"
         className={`ww-target${number < next && number <= grid.goal ? " is-selected" : ""}`}
         aria-pressed={number < next && number <= grid.goal}
+        disabled={cooling}
         onClick={() => tap(number)}
       ><span>{number}</span></button>)}
     </div>
-    <button type="button" className="ww-button" onClick={reshuffle}>Lewati giliran</button>
+    <button type="button" className="ww-button" disabled={cooling} onClick={() => { cool(); reshuffle(); }}>Lewati giliran</button>
   </div>;
 }

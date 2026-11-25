@@ -11,6 +11,7 @@ import { FACTION_LABELS, isNightPhase, PHASE_LABELS, roleName, type WerewolfSnap
 import { NightActionPanel } from "@/games/werewolf/ui/night-actions";
 import { HunterShot } from "@/games/werewolf/ui/hunter-shot";
 import { RoleCard } from "@/games/werewolf/ui/role-card";
+import { TAP_COOLDOWN_MS } from "@/games/werewolf/ui/use-cooldown";
 import { formatSeconds, useCountdown } from "@/games/werewolf/ui/use-countdown";
 import { useNarration } from "@/games/werewolf/ui/use-narration";
 import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
@@ -63,8 +64,12 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   const narratorSpeaking = narratorLeft !== null && narratorLeft > 0;
   const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected), secondsLeft);
 
+  const performing = useRef(false);
+
   async function perform(action: Record<string, unknown>) {
-    if (!snapshot) return;
+    // A second click while one action is in flight (or just finished) is ignored.
+    if (!snapshot || performing.current) return;
+    performing.current = true;
     setBusy(true);
     setError("");
     try {
@@ -75,7 +80,8 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
       setError("Aksi belum tersimpan. Periksa koneksi.");
     } finally {
       await load();
-      setBusy(false);
+      // Keep the buttons locked a moment after the answer, so actions cannot be fired back to back.
+      window.setTimeout(() => { performing.current = false; setBusy(false); }, TAP_COOLDOWN_MS);
     }
   }
 
