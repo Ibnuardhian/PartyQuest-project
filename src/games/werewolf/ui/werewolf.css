@@ -125,7 +125,8 @@ body:has(.ww-is-night) { background: #000; }
 .ww-target:hover:not(:disabled), .ww-target.is-selected { border-color: #0ea5e959; }
 .ww-target.is-selected { box-shadow: inset 0 0 0 1px #0ea5e959; }
 .ww-target:disabled { opacity: .4; }
-.ww-claw { color: #b91c1c; letter-spacing: -2px; }
+.ww-claw { display: inline-flex; gap: 2px; color: #dc2626; }
+.ww-claw svg { width: 18px; height: 18px; }
 /* Day */
 .ww-matrix, .ww-voted, .ww-role-list, .ww-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ww-matrix li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; border-top: 1px solid var(--ww-line); padding-top: 6px; }
@@ -135,7 +136,8 @@ body:has(.ww-is-night) { background: #000; }
 .ww-role-list li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--ww-line); padding-top: 6px; font-size: 13px; }
 .ww-role-list .is-winner strong { color: #fcd34d; }
 .ww-timeline { color: var(--ww-muted); font-size: 12px; list-style: decimal inside; }
-.ww-dead { border-color: #334155; }
+.ww-dead { border-color: #b91c1c; background: rgba(185, 28, 28, .14); }
+.ww-dead .section-kicker { color: #f87171; }
 /* Lobby editor (rendered inside the light platform lobby) */
 .ww-editor { display: grid; gap: 10px; }
 .ww-editor .ww-check { color: inherit; }
