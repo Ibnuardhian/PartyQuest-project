@@ -99,7 +99,7 @@ export default function UndercoverSetup() {
   const mrWhiteToggle = <label className="toggle-row"><span><strong>Tambahkan Mr. White</strong><small>Tak punya kata—bisa menang dengan menebak</small></span><input type="checkbox" checked={mrWhiteEnabled} onChange={(event) => setMrWhiteEnabled(event.target.checked)} /><span className="toggle-ui" aria-hidden="true" /></label>;
 
   return <main className="page-shell undercover-theme">
-    <SiteHeader><div className="topbar-actions"><span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span>{setupMode === "local" && <button type="button" className="online-link" onClick={() => changeSetupMode("online")}>Online Room ↗</button>}</div></SiteHeader>
+    <SiteHeader><div className="topbar-actions"><span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span></div></SiteHeader>
     <section className="hero-grid" id="beranda">
       <div className="hero-copy">
         <Link className="text-button catalog-back" href="/">← Kembali ke katalog</Link>
