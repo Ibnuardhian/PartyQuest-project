@@ -138,7 +138,7 @@ export default function UndercoverLocalGame() {
         <section className="game-wrap">
           <div className="game-topline">
             <button className="text-button" onClick={() => leave("/")}>
-              ← Keluar ke beranda
+              ← Kembali ke katalog
             </button>
             <span>RONDE {game.public.round}</span>
           </div>

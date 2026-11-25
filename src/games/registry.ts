@@ -10,4 +10,3 @@ export function getGameModule(key: string) {
 }
 
 /** The game the header's "Online Room" shortcut opens. */
-export const defaultOnlineGame = gameModules.find((game) => game.onlineSetupHref) ?? null;

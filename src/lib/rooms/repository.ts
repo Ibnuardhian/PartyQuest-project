@@ -66,6 +66,28 @@ export function findLatestSession(roomId: string) {
   );
 }
 
+/** Finished rounds of a room with their stored states, oldest first, for the scoreboard. */
+export function listFinishedSessions(roomId: string) {
+  return query<{ public_state: unknown; private_state: unknown; settings: unknown }>(
+    `select s.public_state, p.private_state, r.settings
+     from game_sessions s
+     join game_private_state p on p.session_id = s.id
+     join game_rooms r on r.id = s.room_id
+     where s.room_id = $1 and s.status = 'finished' order by s.round_no`,
+    [roomId],
+  );
+}
+
+/** Active members who joined after the latest round began and are not ready yet (they were never dealt in). */
+export function listUnreadyNewcomers(roomId: string) {
+  return query<{ user_id: string }>(
+    `select m.user_id from room_members m
+     join lateral (select started_at from game_sessions where room_id = $1 order by round_no desc limit 1) s on true
+     where m.room_id = $1 and m.left_at is null and m.joined_at > s.started_at and not m.is_ready`,
+    [roomId],
+  );
+}
+
 export function findSession<TPublic>(sessionId: string) {
   return queryOne<SessionRow<TPublic>>(`select ${SESSION_COLUMNS} from game_sessions where id = $1`, [sessionId]);
 }

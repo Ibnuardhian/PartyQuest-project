@@ -266,3 +266,30 @@ body:has(.ww-is-night) { background: #000; }
 @media (prefers-reduced-motion: reduce) { .ww-rg-chevron { transition: none; } }
 .ww-rg-card.is-soon { opacity: .5; transition: opacity .2s; }.ww-rg-card.is-soon:hover, .ww-rg-card.is-soon:focus-visible, .ww-rg-card.is-soon.is-flipped { opacity: .85; }
 .ww-rg-card.is-soon .ww-rg-medal { filter: saturate(.5); }
+/* Direct join screen: midnight OLED cyan. */
+.werewolf-theme .lj-crumbs { color: #94a3b8; }.werewolf-theme .lj-back { color: #94a3b8; }.werewolf-theme .lj-back:hover { color: #67e8f9; }
+.werewolf-theme .lj-card { background: #0b121e; border: 1px solid rgba(6, 182, 212, .25); box-shadow: 0 24px 60px rgba(0, 0, 0, .6); color: #f1f5f9; }
+.werewolf-theme .lj-title { color: #f1f5f9; }.werewolf-theme .lj-code { color: #22d3ee; }.werewolf-theme .lj-sub { color: #94a3b8; }
+.werewolf-theme .lj-meta { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .1); color: #94a3b8; }
+.werewolf-theme .lj-host b, .werewolf-theme .lj-count b { color: #f1f5f9; font-weight: 700; }
+.werewolf-theme .lj-mode { color: #22d3ee; }
+.werewolf-theme .lj-label { color: #f1f5f9; }
+.werewolf-theme .lj-input { background: #060a12; border: 1px solid rgba(255, 255, 255, .15); color: #f1f5f9; border-radius: 8px; }
+.werewolf-theme .lj-input::placeholder { color: #64748b; }
+.werewolf-theme .lj-input:focus { border-color: #22d3ee; box-shadow: 0 0 0 2px rgba(34, 211, 238, .2); }
+.werewolf-theme .lj-input:disabled { opacity: .6; }
+.werewolf-theme .lj-cta { background: #06b6d4; color: #020617; }.werewolf-theme .lj-cta:hover:not(:disabled) { background: #22d3ee; }
+.werewolf-theme .lj-cta:disabled { background: rgba(255, 255, 255, .1); color: #64748b; }
+
+/* Shared Online Room lobby on Werewolf's dark cards. */
+.werewolf-theme .lb-card { --ink: #e2e8f0; --muted: #94a3b8; --line: rgba(255, 255, 255, .12); --green: #0ea5e9; --paper: #0b1220; color: #e2e8f0; }
+.werewolf-theme .lb-card .lb-name, .werewolf-theme .lb-card .lb-count b, .werewolf-theme .lb-card .lb-stat strong { color: #f1f5f9; font-weight: 600; }
+.werewolf-theme .lb-card .lb-row, .werewolf-theme .lb-card .lb-stat { background: rgba(255, 255, 255, .04); border-color: rgba(255, 255, 255, .12); }
+.werewolf-theme .lb-card .lb-code { color: #22d3ee; }
+.werewolf-theme .lb-card .lb-pill { background: rgba(255, 255, 255, .1); color: #cbd5e1; }
+.werewolf-theme .lb-card .lb-pill.ready { background: #0f7a4f; color: #fff; }
+.werewolf-theme .lb-card .lb-start:not(:disabled), .werewolf-theme .lb-card .lb-ready.on { background: #0ea5e9; color: #020617; }
+.werewolf-theme .lb-card .lb-start:disabled { background: rgba(255, 255, 255, .08); color: #64748b; }
+.werewolf-theme .lb-card .lb-exit { color: #fca5a5; background: rgba(239, 68, 68, .08); border-color: rgba(239, 68, 68, .4); }
+.werewolf-theme .lb-card .lb-exit:hover:not(:disabled) { background: #b91c1c; color: #fff; }
+.werewolf-theme .lb-card .lb-chip { color: #cbd5e1; }.werewolf-theme .lb-card .lb-chip.host { color: #22d3ee; border-color: #22d3ee; }

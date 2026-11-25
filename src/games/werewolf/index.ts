@@ -16,6 +16,9 @@ export const werewolfModule: GameModule = {
   CatalogCard: WerewolfCatalogCard,
   OnlineGame: WerewolfOnlineGame,
   RoomSettingsEditor: WerewolfRoomSettingsEditor,
+  roomModeLabel() {
+    return "Hybrid Classic";
+  },
   describeRoomSettings(raw) {
     const settings = (raw ?? {}) as { roles?: "AUTO" | Partial<Record<ClassicRole, number>>; deadRevealMode?: string; nightTurnSeconds?: number; dayDiscussionSeconds?: number };
     const roles = settings.roles;

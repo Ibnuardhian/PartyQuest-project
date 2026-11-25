@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { OnlineGameError, type OnlineGameServer, type StoredSession } from "@/games/online-game";
-import { CLUE_TURN_DURATION_MS, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
-import { undercoverGame } from "@/games/undercover/engine";
+import { DEFAULT_CLUE_MINUTES, isClueMinutesOption, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
+import { endClueWindow, finishOfflineClueRound, undercoverGame } from "@/games/undercover/engine";
 
 /** Undercover adapter for Online Room. Pure functions: no database, no HTTP. */
 
@@ -9,12 +9,13 @@ export const undercoverRoomSettingsSchema = z.object({
   category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]),
   undercoverCount: z.number().int().min(1).max(4),
   mrWhiteEnabled: z.boolean(),
+  clueMinutes: z.number().refine(isClueMinutesOption).optional(),
 }).strict();
 
 export const undercoverActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("confirm-reveal") }).strict(),
-  z.object({ type: z.literal("submit-clue") }).strict(),
   z.object({ type: z.literal("finish-discussion") }).strict(),
+  z.object({ type: z.literal("end-clue") }).strict(),
   z.object({ type: z.literal("cast-vote"), targetPlayerId: z.string().uuid() }).strict(),
   z.object({ type: z.literal("guess-civilian-word"), guess: z.string().trim().min(1).max(60) }).strict(),
 ]);
@@ -34,22 +35,22 @@ function requireSeat(state: GameState, userId: string) {
 export function toGameAction(intent: UndercoverActionIntent, userId: string): GameAction {
   switch (intent.type) {
     case "finish-discussion": return intent;
+    case "end-clue": throw new Error("end-clue is host-only and handled before engine dispatch.");
     case "cast-vote": return { type: intent.type, playerId: userId, targetPlayerId: intent.targetPlayerId };
     case "guess-civilian-word": return { type: intent.type, playerId: userId, guess: intent.guess };
     default: return { type: intent.type, playerId: userId };
   }
 }
 
-/** Creates a missing clue deadline or advances an expired clue turn using server time. */
+/** Creates a missing clue deadline or ends an expired clue window using server time. */
 export function advanceClueDeadline(state: GameState, serverNow: number): GameState | null {
   if (state.public.phase !== "clue") return null;
   const deadlineMs = state.public.clueDeadlineAt ? Date.parse(state.public.clueDeadlineAt) : Number.NaN;
   if (!Number.isFinite(deadlineMs)) {
-    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + CLUE_TURN_DURATION_MS).toISOString() } };
+    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + (state.settings.clueMinutes ?? DEFAULT_CLUE_MINUTES) * 60_000).toISOString() } };
   }
   if (deadlineMs > serverNow) return null;
-  const activePlayer = state.public.players.filter((player) => player.alive)[state.public.clueIndex];
-  return activePlayer ? undercoverGame.applyAction(state, { type: "submit-clue", playerId: activePlayer.id }, serverNow) : null;
+  return endClueWindow(state, serverNow);
 }
 
 export const undercoverOnline: OnlineGameServer = {
@@ -80,6 +81,12 @@ export const undercoverOnline: OnlineGameServer = {
     if (!intent.success) throw new OnlineGameError(400, "invalid_input", "Aksi permainan tidak valid.");
     const state = restoreState(session);
     requireSeat(state, ctx.userId);
+    if (intent.data.type === "end-clue") {
+      if (!ctx.isHost) throw new OnlineGameError(403, "host_only", "Hanya host yang dapat mengakhiri ronde petunjuk.");
+      if (state.public.phase !== "clue") throw new OnlineGameError(400, "invalid_action", "Aksi tidak sesuai dengan fase permainan saat ini.");
+      const voting = finishOfflineClueRound(state);
+      return { publicState: { ...voting.public, votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
+    }
     try {
       return { publicState: undercoverGame.applyAction(state, toGameAction(intent.data, ctx.userId), ctx.now).public };
     } catch {
@@ -90,14 +97,23 @@ export const undercoverOnline: OnlineGameServer = {
   retryOnConflict(intent) {
     return typeof intent === "object" && intent !== null && (intent as { type?: unknown }).type === "cast-vote";
   },
+  /** Each member of the winning side scores 1 point; a winning Mr. White scores 3. */
+  roundPoints(session) {
+    const state = restoreState(session);
+    const winner = state.public.winner;
+    if (state.public.phase !== "finished" || !winner) return null;
+    const points: Record<string, number> = {};
+    for (const assignment of state.secret.assignments) if (assignment.role === winner) points[assignment.playerId] = winner === "mr-white" ? 3 : 1;
+    return points;
+  },
   advance(session, now) {
     const next = advanceClueDeadline(restoreState(session), now);
     return next ? { publicState: next.public } : null;
   },
-  view(session, { userId }) {
+  view(session, { userId, isHost }) {
     const state = restoreState(session);
     const view = undercoverGame.getPlayerView(state, userId);
     if (!view) return null;
-    return { view, round: state.public.round, hasVoted: Boolean(state.public.votes[userId]), votesSubmitted: Object.keys(state.public.votes).length };
+    return { view, isHost, round: state.public.round, hasVoted: Boolean(state.public.votes[userId]), votesSubmitted: Object.keys(state.public.votes).length };
   },
 };

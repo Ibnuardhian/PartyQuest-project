@@ -1,0 +1,19 @@
+/* Category dropdown in the dossier palette. Not scoped to .undercover-theme because the menu lives in a portal on <body>. */
+.cs-trigger { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid #d6d3d1; border-radius: 8px; background: #f7f4ee; color: #201d1a; font: 14px Arial, Helvetica, sans-serif; text-align: left; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
+.cs-trigger:hover:not(:disabled) { border-color: #a8a29e; }
+.cs-trigger:focus-visible, .cs-trigger[aria-expanded="true"] { outline: none; border-color: #8b1111; box-shadow: 0 0 0 3px #8b111133; }
+.cs-trigger:disabled { opacity: .55; cursor: not-allowed; }
+.cs-trigger-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-chevron { width: 16px; height: 16px; flex: none; fill: none; stroke: #57534e; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s ease; }
+.cs-trigger[aria-expanded="true"] .cs-chevron { transform: rotate(180deg); }
+.cs-badge { flex: none; padding: 2px 8px; border-radius: 999px; background: #e7e5e4cc; color: #57534e; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.cs-menu { position: fixed; z-index: 1000; margin: 0; padding: 6px; overflow-y: auto; list-style: none; border: 1px solid #d6d3d1; border-radius: 8px; background: #f7f4ee; box-shadow: 0 10px 25px #0000002e, 0 4px 10px #0000001f; font: 14px Arial, Helvetica, sans-serif; }
+.cs-option { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: 6px; color: #292524; cursor: pointer; }
+.cs-option.is-active { background: #8b11111a; color: #450a0a; }
+.cs-option.is-selected { font-weight: 600; }
+.cs-option.is-active .cs-badge { background: #8b111126; color: #7f1d1d; }
+.cs-check { width: 14px; flex: none; color: #8b1111; font-weight: 700; text-align: center; }
+.cs-option-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .cs-trigger, .cs-chevron { transition: none; } }
