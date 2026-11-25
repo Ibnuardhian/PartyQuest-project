@@ -125,6 +125,10 @@ body:has(.ww-is-night) { background: #000; }
 .ww-target:hover:not(:disabled), .ww-target.is-selected { border-color: #0ea5e959; }
 .ww-target.is-selected { box-shadow: inset 0 0 0 1px #0ea5e959; }
 .ww-target:disabled { opacity: .4; }
+/* Tiles appear one after another, a little at a time (the delay is capped so a long list is ready within ~1 s). */
+.ww-targets.is-staggered .ww-target { animation: ww-tile-in .35s ease-out both; animation-delay: calc(min(var(--i, 0), 12) * 80ms); }
+@keyframes ww-tile-in { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ww-targets.is-staggered .ww-target { animation: none; } }
 .ww-claw { display: inline-flex; gap: 2px; color: #dc2626; }
 .ww-claw svg { width: 18px; height: 18px; }
 /* Day */

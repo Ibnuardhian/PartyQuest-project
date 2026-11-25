@@ -64,6 +64,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diubah
 
+- **Kotak target muncul satu per satu** (jeda 80 md per kotak, maksimal sekitar 1 detik) di layar aksi malam asli dan di Fake Tap, dengan animasi yang sama agar keduanya tetap tidak bisa dibedakan. Mengikuti pengaturan "kurangi gerakan".
 - **Cooldown tombol Werewolf online**: tiap ketukan Fake Tap mengunci grid 0,5 detik, dan aksi nyata (target, voting, tembakan Hunter) mengunci tombol 0,5 detik setelah jawaban server, jadi tidak bisa ditekan beruntun.
 - **Kotak "Kamu telah tereliminasi" berwarna merah**, dan tanda pilihan kawanan Werewolf saat memilih mangsa memakai ikon werewolf (bukan garis miring).
 - **Suara narator di TV menyala otomatis** setelah pairing (tombol "Aktifkan suara" tidak perlu ditekan lagi). Kalau browser TV masih memblokir suara, tombol apa pun di remote atau satu ketukan membukanya; tombol "Matikan/Nyalakan suara" tetap ada sebagai opsi.
