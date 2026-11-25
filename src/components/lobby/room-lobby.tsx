@@ -9,7 +9,7 @@ import { getGameModule } from "@/games/registry";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
 
-interface Member { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean; }
+interface Member { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean; returned: boolean; }
 interface RoomPreview { code: string; hostName: string; playerCount: number; maxPlayers: number; status: string; settings: unknown }
 interface RoomData {
   room: { id: string; code: string; gameKey: string; status: "lobby" | "in_progress" | "finished" | "abandoned"; settings: unknown; expiresAt: string; maxPlayers: number };
@@ -43,6 +43,8 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const nameInput = useRef<HTMLInputElement>(null);
   const guardOn = useRef(true);
   const wasHost = useRef<boolean | null>(null);
+  const returnSent = useRef<string | null>(null);
+  const [returnRetry, setReturnRetry] = useState(0);
   const isMember = Boolean(room);
 
   const load = useCallback(async (redirect = true) => {
@@ -154,6 +156,19 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
     guardOn.current = true;
   }
 
+  // Opening the lobby of a finished room is what "back in the lobby" means; the server opens it once everyone is back.
+  const finishedMe = room?.room.status === "finished" ? room.members.find((member) => member.user_id === room.currentUserId) : undefined;
+  const needsReturn = Boolean(finishedMe && !finishedMe.returned);
+  const roundKey = room?.session?.id ?? "";
+  useEffect(() => {
+    if (!needsReturn || returnSent.current === roundKey) return;
+    returnSent.current = roundKey;
+    const retryLater = () => { returnSent.current = null; window.setTimeout(() => setReturnRetry((count) => count + 1), 3000); };
+    void fetch(`/api/rooms/${code}/return`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then((response) => { if (response.ok) return load(false); retryLater(); })
+      .catch(retryLater);
+  }, [needsReturn, roundKey, code, load, returnRetry]);
+
   // The host role moves when the host leaves; tell the player who just received it.
   const isHostNow = room?.isHost;
   useEffect(() => {
@@ -197,6 +212,9 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const status = room?.room.status;
   const startBlocker = !room ? "" : room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : readyCount < room.members.length ? `MENUNGGU SEMUA SIAP (${readyCount}/${room.members.length})` : "";
   const showInvite = status === "lobby" || status === "finished";
+  // Offline members cannot come back, so they neither block the lobby nor count toward the wait.
+  const waitingMembers = room?.members.filter((member) => member.returned || member.online) ?? [];
+  const returnedCount = waitingMembers.filter((member) => member.returned).length;
   const settingsItems = room ? (game?.describeRoomSettings?.(room.room.settings) ?? []) : [];
   const editable = Boolean(room?.isHost && status === "lobby" && game?.RoomSettingsEditor);
 
@@ -240,7 +258,10 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
             <div className="lb-card-head"><span className="section-kicker">{editable ? "PENGATURAN RONDE" : "ATURAN RONDE AKTIF"}</span>{!room.isHost && <span className="lb-badge">Diatur oleh Host</span>}</div>
             {editable && game?.RoomSettingsEditor
               ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} />
-              : <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>}
+              : <>
+                <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>
+                {status === "finished" && room.isHost && <p className="lb-callout">Pengaturan bisa diubah setelah semua pemain yang online kembali ke lobi. Pemain offline tidak ditunggu, atau tekan Buka lobi sekarang.</p>}
+              </>}
             <p className="lb-note">Setiap pemain menerima informasi rahasia sendiri. Jangan bagikan layar saat kartu dibuka.</p>
           </section>
           <section className="setup-card lb-card lb-people" aria-label="Kode room dan daftar pemain">
@@ -261,13 +282,19 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
                 : <span className="lb-name">{member.display_name}{member.user_id === room.currentUserId && <small className="lb-chip">Kamu</small>}{member.user_id === room.hostUserId && <small className="lb-chip host">♛ Host</small>}</span>}
               {room.isHost && room.hostCanRenameMembers && (status === "lobby" || status === "finished") && renaming?.userId !== member.user_id && <button type="button" className="lb-edit" disabled={busy} aria-label={`Ganti nama ${member.display_name}`} title="Ganti nama" onClick={() => setRenaming({ userId: member.user_id, value: member.display_name })}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></button>}
               {room.scores && <span className="lb-score" aria-label={`Skor ${room.scores[member.user_id] ?? 0}`}>🏆 {room.scores[member.user_id] ?? 0}</span>}
-              <span className={member.is_ready ? "lb-pill ready" : "lb-pill"}>{member.is_ready ? "Siap ✓" : "Belum siap"}</span>
+              {status === "finished"
+                ? <span className={member.returned ? "lb-pill ready" : "lb-pill"}>{member.returned ? "Di lobi ✓" : member.online ? "Belum kembali" : "Offline"}</span>
+                : <span className={member.is_ready ? "lb-pill ready" : "lb-pill"}>{member.is_ready ? "Siap ✓" : "Belum siap"}</span>}
             </div>)}
             {room.members.length < minPlayers && Array.from({ length: Math.min(2, minPlayers - room.members.length) }, (_, index) => <div className="lb-row lb-empty" key={`empty-${index}`}>Menunggu pemain lain…</div>)}</div>
             <div className="lb-actions">
-              {(status === "lobby" || status === "finished") && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "SUDAH SIAP ✓" : "TANDAI SIAP"}</button>}
+              {status === "lobby" && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "SUDAH SIAP ✓" : "TANDAI SIAP"}</button>}
               {room.isHost && status === "lobby" && <button className="lb-btn lb-start" disabled={busy || Boolean(startBlocker)} onClick={() => void roomAction("start")}>{startBlocker || "MULAI PERMAINAN →"}</button>}
-              {room.isHost && status === "finished" && <button className="lb-btn lb-start" disabled={busy || room.members.length < minPlayers} onClick={() => void roomAction("rematch")}>{room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : "MAIN ULANG ↻"}</button>}
+              {status === "finished" && room.isHost && <>
+                <button className="lb-btn lb-start" disabled>{`MENUNGGU SEMUA KEMBALI KE LOBI (${returnedCount}/${waitingMembers.length})`}</button>
+                <button type="button" className="secondary-wide" disabled={busy} onClick={() => void roomAction("return", { force: true })}>Buka lobi sekarang</button>
+              </>}
+              {status === "finished" && !room.isHost && <p className="status-note">Menunggu semua pemain kembali ke lobi ({returnedCount}/{waitingMembers.length}). Setelah itu host dapat mengubah pengaturan dan memulai ronde baru.</p>}
               {room.isHost && game?.tvSetupHref && <div className="tv-pairing">
                 {room.tvConnected ? <p className="status-note">Layar TV terhubung ✓ · suara moderator diputar di TV</p> : <button className="secondary-wide" disabled={busy} onClick={() => void createTvCode()}>Hubungkan layar TV (opsional)</button>}
                 {tvCode && !room.tvConnected && <p className="status-note">Buka <strong>{typeof window === "undefined" ? game.tvSetupHref : `${window.location.origin}${game.tvSetupHref}`}</strong> di TV, masukkan kode room <strong>{room.room.code}</strong> dan kode TV <strong className="tv-code">{tvCode.code}</strong> (berlaku {tvCode.minutes} menit).</p>}

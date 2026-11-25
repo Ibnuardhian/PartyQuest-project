@@ -71,7 +71,7 @@ The game should support:
 - Voting and elimination.
 - Role-specific victory conditions.
 - Round progression and game-over results.
-- Rematch.
+- Rematch (a new round from the lobby: a finished room only reopens as a lobby once every member who is still online (seen within 30 s) is back via `return_to_lobby`, or the host forces it).
 
 Keep the role distribution and victory conditions in one authoritative rules module. Document all implemented rules and edge cases.
 

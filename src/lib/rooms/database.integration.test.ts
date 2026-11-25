@@ -238,6 +238,99 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
+  describe("returning to the lobby after a round", () => {
+    async function finishedRoom() {
+      const started = await startedSession();
+      const done = await client.query("select ok from apply_game_action($1, $2, 0, $3::jsonb)", [started.session.id, started.ids[0], JSON.stringify({ ...started.publicState, phase: "finished" })]);
+      expect(done.rows[0]!.ok).toBe(true);
+      // Same transaction clock: age the members' lobby_at so they count as still on the result screen.
+      await client.query("update room_members set lobby_at = now() - interval '1 minute', last_seen_at = now() where room_id = $1", [started.room.id]);
+      return started;
+    }
+    const statusOf = async (roomId: string) => (await client.query<{ status: string }>("select status from game_rooms where id = $1", [roomId])).rows[0]!.status;
+
+    it("opens the lobby only after every active member is back", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[1]]);
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[2]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+        const ready = await client.query("select count(*)::int as n from room_members where room_id = $1 and is_ready", [room.id]);
+        expect(ready.rows[0]!.n).toBe(0);
+      });
+    });
+
+    it("lets only the host open the lobby early and refuses it while a round runs", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        await client.query("savepoint s");
+        expect(await errorOf(client.query("select return_to_lobby($1, $2, true)", [room.id, ids[1]]))).toContain("host_required");
+        await client.query("rollback to savepoint s");
+        await client.query("select return_to_lobby($1, $2, true)", [room.id, ids[0]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+        const running = await startedSession();
+        expect(await errorOf(client.query("select return_to_lobby($1, $2)", [running.room.id, running.ids[0]]))).toContain("room_in_progress");
+      });
+    });
+
+    it("moves the host and opens the lobby when the host is the last one not back and leaves", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[1]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[2]]);
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select leave_room($1, $2)", [room.id, ids[0]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+        const host = await client.query<{ host_user_id: string }>("select host_user_id from game_rooms where id = $1", [room.id]);
+        expect(host.rows[0]!.host_user_id).toBe(ids[1]);
+      });
+    });
+
+    it("treats a room everyone left as abandoned and refuses to return to it", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        for (const id of ids) await client.query("select leave_room($1, $2)", [room.id, id]);
+        expect(await statusOf(room.id)).toBe("abandoned");
+        expect(await errorOf(client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]))).toContain("room_not_found");
+      });
+    });
+
+    it("does not wait for members who went offline", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        // Two members closed their tab long ago; only the host is still around.
+        await client.query("update room_members set last_seen_at = now() - interval '5 minutes' where room_id = $1 and user_id = any($2)", [room.id, [ids[1], ids[2]]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+      });
+    });
+
+    it("still waits for members who are online but have not come back", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        await client.query("update room_members set last_seen_at = now() - interval '5 minutes' where room_id = $1 and user_id = $2", [room.id, ids[2]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]);
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[1]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+      });
+    });
+
+    it("opens the lobby when the last member still on the result screen leaves", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[1]]);
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select leave_room($1, $2)", [room.id, ids[2]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+      });
+    });
+  });
+
   it("cleans up expired rooms and finished or abandoned rooms idle for over an hour", async () => {
     await inRollback(async () => {
       // updated_at is maintained by a trigger; switch it off so the test can age rooms.
