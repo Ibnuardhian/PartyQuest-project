@@ -87,6 +87,16 @@ describe("Undercover Online Room adapter", () => {
     expectGameError(() => undercoverOnline.applyIntent(clue, { type: "submit-clue" }, ctx(members[0]!.userId)).publicState, 400, "invalid_input");
   });
 
+  it("lets only the host end the clue window early and go to voting", () => {
+    const clue = revealAll(newSession());
+    const host = { ...ctx(members[0]!.userId), isHost: true };
+    expectGameError(() => undercoverOnline.applyIntent(clue, { type: "end-clue" }, ctx(members[1]!.userId)).publicState, 403, "host_only");
+    const voting = undercoverOnline.applyIntent(clue, { type: "end-clue" }, host).publicState as unknown as PublicState;
+    expect(voting.phase).toBe("voting");
+    expect(voting.clueDeadlineAt).toBeNull();
+    expectGameError(() => undercoverOnline.applyIntent({ ...clue, publicState: voting }, { type: "end-clue" }, host).publicState, 400, "invalid_action");
+  });
+
   it("advances the clue window from server time only", () => {
     const clue = revealAll(newSession());
     const publicState = clue.publicState as PublicState;

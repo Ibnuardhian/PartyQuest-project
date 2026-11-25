@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { OnlineGameError, type OnlineGameServer, type StoredSession } from "@/games/online-game";
 import { DEFAULT_CLUE_MINUTES, isClueMinutesOption, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
-import { endClueWindow, undercoverGame } from "@/games/undercover/engine";
+import { endClueWindow, finishOfflineClueRound, undercoverGame } from "@/games/undercover/engine";
 
 /** Undercover adapter for Online Room. Pure functions: no database, no HTTP. */
 
@@ -15,6 +15,7 @@ export const undercoverRoomSettingsSchema = z.object({
 export const undercoverActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("confirm-reveal") }).strict(),
   z.object({ type: z.literal("finish-discussion") }).strict(),
+  z.object({ type: z.literal("end-clue") }).strict(),
   z.object({ type: z.literal("cast-vote"), targetPlayerId: z.string().uuid() }).strict(),
   z.object({ type: z.literal("guess-civilian-word"), guess: z.string().trim().min(1).max(60) }).strict(),
 ]);
@@ -34,6 +35,7 @@ function requireSeat(state: GameState, userId: string) {
 export function toGameAction(intent: UndercoverActionIntent, userId: string): GameAction {
   switch (intent.type) {
     case "finish-discussion": return intent;
+    case "end-clue": throw new Error("end-clue is host-only and handled before engine dispatch.");
     case "cast-vote": return { type: intent.type, playerId: userId, targetPlayerId: intent.targetPlayerId };
     case "guess-civilian-word": return { type: intent.type, playerId: userId, guess: intent.guess };
     default: return { type: intent.type, playerId: userId };
@@ -79,6 +81,12 @@ export const undercoverOnline: OnlineGameServer = {
     if (!intent.success) throw new OnlineGameError(400, "invalid_input", "Aksi permainan tidak valid.");
     const state = restoreState(session);
     requireSeat(state, ctx.userId);
+    if (intent.data.type === "end-clue") {
+      if (!ctx.isHost) throw new OnlineGameError(403, "host_only", "Hanya host yang dapat mengakhiri ronde petunjuk.");
+      if (state.public.phase !== "clue") throw new OnlineGameError(400, "invalid_action", "Aksi tidak sesuai dengan fase permainan saat ini.");
+      const voting = finishOfflineClueRound(state);
+      return { publicState: { ...voting.public, votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
+    }
     try {
       return { publicState: undercoverGame.applyAction(state, toGameAction(intent.data, ctx.userId), ctx.now).public };
     } catch {
@@ -93,10 +101,10 @@ export const undercoverOnline: OnlineGameServer = {
     const next = advanceClueDeadline(restoreState(session), now);
     return next ? { publicState: next.public } : null;
   },
-  view(session, { userId }) {
+  view(session, { userId, isHost }) {
     const state = restoreState(session);
     const view = undercoverGame.getPlayerView(state, userId);
     if (!view) return null;
-    return { view, round: state.public.round, hasVoted: Boolean(state.public.votes[userId]), votesSubmitted: Object.keys(state.public.votes).length };
+    return { view, isHost, round: state.public.round, hasVoted: Boolean(state.public.votes[userId]), votesSubmitted: Object.keys(state.public.votes).length };
   },
 };
