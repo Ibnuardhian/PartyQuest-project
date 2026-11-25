@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
-import { CLUE_MINUTES_OPTIONS, DEFAULT_CLUE_MINUTES, formatClueMinutes, type Category } from "@/games/undercover/contract";
+import { DEFAULT_CLUE_MINUTES, type Category } from "@/games/undercover/contract";
 import { undercoverGame } from "@/games/undercover/engine";
 import { createLocalGameSession, LOCAL_GAME_PATH, writeLocalGameSession } from "@/games/undercover/local-session";
 import { UNDERCOVER_ONLINE_SETUP_PATH, UNDERCOVER_SETUP_PATH } from "@/games/undercover/paths";
@@ -22,7 +22,6 @@ export default function UndercoverSetup() {
   const [category, setCategory] = useState<Category>("campuran");
   const [undercoverCount, setUndercoverCount] = useState(1);
   const [mrWhiteEnabled, setMrWhiteEnabled] = useState(false);
-  const [clueMinutes, setClueMinutes] = useState<number>(DEFAULT_CLUE_MINUTES);
   const [error, setError] = useState("");
   const [onlineName, setOnlineName] = useState("");
   const [onlineRoomCode, setOnlineRoomCode] = useState("");
@@ -70,7 +69,8 @@ export default function UndercoverSetup() {
     setSetupMode(mode);
     setError("");
     setOnlineMessage("");
-    router.replace(mode === "online" ? UNDERCOVER_ONLINE_SETUP_PATH : UNDERCOVER_SETUP_PATH);
+    // In-place tab switch: keep the URL in sync without a navigation, a flash, or a scroll reset.
+    window.history.replaceState(window.history.state, "", mode === "online" ? UNDERCOVER_ONLINE_SETUP_PATH : UNDERCOVER_SETUP_PATH);
   }
 
   async function submitOnlineRoom(event: FormEvent<HTMLFormElement>, mode: "create" | "join") {
@@ -83,7 +83,7 @@ export default function UndercoverSetup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "create"
-          ? { gameKey: "undercover", displayName: onlineName, settings: { category, undercoverCount, mrWhiteEnabled, clueMinutes } }
+          ? { gameKey: "undercover", displayName: onlineName, settings: { category: "campuran", undercoverCount: 1, mrWhiteEnabled: false, clueMinutes: DEFAULT_CLUE_MINUTES } }
           : { displayName: onlineName, code: onlineRoomCode }),
       });
       const payload = await response.json() as { data?: { code?: string }; error?: { message?: string } };
@@ -99,14 +99,14 @@ export default function UndercoverSetup() {
   const mrWhiteToggle = <label className="toggle-row"><span><strong>Tambahkan Mr. White</strong><small>Tak punya kata—bisa menang dengan menebak</small></span><input type="checkbox" checked={mrWhiteEnabled} onChange={(event) => setMrWhiteEnabled(event.target.checked)} /><span className="toggle-ui" aria-hidden="true" /></label>;
 
   return <main className="page-shell undercover-theme">
-    <SiteHeader><div className="topbar-actions"><span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span>{setupMode === "local" && <button type="button" className="online-link" onClick={() => changeSetupMode("online")}>Online Room ↗</button>}</div></SiteHeader>
-    <section className="hero-grid" id="beranda">
+    <SiteHeader><div className="topbar-actions"><span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span></div></SiteHeader>
+    <section className="hero-grid uc-hero" id="beranda">
       <div className="hero-copy">
         <Link className="text-button catalog-back" href="/">← Kembali ke katalog</Link>
         <div className="eyebrow"><span>✦</span> GAME · UNDERCOVER</div>
         <h1>Seberapa jago<br />kamu <em>menyamar?</em></h1>
         <p className="hero-description">Semua punya kata rahasia—kecuali si penyamar. Beri petunjuk secara lisan, baca situasi, dan temukan siapa yang berbeda.</p>
-        <div className="hero-facts"><span>👥 3–12 pemain</span><span>◷ 15–30 menit</span><span>▣ {setupMode === "local" ? "Satu perangkat" : "Perangkat masing-masing"}</span></div>
+        <div className="hero-facts"><span>👥 3–12 pemain</span><span>◷ 15–30 menit</span><span key={setupMode} className="uc-fade uc-fact-mode">▣ {setupMode === "local" ? "Satu perangkat" : "Perangkat masing-masing"}</span></div>
         <div className="round-preview" aria-label="Ringkasan cara bermain">
           <div className="round-line" />
           {[["01", "Lihat kata", "Rahasiakan isi kartu"], ["02", "Beri petunjuk", "Jangan terlalu jelas"], ["03", "Cari penyamar", "Diskusi lalu voting"]].map(([number, title, description]) => <div className="round-step" key={number}><span className="step-number">{number}</span><strong>{title}</strong><small>{description}</small></div>)}
@@ -115,8 +115,8 @@ export default function UndercoverSetup() {
 
       <section className="setup-card" aria-labelledby="setup-title">
         <div className="card-heading"><div><span className="section-kicker">{setupMode === "local" ? "MODE LOKAL" : "MODE ONLINE"}</span><h2 id="setup-title">{setupMode === "local" ? "Siapkan permainan" : "Buat atau gabung"}</h2></div><span className="card-icon">{setupMode === "local" ? "♧" : "⌁"}</span></div>
-        <div className="setup-mode-switch" role="group" aria-label="Pilih mode permainan"><button type="button" className={setupMode === "local" ? "mode-option active" : "mode-option"} aria-pressed={setupMode === "local"} onClick={() => changeSetupMode("local")}>Pass-and-Play</button><button type="button" className={setupMode === "online" ? "mode-option active" : "mode-option"} aria-pressed={setupMode === "online"} onClick={() => changeSetupMode("online")}>Online Room</button></div>
-        {setupMode === "local" ? <>
+        <div className="setup-mode-switch" data-mode={setupMode} role="group" aria-label="Pilih mode permainan"><span className="mode-pill" aria-hidden="true" /><button type="button" className={setupMode === "local" ? "mode-option active" : "mode-option"} aria-pressed={setupMode === "local"} onClick={() => changeSetupMode("local")}>Pass-and-Play</button><button type="button" className={setupMode === "online" ? "mode-option active" : "mode-option"} aria-pressed={setupMode === "online"} onClick={() => changeSetupMode("online")}>Online Room</button></div>
+        <div key={setupMode} className="uc-mode-body">{setupMode === "local" ? <>
           <label className="field-label" htmlFor="player-names">Nama pemain <span>· satu nama per baris</span></label>
           <textarea id="player-names" className="names-input" value={namesInput} onChange={(event) => setNamesInput(event.target.value)} rows={5} maxLength={360} placeholder={"Alya\nBima\nCitra"} />
           <div className="input-caption"><span>Minimal 3, maksimal 12 pemain</span><span className={playerCount >= 3 && playerCount <= 12 ? "count-ok" : "count-warning"}>{playerCount}/12</span></div>
@@ -130,12 +130,12 @@ export default function UndercoverSetup() {
           <p className="privacy-note"><span aria-hidden="true">◉</span> Kata akan dibuka bergiliran di perangkat ini. Pastikan pemain lain tidak mengintip.</p>
         </> : <div className="uc-online-stack">
           <div className="uc-field"><label className="field-label" htmlFor="online-player-name">Nama tampilan</label><input className="text-input online-text-input" id="online-player-name" maxLength={24} value={onlineName} onChange={(event) => setOnlineName(event.target.value)} placeholder="Nama yang dilihat teman" /></div>
-          <form className="uc-online-stack" onSubmit={(event) => void submitOnlineRoom(event, "create")}><h3 className="subheading">Buat room baru</h3><div className="form-row"><div className="form-field"><label className="field-label" htmlFor="online-category">Kategori</label><CategorySelect id="online-category" value={category} onChange={setCategory} /></div><div className="form-field"><label className="field-label" htmlFor="online-undercover-count">Undercover</label><select id="online-undercover-count" value={undercoverCount} onChange={(event) => setUndercoverCount(Number(event.target.value))}>{[1, 2, 3].map((count) => <option key={count} value={count}>{count} orang</option>)}</select></div></div><div className="form-field"><label className="field-label" htmlFor="online-clue-minutes">Waktu ronde petunjuk</label><select id="online-clue-minutes" value={clueMinutes} onChange={(event) => setClueMinutes(Number(event.target.value))}>{CLUE_MINUTES_OPTIONS.map((minutes) => <option key={minutes} value={minutes}>{formatClueMinutes(minutes)}</option>)}</select></div>{mrWhiteToggle}<button className="primary-button" disabled={!onlineReady || onlineWorking || !onlineName.trim()}>Buat room <span>→</span></button></form>
+          <form className="uc-online-stack" onSubmit={(event) => void submitOnlineRoom(event, "create")}><p className="uc-caption">Atur kategori &amp; role di lobi setelah room dibuat.</p><button className="primary-button" disabled={!onlineReady || onlineWorking || !onlineName.trim()}>Buat room <span>→</span></button></form>
           <div className="divider-label"><span />ATAU<span /></div>
           <form className="uc-field" onSubmit={(event) => void submitOnlineRoom(event, "join")}><label className="field-label" htmlFor="online-join-code">Kode room</label><div className="join-row"><input className="text-input online-text-input code-input" id="online-join-code" maxLength={6} autoCapitalize="characters" autoComplete="off" value={onlineRoomCode} onChange={(event) => setOnlineRoomCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, ""))} placeholder="ABC234" /><button className={`secondary-button${onlineRoomCode.length === 6 ? " is-ready" : ""}`} disabled={!onlineReady || onlineWorking || onlineRoomCode.length !== 6 || !onlineName.trim()}>Gabung</button></div></form>
           {!onlineReady && !onlineMessage && <p className="status-note">Menghubungkan sesi tamu…</p>}{onlineMessage && <p className="error-message" role="alert">{onlineMessage}</p>}
           <p className="privacy-note">Sesi tamu tidak memakai email atau kata sandi.</p>
-        </div>}
+        </div>}</div>
       </section>
     </section>
     <SiteFooter left="UNDERCOVER" right="Undercover · game pertama di katalog" />

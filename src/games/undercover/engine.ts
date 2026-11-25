@@ -115,7 +115,9 @@ export function endClueWindow(state: GameState, now: number): GameState {
   if (state.public.phase !== "clue") throw new Error("Ronde petunjuk tidak aktif.");
   const clueIndex = state.public.clueIndex + 1;
   const more = clueIndex < cluePassesForRound(state.public.round);
-  return { ...state, public: { ...state.public, clueIndex, phase: more ? "clue" : "discussion", clueDeadlineAt: more ? deadlineAfter(now, state.settings) : null } };
+  if (more) return { ...state, public: { ...state.public, clueIndex, clueDeadlineAt: deadlineAfter(now, state.settings) } };
+  // The timed window is the whole clue phase: when it ends the table votes right away.
+  return { ...state, public: { ...state.public, clueIndex, phase: "voting", clueDeadlineAt: null, votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
 }
 
 /** Finish the spoken clue window before players vote away from the device. */

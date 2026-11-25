@@ -45,6 +45,11 @@ export interface OnlineGameServer {
   advance(session: StoredSession, now: number): { publicState: NewRound["publicState"]; secretState?: unknown } | null;
   /** The view authorized for one player, or null when they hold no seat. */
   view(session: StoredSession, viewer: Viewer): Record<string, unknown> | null;
+  /**
+   * Points each player earned in one finished round, keyed by user id; null when the game keeps no score.
+   * The platform sums these over the room's finished rounds for the lobby scoreboard.
+   */
+  roundPoints?(session: StoredSession): Record<string, number> | null;
   /** Read-only public view for a shared screen. */
   publicView?(session: StoredSession): Record<string, unknown>;
 }
