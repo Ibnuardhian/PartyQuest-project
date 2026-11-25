@@ -260,6 +260,52 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
+  it("removes guests together with their rooms, but never a guest who still belongs to a surviving room", async () => {
+    await inRollback(async () => {
+      await client.query("alter table game_rooms disable trigger game_rooms_touch_updated_at");
+      const seen = (id: string, ago: string) => client.query(`update guest_users set last_seen_at = now() - interval '${ago}' where id = $1`, [id]);
+      const exists = async (id: string) => ((await client.query("select 1 from guest_users where id = $1", [id])).rowCount ?? 0) > 0;
+      const profileRows = async (id: string) => (await client.query("select 1 from guest_profiles where user_id = $1", [id])).rowCount ?? 0;
+      const expire = (roomId: string) => client.query("update game_rooms set expires_at = now() - interval '1 minute' where id = $1", [roomId]);
+
+      // An expired room with a host and two players: all three guests go with it, profiles included.
+      const gone = await roomWithPlayers(3);
+      for (const id of gone.ids) await seen(id, "30 minutes");
+      expect(await profileRows(gone.ids[1]!)).toBe(1);
+      // A player who belongs to the expired room AND to a surviving room is kept.
+      const survivor = await roomWithPlayers(1);
+      await seen(survivor.ids[0]!, "30 minutes");
+      const shared = await guest();
+      await client.query("select join_room($1, $2, 'Dua Room')", [shared, gone.room.code]);
+      await client.query("select join_room($1, $2, 'Dua Room')", [shared, survivor.room.code]);
+      await seen(shared, "30 minutes");
+      // A player of the expired room who was seen a minute ago keeps the row for now (the guest may be mid-request).
+      const recent = await guest();
+      await client.query("select join_room($1, $2, 'Baru Saja')", [recent, gone.room.code]);
+      await seen(recent, "1 minute");
+      // Guests who never joined a room: swept after an hour, kept when fresh.
+      const staleOrphan = await guest(); await seen(staleOrphan, "2 hours");
+      const freshOrphan = await guest(); await seen(freshOrphan, "10 minutes");
+      // A host of a surviving room is never removed, however idle.
+      await seen(survivor.ids[0]!, "5 hours");
+      await expire(gone.room.id);
+
+      expect((await client.query<{ n: number }>("select cleanup_expired_rooms() as n")).rows[0]!.n).toBeGreaterThanOrEqual(1);
+      for (const id of gone.ids) expect(await exists(id), "member of the deleted room").toBe(false);
+      expect(await profileRows(gone.ids[1]!)).toBe(0);
+      expect(await exists(shared), "also in a surviving room").toBe(true);
+      expect(await exists(recent), "seen a minute ago").toBe(true);
+      expect(await exists(staleOrphan), "idle orphan").toBe(false);
+      expect(await exists(freshOrphan), "fresh orphan").toBe(true);
+      expect(await exists(survivor.ids[0]!), "host of a surviving room").toBe(true);
+      expect((await client.query("select 1 from game_rooms where id = $1", [survivor.room.id])).rowCount).toBe(1);
+
+      // A browser that still holds the cookie of a removed guest gets the same row back.
+      const comeback = await client.query<{ id: string }>("insert into guest_users(id) values ($1) on conflict (id) do update set last_seen_at = now() returning id", [gone.ids[1]]);
+      expect(comeback.rows[0]!.id).toBe(gone.ids[1]);
+    });
+  });
+
   it("ignores unknown ids without leaking a session", async () => {
     const result = await client.query("select ok, error_code from apply_game_action($1, $2, 0, '{}'::jsonb)", [randomUUID(), randomUUID()]);
     expect(result.rows[0]).toEqual({ ok: false, error_code: "session_not_found" });

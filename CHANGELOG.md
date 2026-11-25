@@ -15,6 +15,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Baris tamu ikut dibersihkan bersama room-nya** (`202611260002`): `cleanup_expired_rooms()` kini juga menghapus `guest_users` milik room yang dihapus, kecuali anggota/host room lain atau tamu yang terlihat <5 menit; tamu tanpa room dihapus setelah 1 jam. Mencatat `NOTICE: cleanup: N room(s), M guest(s) removed`. Diverifikasi lewat service `cleanup` di stack produksi (1 room dan 3 tamu terhapus; room berjalan, host, dan tamu baru aman) dan tes integrasi.
 - **Werewolf: host bisa mengganti nama pemain** di lobi (ikon pensil), agar pemain tidak bisa memalsukan identitas sebagai pemain lain. Hanya host, hanya sebelum ronde berjalan, nama unik per room (tanpa memandang huruf besar-kecil dan spasi ganda), berlaku hanya di room itu. Fungsi `rename_room_member` (migration `202611260001`), route `PATCH /api/rooms/<kode>/members/<id>`, opt-in per game, dengan tes integrasi.
 - **Tembakan Hunter kini pilih target lalu tombol Tembak** (sebelumnya langsung menembak saat nama diketuk).
 - **Kartu "Daftar role" di ponsel memenuhi layar**: kartu yang dibalik terbuka 358×812 dengan margin 16 px dan teks 18 px (sebelumnya 149×199 px dengan teks 12 px, deskripsi Vampire terpotong).
