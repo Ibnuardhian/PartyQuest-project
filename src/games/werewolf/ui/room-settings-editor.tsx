@@ -77,7 +77,7 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
       </select>
     </GameField>
     <ThemedSlider id="ww-night" label="Giliran malam per role" value={nightTurnSeconds} min={10} max={30} unit="detik" onChange={setNightTurnSeconds} />
-    <ThemedSlider id="ww-day" label="Diskusi siang" value={Math.round(dayDiscussionSeconds / 60)} min={1} max={10} unit="menit" onChange={(minutes) => setDayDiscussionSeconds(minutes * 60)} />
+    <ThemedSlider id="ww-day" label="Diskusi siang" value={Math.round(dayDiscussionSeconds / 60)} min={3} max={10} unit="menit" onChange={(minutes) => setDayDiscussionSeconds(minutes * 60)} />
     <GameButton variant="primary" wide type="button" disabled={disabled || saving} onClick={() => void save()}>{saving ? "Menyimpan…" : "Simpan pengaturan"}</GameButton>
   </div>;
 }

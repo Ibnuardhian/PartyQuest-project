@@ -8,7 +8,7 @@ export const classicSettingsSchema = z.object({
   roles: z.partialRecord(z.enum(CLASSIC_ROLES), roleCountSchema),
   deadRevealMode: z.enum(["SPECTATOR_REVEAL", "KEEP_HIDDEN"]),
   nightTurnSeconds: z.number().int().min(10).max(30),
-  dayDiscussionSeconds: z.number().int().min(60).max(600),
+  dayDiscussionSeconds: z.number().int().min(180).max(600),
   advanced: z.boolean().optional(),
 }).strict();
 
