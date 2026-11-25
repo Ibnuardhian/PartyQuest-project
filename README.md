@@ -88,6 +88,8 @@ Jangan memberi prefix `NEXT_PUBLIC_` pada variabel di atas dan jangan commit `.e
 4. Dalam Online Room, clue diberikan bergiliran dengan deadline 3 menit per pemain yang disimpan di state server; refresh tidak mengatur ulang timer, dan giliran yang habis dimajukan oleh server melalui mutasi versi yang sama. Aplikasi tidak merekam isi clue. Voting berlangsung di aplikasi. Seri pada voting pertama diselesaikan dengan satu revote di antara pemain yang seri. Seri kedua tidak mengeliminasi pemain dan memulai ronde petunjuk berikutnya.
 5. Kartu Pass-and-Play hanya menampilkan kata, tanpa nama role. Di akhir permainan, hasil menampilkan semua role. Civilian menang setelah semua Undercover dan Mr. White tereliminasi. Undercover menang saat jumlah Undercover aktif menyamai atau melebihi Civilian aktif (Mr. White tidak dihitung). Jika Mr. White tereliminasi, ia mendapat satu tebakan kata Civilian dan menang jika benar.
 
+**Pustaka kata.** `src/games/undercover/word-pairs.ts` berisi 307 pasangan kata yang mirip tetapi tidak identik: 5 kategori bertema (Makanan, Hewan, Benda sehari-hari, Tempat, Pekerjaan; masing-masing 51–53 pasangan) plus 47 pasangan umum (cuaca, alam, konsep) yang hanya muncul di kategori Campuran. Campuran memilih dari seluruh pustaka. Setiap game memilih satu pasangan secara acak, lalu mengacak kata mana yang menjadi kata Civilian (kata pertama pasangan bukan petunjuk). Tidak ada pasangan ganda; `words.test.ts` menjaganya. Menambah pasangan: tambahkan satu baris `["Kata A", "Kata B"]` ke array kategorinya.
+
 Pemain dapat keluar dari room saat lobi atau setelah ronde selesai. Membership dipertahankan saat ronde aktif agar giliran tidak tertinggal; buka lagi dengan browser yang sama untuk reconnect.
 
 Pass-and-Play memakai `/games/undercover/local#<hash-sesi>`. ID sesi dan salt acak disimpan bersama state di `sessionStorage`; URL hanya memuat hash SHA-256. Hash ini penanda sesi, bukan token akses. Hand-off hanya privasi melalui UI, bukan perlindungan dari inspeksi browser.
@@ -121,7 +123,7 @@ src/
     registry.ts             daftar game di katalog
     online-registry.ts      daftar game yang bisa dimainkan online (server)
     undercover/             seluruh logika & UI Undercover
-      contract.ts, engine.ts, words.ts, local-session.ts
+      contract.ts, engine.ts, words.ts, word-pairs.ts, local-session.ts
       server/online.ts      adapter Online Room (settings, aksi, deadline, view)
       ui/                   setup, Pass-and-Play, layar online, kartu katalog, tema CSS
       index.ts              modul game untuk platform

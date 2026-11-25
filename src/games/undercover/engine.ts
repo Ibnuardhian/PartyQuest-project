@@ -214,8 +214,11 @@ function createInitialState(names: string[], input: GameSettings, pick = randomI
   if (ids.length !== cleanNames.length || new Set(ids).size !== ids.length) throw new Error("Identitas pemain tidak valid.");
   const idDeck = shuffled(ids, pick);
   const players = cleanNames.map((name, index) => ({ id: ids[index]!, name, alive: true }));
-  const pair = getWordPairs(settings.category)[pick(getWordPairs(settings.category).length)];
+  const pairs = getWordPairs(settings.category);
+  const pair = pairs[pick(pairs.length)];
   if (!pair) throw new Error("Belum ada pasangan kata untuk kategori ini.");
+  // Either word of the pair may be the civilian word, so the first word of a pair is not a giveaway.
+  const [civilianWord, undercoverWord] = pick(2) === 0 ? pair : [pair[1], pair[0]] as const;
   const shuffledRoles: Role[] = [
     ...Array.from({ length: cleanNames.length - settings.undercoverCount - Number(settings.mrWhiteEnabled) }, () => "civilian" as const),
     ...Array.from({ length: settings.undercoverCount }, () => "undercover" as const),
@@ -225,13 +228,13 @@ function createInitialState(names: string[], input: GameSettings, pick = randomI
   shuffled(idDeck, pick).forEach((id, index) => assignmentsById.set(id, shuffledRoles[index]!));
   const assignments = players.map((player) => {
     const role = assignmentsById.get(player.id)!;
-    return { playerId: player.id, role, word: role === "civilian" ? pair[0] : role === "undercover" ? pair[1] : null };
+    return { playerId: player.id, role, word: role === "civilian" ? civilianWord : role === "undercover" ? undercoverWord : null };
   });
   const publicState: PublicState = {
     phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clues: [], votes: {}, tiedPlayerIds: [],
     revoteUsed: false, eliminatedPlayerId: null, winner: null, resultReason: null, lastRoundTied: false,
   };
-  return { public: publicState, secret: { civilianWord: pair[0], undercoverWord: pair[1], assignments }, settings };
+  return { public: publicState, secret: { civilianWord, undercoverWord, assignments }, settings };
 }
 
 export const undercoverGame: GameDefinition = {
