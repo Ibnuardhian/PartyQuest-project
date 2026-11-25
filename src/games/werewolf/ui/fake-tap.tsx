@@ -13,6 +13,8 @@ import { useCooldown } from "@/games/werewolf/ui/use-cooldown";
 export function FakeTap({ size }: { size: number }) {
   const [grid, setGrid] = useState(() => makeTapGrid(size, Math.random));
   const [next, setNext] = useState(1);
+  /** Bumped on every reshuffle so the tiles are new elements and appear one by one again. */
+  const [round, setRound] = useState(0);
   const timer = useRef<number | null>(null);
   // Every tap (right or wrong) locks the grid briefly, like a real action, so it cannot be mashed.
   const { cooling, start: cool } = useCooldown();
@@ -22,6 +24,7 @@ export function FakeTap({ size }: { size: number }) {
   function reshuffle() {
     setGrid(makeTapGrid(size, Math.random));
     setNext(1);
+    setRound((current) => current + 1);
   }
 
   function tap(number: number) {
@@ -36,9 +39,10 @@ export function FakeTap({ size }: { size: number }) {
 
   return <div className="ww-panel ww-fake-tap">
     <p className="ww-night-hint">Ketuk angka {grid.goal === 3 ? "1 sampai 3" : "1 sampai 4"} secara berurutan.</p>
-    <div className="ww-targets" role="group" aria-label="Ketuk angka sesuai urutan">
-      {grid.tiles.map((number) => <button
-        key={number}
+    <div className="ww-targets is-staggered" role="group" aria-label="Ketuk angka sesuai urutan">
+      {grid.tiles.map((number, index) => <button
+        key={`${round}-${number}`}
+        style={{ "--i": index } as React.CSSProperties}
         type="button"
         className={`ww-target${number < next && number <= grid.goal ? " is-selected" : ""}`}
         aria-pressed={number < next && number <= grid.goal}

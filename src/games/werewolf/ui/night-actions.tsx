@@ -9,7 +9,8 @@ type Player = WerewolfView["public"]["players"][number];
 
 function TargetList({ players, selectedId, marks, disabled, onPick }: { players: Player[]; selectedId?: string | null; marks?: Record<string, number>; disabled: boolean; onPick: (id: string) => void }) {
   if (players.length === 0) return <p className="ww-night-hint">Tidak ada target yang dapat dipilih.</p>;
-  return <div className="ww-targets">{players.map((player) => <button key={player.id} type="button" className={`ww-target${selectedId === player.id ? " is-selected" : ""}`} disabled={disabled} aria-pressed={selectedId === player.id} onClick={() => onPick(player.id)}>
+  // Tiles appear one by one (same as the Fake Tap grid, so the two screens cannot be told apart).
+  return <div className="ww-targets is-staggered">{players.map((player, index) => <button key={player.id} type="button" style={{ "--i": index } as React.CSSProperties} className={`ww-target${selectedId === player.id ? " is-selected" : ""}`} disabled={disabled} aria-pressed={selectedId === player.id} onClick={() => onPick(player.id)}>
     <span>{player.name}</span>
     {marks?.[player.id] ? <span className="ww-claw" role="img" aria-label={`${marks[player.id]} pilihan kawanan`}>{Array.from({ length: marks[player.id]! }, (_, index) => <svg key={index} viewBox="0 0 512 512" fill="currentColor" aria-hidden="true" focusable="false"><path d={ROLE_ICONS.WEREWOLF.d} /></svg>)}</span> : null}
   </button>)}</div>;
@@ -110,7 +111,7 @@ export function NightActionPanel({ view, busy, perform }: { view: WerewolfView; 
       const toggle = (id: string) => setCupidPick((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id].slice(-2));
       return <>
         <p className="ww-night-hint">Pilih dua pemain yang akan menjadi sepasang kekasih (boleh dirimu sendiri).</p>
-        <div className="ww-targets">{alive.map((player) => <button key={player.id} type="button" className={`ww-target${cupidPick.includes(player.id) ? " is-selected" : ""}`} aria-pressed={cupidPick.includes(player.id)} disabled={busy} onClick={() => toggle(player.id)}>{player.name}</button>)}</div>
+        <div className="ww-targets is-staggered">{alive.map((player, index) => <button key={player.id} type="button" style={{ "--i": index } as React.CSSProperties} className={`ww-target${cupidPick.includes(player.id) ? " is-selected" : ""}`} aria-pressed={cupidPick.includes(player.id)} disabled={busy} onClick={() => toggle(player.id)}>{player.name}</button>)}</div>
         <button type="button" className="ww-button ww-primary" disabled={busy || cupidPick.length !== 2} onClick={() => void perform({ type: "night-action", actionType: "CUPID_LINK", targetId: cupidPick[0], secondaryTargetId: cupidPick[1] })}>Panah pasangan ini</button>
         {skip}
       </>;
