@@ -107,6 +107,9 @@ describe("Undercover Online Room adapter", () => {
     const civilians = secret.assignments.filter((item) => item.role === "civilian").map((item) => item.playerId);
     expect(Object.keys(points).sort()).toEqual([...civilians].sort());
     expect(Object.values(points).every((value) => value === 1)).toBe(true);
+    const undercoverWin = undercoverOnline.roundPoints!({ ...session, publicState: { ...pub, phase: "finished", winner: "undercover" } })!;
+    expect(Object.keys(undercoverWin)).toEqual(secret.assignments.filter((item) => item.role === "undercover").map((item) => item.playerId));
+    expect(undercoverOnline.roundPoints!({ ...session, publicState: { ...pub, phase: "clue", winner: "civilian" } })).toBeNull();
     const withWhite = { ...settings, mrWhiteEnabled: true };
     const round = undercoverOnline.createRound(members, withWhite);
     const whiteSession = { publicState: { ...(round.publicState as PublicState), phase: "finished", winner: "mr-white" }, secretState: round.secretState, settings: withWhite };

@@ -50,7 +50,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Shared TV screen: host-issued single-use pairing code, TV token stored only as a SHA-256 hash, read-only public view (`OnlineGameServer.publicView`); while a TV is connected it is the only narrator device.
 - Optional ElevenLabs provider (`TTS_PROVIDER=elevenlabs` + `ELEVENLABS_API_KEY`): the key stays in runtime server env only (never `NEXT_PUBLIC_`, never a build arg, never committed); failures fall back to Microsoft. Voice presets, dramatic effects, and the bilingual role-name option live in `voice-pack.json`.
 - The catalog renders every game through `GameCatalogCard` (`src/components/catalog/`); a game's `CatalogCard` only passes metadata, accent, and banner artwork.
-- Every game screen links back to the catalog (`CatalogLink`); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
+- Every game screen links back to the catalog (`CatalogLink`), except inside an active Online Room lobby, whose only exit is the confirmed "Keluar dari Room" flow (with a Back-button guard); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
 - Game landing/setup screens use the platform UI kit `src/components/ui/game-ui.tsx` (cards, filled inputs, buttons, stepper tiles, sliders, validation banner); a game theme only sets `--game-accent`/`--game-accent-ink`.
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
@@ -140,7 +140,7 @@ Never claim tests passed unless they were actually executed.
 - Provide `.env.example` containing variable names and safe placeholders only.
 - Document local Docker setup and PostgreSQL configuration.
 - Pass `DATABASE_URL` and `GUEST_SESSION_SECRET` as runtime environment values only, never as Docker build arguments.
-- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()`; `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. Guest row retention is an operator policy.
+- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()` (extended by `202611250003` to also drop finished/abandoned rooms idle for 1 hour; `compose.prod.yaml` runs it every 10 minutes in the `cleanup` service); `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. Guest row retention is an operator policy.
 - `LISTEN/NOTIFY` needs a direct or session-pooled connection; with transaction pooling, clients fall back to polling.
 - Ensure the application can also be deployed to Vercel.
 - Production on a VPS (Hostinger) uses `compose.prod.yaml` (Postgres, one-shot `migrate` from the `runner` image, `web` on `127.0.0.1:3005`; HTTPS terminates in the host Nginx) with secrets in `.env.production` only; see `deploy/HOSTINGER.md`. `.github/workflows/deploy.yml` verifies every push to `main` and, when `DEPLOY_ENABLED=true`, deploys that exact commit over SSH (pinned host key; app secrets never leave the VPS).

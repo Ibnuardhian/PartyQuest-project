@@ -19,7 +19,7 @@ export function isClueMinutesOption(value: unknown): value is (typeof CLUE_MINUT
 export function formatClueMinutes(minutes: number): string {
   return `${minutes} menit`;
 }
-/** Timed clue windows (putaran) before a vote: two before the first vote, one after every vote without a winner. */
+/** Timed clue windows before a vote: exactly one per round; it is never restarted and ends in voting. */
 export const CLUE_PASSES_FIRST_ROUND = 1;
 export const CLUE_PASSES_LATER_ROUNDS = 1;
 

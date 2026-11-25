@@ -75,8 +75,11 @@ suite("PostgreSQL room functions", () => {
       await client.query("rollback to savepoint s2");
       // A finished room (waiting for a rematch) accepts new players again.
       await client.query("update game_rooms set status = 'finished' where id = $1", [room.id]);
-      const joined = await client.query("select join_room($1, $2, 'Baru')", [await guest(), room.code]);
+      const newcomer = await guest();
+      const joined = await client.query("select join_room($1, $2, 'Baru')", [newcomer, room.code]);
       expect(joined.rowCount).toBe(1);
+      // The newcomer can mark ready while the room waits for a rematch.
+      await client.query("select set_room_ready($1, $2, true)", [room.id, newcomer]);
     });
   });
 
@@ -197,6 +200,28 @@ suite("PostgreSQL room functions", () => {
       expect(await pair("654321", "d".repeat(64))).toBe(false);
       const screens = await client.query("select token_hash from room_tv_screens where room_id = $1", [room.id]);
       expect(screens.rows).toEqual([{ token_hash: "b".repeat(64) }]);
+    });
+  });
+
+  it("cleans up expired rooms and finished or abandoned rooms idle for over an hour", async () => {
+    await inRollback(async () => {
+      // updated_at is maintained by a trigger; switch it off so the test can age rooms.
+      await client.query("alter table game_rooms disable trigger game_rooms_touch_updated_at");
+      const make = async (status: string, updatedAgo: string, expiresIn = "10 hours") => {
+        const { room } = await roomWithPlayers(1);
+        await client.query(`update game_rooms set status = $2, updated_at = now() - interval '${updatedAgo}', expires_at = now() + interval '${expiresIn}' where id = $1`, [room.id, status]);
+        return room.id;
+      };
+      const finishedOld = await make("finished", "2 hours");
+      const abandonedOld = await make("abandoned", "2 hours");
+      const finishedFresh = await make("finished", "10 minutes");
+      const lobbyOld = await make("lobby", "5 hours");
+      const inProgressOld = await make("in_progress", "5 hours");
+      const expired = await make("lobby", "1 minute", "-1 minute");
+      const deleted = (await client.query<{ n: number }>("select cleanup_expired_rooms() as n")).rows[0]!.n;
+      expect(deleted).toBeGreaterThanOrEqual(3);
+      const left = new Set((await client.query<{ id: string }>("select id from game_rooms where id = any($1)", [[finishedOld, abandonedOld, finishedFresh, lobbyOld, inProgressOld, expired]])).rows.map((row) => row.id));
+      expect(left).toEqual(new Set([finishedFresh, lobbyOld, inProgressOld]));
     });
   });
 

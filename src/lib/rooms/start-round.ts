@@ -4,7 +4,7 @@ import { requireGuest } from "@/lib/auth/require-guest";
 import { OnlineGameError } from "@/games/online-game";
 import { getOnlineGame } from "@/games/online-registry";
 import { normalizeRoomCode } from "@/lib/room-code";
-import { findRoomByCode, listActiveMembers, startRound } from "@/lib/rooms/repository";
+import { findRoomByCode, listActiveMembers, listUnreadyNewcomers, startRound } from "@/lib/rooms/repository";
 
 /** Shared by start and rematch: host check, member checks, game deals the round, DB re-validates atomically. */
 export async function handleStartRound(kind: "start" | "rematch", rawCode: string) {
@@ -23,6 +23,7 @@ export async function handleStartRound(kind: "start" | "rematch", rawCode: strin
     if (members.length < game.minPlayers || members.length > game.maxPlayers) return apiError(409, "invalid_player_count", `Permainan memerlukan ${game.minPlayers}–${game.maxPlayers} pemain aktif.`);
     if (new Set(members.map((member) => member.display_name.trim().toLocaleLowerCase("id-ID"))).size !== members.length) return apiError(409, "duplicate_name", "Nama pemain di room harus berbeda.");
     if (kind === "start" && members.some((member) => !member.is_ready)) return apiError(409, "players_not_ready", "Semua pemain harus siap sebelum mulai.");
+    if (kind === "rematch" && (await listUnreadyNewcomers(room.id)).length > 0) return apiError(409, "players_not_ready", "Pemain baru harus menandai siap sebelum main ulang.");
     const round = game.createRound(members.map((member) => ({ userId: member.user_id, displayName: member.display_name })), room.settings);
     const session = await startRound(kind, room.id, guest.userId, round);
     if (!session) return apiError(failure.status, failure.code, failure.message);

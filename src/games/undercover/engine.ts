@@ -108,8 +108,8 @@ function resolveVotes(state: GameState, now: number): GameState {
 }
 
 /**
- * Ends the running timed clue window (the server calls this when its deadline passes). The next window
- * starts with the same length; after the last window of the round the table moves to the discussion.
+ * Ends the running timed clue window (the server calls this when its deadline passes). Every round has a
+ * single window, so the table moves straight to voting.
  */
 export function endClueWindow(state: GameState, now: number): GameState {
   if (state.public.phase !== "clue") throw new Error("Ronde petunjuk tidak aktif.");
