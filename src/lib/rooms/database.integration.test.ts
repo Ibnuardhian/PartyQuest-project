@@ -203,6 +203,28 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
+  it("cleans up expired rooms and finished or abandoned rooms idle for over an hour", async () => {
+    await inRollback(async () => {
+      // updated_at is maintained by a trigger; switch it off so the test can age rooms.
+      await client.query("alter table game_rooms disable trigger game_rooms_touch_updated_at");
+      const make = async (status: string, updatedAgo: string, expiresIn = "10 hours") => {
+        const { room } = await roomWithPlayers(1);
+        await client.query(`update game_rooms set status = $2, updated_at = now() - interval '${updatedAgo}', expires_at = now() + interval '${expiresIn}' where id = $1`, [room.id, status]);
+        return room.id;
+      };
+      const finishedOld = await make("finished", "2 hours");
+      const abandonedOld = await make("abandoned", "2 hours");
+      const finishedFresh = await make("finished", "10 minutes");
+      const lobbyOld = await make("lobby", "5 hours");
+      const inProgressOld = await make("in_progress", "5 hours");
+      const expired = await make("lobby", "1 minute", "-1 minute");
+      const deleted = (await client.query<{ n: number }>("select cleanup_expired_rooms() as n")).rows[0]!.n;
+      expect(deleted).toBeGreaterThanOrEqual(3);
+      const left = new Set((await client.query<{ id: string }>("select id from game_rooms where id = any($1)", [[finishedOld, abandonedOld, finishedFresh, lobbyOld, inProgressOld, expired]])).rows.map((row) => row.id));
+      expect(left).toEqual(new Set([finishedFresh, lobbyOld, inProgressOld]));
+    });
+  });
+
   it("ignores unknown ids without leaking a session", async () => {
     const result = await client.query("select ok, error_code from apply_game_action($1, $2, 0, '{}'::jsonb)", [randomUUID(), randomUUID()]);
     expect(result.rows[0]).toEqual({ ok: false, error_code: "session_not_found" });

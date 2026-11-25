@@ -101,7 +101,7 @@ Rahasia aplikasi (`POSTGRES_PASSWORD`, `GUEST_SESSION_SECRET`, `ELEVENLABS_API_K
 
 - Log: `docker compose -f compose.prod.yaml --env-file .env.production logs -f web`
 - Backup database: `docker compose -f compose.prod.yaml --env-file .env.production exec postgres pg_dump -U partyquest partyquest > backup-$(date +%F).sql`
-- Bersihkan room kedaluwarsa (opsional, misalnya cron harian): `docker compose -f compose.prod.yaml --env-file .env.production exec postgres psql -U partyquest -d partyquest -c "select cleanup_expired_rooms();"`
+- Pembersihan room berjalan otomatis: service `cleanup` di `compose.prod.yaml` memanggil `cleanup_expired_rooms()` setiap 10 menit. Room dihapus setelah kedaluwarsa (12 jam) atau, lebih cepat, jika berstatus selesai/terbengkalai dan tidak berubah selama 1 jam. Manual: `docker compose -f compose.prod.yaml --env-file .env.production exec postgres psql -U partyquest -d partyquest -c "select cleanup_expired_rooms();"`
 - Cache TTS ada di volume `tts_cache`; aman dihapus kapan saja (`docker volume rm partyquest_tts_cache` setelah `down`).
 
 ## Sudah diuji

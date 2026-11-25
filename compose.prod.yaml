@@ -70,6 +70,34 @@ services:
 
 
 
+  # Removes expired rooms and finished/abandoned rooms idle for an hour (see cleanup_expired_rooms()).
+
+  cleanup:
+
+    image: postgres:17-alpine
+
+    restart: unless-stopped
+
+    depends_on:
+
+      migrate:
+
+        condition: service_completed_successfully
+
+    environment:
+
+      PGHOST: postgres
+
+      PGUSER: ${POSTGRES_USER:-partyquest}
+
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+
+      PGDATABASE: ${POSTGRES_DB:-partyquest}
+
+    command: ["sh", "-c", "while true; do psql -tA -c 'select cleanup_expired_rooms()' || true; sleep 600; done"]
+
+
+
   web:
 
     image: partyquest-web:latest
