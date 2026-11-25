@@ -77,6 +77,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diperbaiki
 
+- **Layar TV kembali ke lobi saat room dibuka lagi**: sebelumnya, setelah game selesai dan host membuka lobi, TV masih menampilkan voting terakhir. Sekarang saat status room `lobby`, TV menampilkan lobi (kode QR dan daftar pemain beserta statusnya); hasil ronde tetap tampil selama room berstatus selesai.
 - **Dropdown "Kartu role saya" (Werewolf online)** tidak lagi muncul mendadak di bawah layar: kini terbuka sedikit demi sedikit (tinggi dan transparansi bertransisi) sambil halaman otomatis digulir ke atas sampai kartu terlihat. Mengikuti pengaturan "kurangi gerakan" perangkat.
 - **Mengubah konfigurasi room tidak lagi membatalkan status siap** (Werewolf dan Undercover; migrasi `202611260003`): pemain yang sudah siap tetap siap saat host mengganti pengaturan. Validasi komposisi tetap dijalankan saat host memulai ronde.
 - **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.
