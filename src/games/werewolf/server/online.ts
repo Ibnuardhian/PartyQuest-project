@@ -25,16 +25,17 @@ export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", dead
 const playerId = z.string().uuid();
 export const werewolfIntentSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }).strict(),
-  z.object({ type: z.literal("wolf-target"), targetId: playerId.nullable() }).strict(),
+  z.object({ type: z.literal("wolf-target"), targetId: playerId.nullable(), secondTargetId: playerId.nullable().optional(), convert: z.boolean().optional() }).strict(),
   z.object({
     type: z.literal("night-action"),
-    actionType: z.enum(["DOCTOR_PROTECT", "SEER_INSPECT", "WITCH_HEAL", "WITCH_POISON", "CUPID_LINK", "SKIP"]),
+    actionType: z.enum(["DOCTOR_PROTECT", "SEER_INSPECT", "WITCH_HEAL", "WITCH_POISON", "CUPID_LINK", "SORCERER_INSPECT", "SPELLCASTER_SILENCE", "VAMPIRE_BITE", "DIRE_PARTNER", "SKIP"]),
     targetId: playerId.optional(),
     secondaryTargetId: playerId.optional(),
   }).strict(),
   z.object({ type: z.literal("skip-discussion") }).strict(),
   z.object({ type: z.literal("vote"), targetId: playerId.nullable() }).strict(),
   z.object({ type: z.literal("hunter-shot"), targetId: playerId }).strict(),
+  z.object({ type: z.literal("second-vote") }).strict(),
   z.object({ type: z.literal("force-advance") }).strict(),
 ]);
 

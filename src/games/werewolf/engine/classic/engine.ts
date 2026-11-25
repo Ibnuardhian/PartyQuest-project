@@ -1,10 +1,10 @@
 import {
-  FIRST_NIGHT_ONLY, NIGHT_ORDER, PHASE_SECONDS,
+  FIRST_NIGHT_ONLY, HUNTING_ROLES, NIGHT_ORDER, PHASE_SECONDS,
   type Actor, type ClassicAction, type ClassicContext, type ClassicGameState, type ClassicPhase, type ClassicPlayer, type ClassicRole, type NightRole, type WinnerFaction,
 } from "@/games/werewolf/contract";
 import { CLASSIC_ROLE_INFO } from "@/games/werewolf/roles";
 import { validateClassicSettings } from "@/games/werewolf/engine/classic/settings";
-import { alivePlayers, applyDeaths, currentWolfVictim, emptyNight, evaluateWinner, isAlive, resolveDawn, tallyVotes, winReason, type Death } from "@/games/werewolf/engine/classic/resolve";
+import { alivePlayers, applyDeaths, appearsAsWerewolf, currentWolfVictim, emptyNight, evaluateWinner, isAlive, isDoubleAttackNight, isPackRole, resolveDawn, tallyVotes, winReason, type Death } from "@/games/werewolf/engine/classic/resolve";
 
 /**
  * Werewolf Classic (Mode 1) state machine. Pure: no React, database, or network.
@@ -40,16 +40,32 @@ export function createClassicGame(players: Array<{ id: string; name: string }>, 
       players: players.map((player): ClassicPlayer => ({ id: player.id, name: player.name.trim(), alive: true, deathReason: null, canVote: true, hasAfkPenalty: false })),
       readyPlayerIds: [], skipDiscussionIds: [], votedPlayerIds: [], tiedPlayerIds: [], lastVoteReveal: null,
       hunterQueue: [], resumePhase: null, winner: null, winReason: null, log: [],
+      silencedId: null, doomedIds: [], revealedPrinceIds: [], secondVoteQueued: false,
     },
     secret: {
       roles, originalRoles: { ...roles }, lovers: null, doctorLastTarget: null, witchHealUsed: false, witchPoisonUsed: false,
-      werewolvesDiseased: false, night: emptyNight(), seerResults: [], votes: {}, notices: [],
+      werewolvesDiseased: false, night: emptyNight(), seerResults: [], sorcererResults: [], direBond: null, alphaUsed: false,
+      doubleAttackNight: null, troublemakerUsed: false, votes: {}, notices: [],
     },
   };
 }
 
 export function activeNightRole(state: ClassicGameState): NightRole | null {
   return state.public.phase === "NIGHT_TURN" ? state.public.nightQueue[state.public.nightTurnIndex] ?? null : null;
+}
+
+/** Roles whose holders act in a night turn: the Werewolf turn belongs to every hunting pack member. */
+export function turnRoles(turn: NightRole): readonly ClassicRole[] {
+  return turn === "WEREWOLF" ? HUNTING_ROLES : [turn];
+}
+
+/** A turn is in the queue when its role is in the composition; the Werewolf turn also covers the wolf-side hunters. */
+function turnConfigured(settings: ClassicGameState["settings"], turn: NightRole) {
+  return turnRoles(turn).some((role) => (settings.roles[role] ?? 0) > 0);
+}
+
+function seerAlive(state: ClassicGameState) {
+  return alivePlayers(state).some((player) => state.secret.roles[player.id] === "SEER");
 }
 
 // ---------- phase transitions (mutate a draft) ----------
@@ -71,7 +87,9 @@ function startNight(draft: ClassicGameState, now: number) {
   const pub = draft.public;
   pub.nightNumber += 1;
   // Fixed queue from the configured composition, so pacing never reveals who is dead.
-  pub.nightQueue = NIGHT_ORDER.filter((role) => (draft.settings.roles[role] ?? 0) > 0 && (pub.nightNumber === 1 || !FIRST_NIGHT_ONLY.includes(role)));
+  pub.nightQueue = NIGHT_ORDER.filter((role) => turnConfigured(draft.settings, role) && (pub.nightNumber === 1 || !FIRST_NIGHT_ONLY.includes(role)));
+  // The silence cast last night ended with the day.
+  pub.silencedId = null;
   pub.nightTurnIndex = 0;
   pub.readyPlayerIds = [];
   draft.secret.night = emptyNight();
@@ -91,9 +109,13 @@ function nextNightTurn(draft: ClassicGameState, now: number) {
   afterDeaths(draft, now, "DAY_DISCUSSION");
 }
 
-function enterPhase(draft: ClassicGameState, phase: "DAY_DISCUSSION" | "NIGHT_INTRO", now: number) {
+function enterPhase(draft: ClassicGameState, phase: "DAY_DISCUSSION" | "NIGHT_INTRO" | "OPEN_VOTING", now: number) {
   if (phase === "NIGHT_INTRO") {
     startNight(draft, now);
+    return;
+  }
+  if (phase === "OPEN_VOTING") {
+    startVoting(draft, now, false);
     return;
   }
   draft.public.dayNumber = draft.public.nightNumber;
@@ -102,7 +124,7 @@ function enterPhase(draft: ClassicGameState, phase: "DAY_DISCUSSION" | "NIGHT_IN
 }
 
 /** Hunter shots resolve before the win check, because a shot can change the outcome. */
-function afterDeaths(draft: ClassicGameState, now: number, resume: "DAY_DISCUSSION" | "NIGHT_INTRO") {
+function afterDeaths(draft: ClassicGameState, now: number, resume: "DAY_DISCUSSION" | "NIGHT_INTRO" | "OPEN_VOTING") {
   const pub = draft.public;
   if (pub.hunterQueue.length > 0) {
     pub.resumePhase = resume;
@@ -163,8 +185,21 @@ function resolveVoting(draft: ClassicGameState, now: number) {
     endGame(draft, { faction: "TANNER", playerIds: [executedId] });
     return;
   }
-  if (executedId) applyDeaths(draft, [{ playerId: executedId, reason: "EXECUTION" }]);
-  afterDeaths(draft, now, "NIGHT_INTRO");
+  // The Vampire's bitten players fall right after the vote; a Prince is spared once, whichever way he is sentenced.
+  const doomed = pub.doomedIds.filter((id) => isAlive(draft, id) && id !== executedId);
+  pub.doomedIds = [];
+  for (const id of [...(executedId ? [executedId] : []), ...doomed]) {
+    if (draft.secret.roles[id] === "PRINCE" && !pub.revealedPrinceIds.includes(id)) {
+      pub.revealedPrinceIds.push(id);
+      pub.log.push({ type: "PRINCE", day: pub.dayNumber, playerId: id });
+      continue;
+    }
+    applyDeaths(draft, [{ playerId: id, reason: "EXECUTION" }]);
+  }
+  // The Troublemaker's second vote is played before night falls, unless the game ends first.
+  const resume = pub.secondVoteQueued ? "OPEN_VOTING" : "NIGHT_INTRO";
+  pub.secondVoteQueued = false;
+  afterDeaths(draft, now, resume);
 }
 
 /** AFK strike: strike 1 sets the penalty, strike 2 eliminates without using the day's execution. */
@@ -180,7 +215,8 @@ function strikeAfk(draft: ClassicGameState, playerId: string): Death[] {
 }
 
 function holdersOf(state: ClassicGameState, role: NightRole) {
-  return alivePlayers(state).filter((player) => state.secret.roles[player.id] === role);
+  const roles = turnRoles(role);
+  return alivePlayers(state).filter((player) => roles.includes(state.secret.roles[player.id]!));
 }
 
 function promoteReplacement(draft: ClassicGameState, afkId: string, role: NightRole, ctx: ClassicContext, excluded: Set<string>) {
@@ -205,6 +241,7 @@ function forceAdvance(draft: ClassicGameState, ctx: ClassicContext) {
       // Only strike holders who could act: Mason's turn is information only, diseased Werewolves
       // cannot hunt, and a Witch with both potions spent has nothing to do.
       const canAct = role !== "MASON"
+        && !(role === "APPRENTICE_SEER" && seerAlive(draft))
         && !(role === "WEREWOLF" && draft.secret.werewolvesDiseased)
         && !(role === "WITCH" && draft.secret.witchHealUsed && draft.secret.witchPoisonUsed);
       if (canAct) {
@@ -249,10 +286,10 @@ function requireLivingTarget(state: ClassicGameState, targetId: string | undefin
   return targetId!;
 }
 
-function requireNightTurn(state: ClassicGameState, role: NightRole, actorId: string) {
-  if (activeNightRole(state) !== role) fail("Bukan giliran role ini.");
+function requireNightTurn(state: ClassicGameState, turn: NightRole, actorId: string) {
+  if (activeNightRole(state) !== turn) fail("Bukan giliran role ini.");
   if (!isAlive(state, actorId)) fail("Pemain yang tereliminasi tidak dapat beraksi.");
-  if (state.secret.roles[actorId] !== role) fail("Role kamu tidak dapat melakukan aksi ini.");
+  if (!turnRoles(turn).includes(state.secret.roles[actorId]!)) fail("Role kamu tidak dapat melakukan aksi ini.");
 }
 
 export function applyClassicAction(state: ClassicGameState, actor: Actor, action: ClassicAction, ctx: ClassicContext): ClassicGameState {
@@ -279,9 +316,21 @@ export function applyClassicAction(state: ClassicGameState, actor: Actor, action
       if (secret.werewolvesDiseased) fail("Kawanan Werewolf sedang tertular penyakit dan tidak dapat berburu malam ini.");
       if (action.targetId !== null) {
         const target = requireLivingTarget(draft, action.targetId, actor.playerId, false);
-        if (secret.roles[target] === "WEREWOLF") fail("Werewolf tidak dapat memangsa sesama Werewolf.");
+        if (isPackRole(secret.roles[target]!)) fail("Werewolf tidak dapat memangsa sesama Werewolf.");
+      }
+      if (action.secondTargetId) {
+        if (!isDoubleAttackNight(draft)) fail("Kawanan hanya boleh memilih dua korban setelah Wolf Cub gugur.");
+        const second = requireLivingTarget(draft, action.secondTargetId, actor.playerId, false);
+        if (isPackRole(secret.roles[second]!)) fail("Werewolf tidak dapat memangsa sesama Werewolf.");
+        if (second === action.targetId) fail("Pilih dua korban yang berbeda.");
+      }
+      if (action.convert) {
+        if (secret.roles[actor.playerId] !== "ALPHA_WOLF") fail("Hanya Alpha Wolf yang dapat mengubah korban.");
+        if (secret.alphaUsed) fail("Alpha Wolf sudah memakai kemampuan mengubahnya.");
       }
       secret.night.wolfTargets[actor.playerId] = action.targetId;
+      if (isDoubleAttackNight(draft)) secret.night.wolfSecondTargets[actor.playerId] = action.secondTargetId ?? null;
+      if (secret.roles[actor.playerId] === "ALPHA_WOLF") secret.night.alphaConvert = Boolean(action.convert);
       markActed();
       break;
     }
@@ -296,12 +345,41 @@ export function applyClassicAction(state: ClassicGameState, actor: Actor, action
           break;
         }
         case "SEER_INSPECT": {
-          requireNightTurn(draft, "SEER", actor.playerId);
+          const turn = activeNightRole(draft);
+          if (turn !== "SEER" && turn !== "APPRENTICE_SEER") fail("Bukan giliran role ini.");
+          requireNightTurn(draft, turn, actor.playerId);
+          if (turn === "APPRENTICE_SEER" && seerAlive(draft)) fail("Seer masih hidup; Apprentice Seer belum dapat menerawang.");
           if (night.seerTarget) fail("Seer sudah menerawang malam ini.");
           const target = requireLivingTarget(draft, action.targetId, actor.playerId, false);
-          const role = secret.roles[target]!;
           night.seerTarget = target;
-          secret.seerResults.push({ seerId: actor.playerId, night: pub.nightNumber, targetId: target, appearsAs: role === "WEREWOLF" || role === "LYCAN" ? "WEREWOLF" : "VILLAGER" });
+          secret.seerResults.push({ seerId: actor.playerId, night: pub.nightNumber, targetId: target, appearsAs: appearsAsWerewolf(secret.roles[target]!) ? "WEREWOLF" : "VILLAGER" });
+          break;
+        }
+        case "SORCERER_INSPECT": {
+          requireNightTurn(draft, "SORCERER", actor.playerId);
+          if (night.sorcererTarget) fail("Sorcerer sudah menerawang malam ini.");
+          const target = requireLivingTarget(draft, action.targetId, actor.playerId, false);
+          night.sorcererTarget = target;
+          const found = secret.roles[target] === "SEER" || secret.roles[target] === "APPRENTICE_SEER";
+          secret.sorcererResults.push({ sorcererId: actor.playerId, night: pub.nightNumber, targetId: target, isSeer: found });
+          break;
+        }
+        case "SPELLCASTER_SILENCE": {
+          requireNightTurn(draft, "SPELLCASTER", actor.playerId);
+          night.silenceTarget = requireLivingTarget(draft, action.targetId, actor.playerId, false);
+          break;
+        }
+        case "VAMPIRE_BITE": {
+          requireNightTurn(draft, "VAMPIRE", actor.playerId);
+          night.biteTarget = requireLivingTarget(draft, action.targetId, actor.playerId, false);
+          break;
+        }
+        case "DIRE_PARTNER": {
+          requireNightTurn(draft, "DIRE_WOLF", actor.playerId);
+          if (secret.direBond) fail("Dire Wolf sudah memilih rekan rahasia.");
+          const partner = requireLivingTarget(draft, action.targetId, actor.playerId, false);
+          night.direTarget = partner;
+          secret.direBond = { direId: actor.playerId, partnerId: partner };
           break;
         }
         case "WITCH_HEAL": {
@@ -367,6 +445,14 @@ export function applyClassicAction(state: ClassicGameState, actor: Actor, action
       const deaths = applyDeaths(draft, [{ playerId: target, reason: "HUNTER" }]);
       pub.log.push({ type: "HUNTER", hunterId: actor.playerId, targetId: target, deaths });
       afterDeaths(draft, ctx.now, pub.resumePhase ?? "DAY_DISCUSSION");
+      break;
+    }
+    case "second-vote": {
+      if (pub.phase !== "OPEN_VOTING") fail("Suara ganda hanya dapat dipakai saat voting pertama hari ini.");
+      if (!player!.alive || secret.roles[actor.playerId] !== "TROUBLEMAKER") fail("Hanya Troublemaker yang masih hidup yang dapat memakai suara ganda.");
+      if (secret.troublemakerUsed) fail("Troublemaker sudah memakai suara gandanya.");
+      secret.troublemakerUsed = true;
+      pub.secondVoteQueued = true;
       break;
     }
     case "force-advance": {

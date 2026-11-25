@@ -1,4 +1,4 @@
-// Generates the static Werewolf voice pack (50 MP3 lines) from src/games/werewolf/voice/voice-pack.json.
+// Generates the static Werewolf voice pack (52 MP3 lines) from src/games/werewolf/voice/voice-pack.json.
 //
 //   docker compose run --rm --no-deps web npm run voice:generate                         # Microsoft Edge Neural
 //   docker compose run --rm --no-deps web npm run voice:generate -- --provider elevenlabs # ElevenLabs (needs ELEVENLABS_API_KEY)

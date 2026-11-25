@@ -11,7 +11,7 @@ import { classicVoice, VOICE_PACK } from "@/games/werewolf/voice/templates";
  * for both voices (Microsoft and ElevenLabs Adam). Adding a night role without voice fails here instead
  * of silently playing the "your turn is over" clip.
  */
-const FACTIONS: WinnerFaction[] = ["VILLAGER", "WEREWOLF", "TANNER", "LOVERS"];
+const FACTIONS: WinnerFaction[] = ["VILLAGER", "WEREWOLF", "TANNER", "LOVERS", "LONE_WOLF", "VAMPIRE"];
 const publicFile = (url: string) => path.join(process.cwd(), "public", url);
 const elevenLabsFile = (url: string) => publicFile(url.replace("/audio/werewolf/", "/audio/werewolf/elevenlabs/"));
 

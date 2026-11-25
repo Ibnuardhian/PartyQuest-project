@@ -21,6 +21,17 @@ const ABILITY: Record<ClassicRole, string> = {
   CUPID: "Panah dua pemain di malam pertama agar jatuh cinta sehidup semati, jika satu mati, pasangannya ikut mati.",
   MINION: "Kaki tangan manusia yang mengetahui identitas para Werewolf dan membantu mengacaukan voting warga.",
   MAYOR: "Pemimpin desa yang memiliki bobot suara dua kali lipat setiap kali voting eksekusi siang berlangsung.",
+  APPRENTICE_SEER: "Warga biasa yang mewarisi kekuatan menerawang Seer secara otomatis begitu Seer tereliminasi.",
+  PRINCE: "Bangsawan desa yang selamat dari eksekusi voting satu kali: identitasmu terbongkar dan eksekusi hari itu dibatalkan.",
+  TROUBLEMAKER: "Satu kali dalam permainan saat voting siang, kamu memicu voting kedua sehingga desa mengeksekusi satu orang lagi hari itu.",
+  SPELLCASTER: "Pilih satu pemain setiap malam untuk dibungkam sehingga ia dilarang berbicara sepanjang diskusi siang berikutnya.",
+  LONE_WOLF: "Bangun bersama kawanan Werewolf, tetapi kamu menang sendirian saat menjadi satu-satunya anggota kawanan yang tersisa.",
+  VAMPIRE: "Gigit satu korban setiap malam yang binasa setelah voting siang berikutnya; Werewolf tidak dapat membunuhmu.",
+  ALPHA_WOLF: "Pemimpin kawanan yang satu kali per permainan bisa mengubah korban mangsa malam menjadi Werewolf baru alih-alih membunuhnya.",
+  SORCERER: "Penyihir sekutu Werewolf yang setiap malam menerawang satu pemain untuk mencari tahu apakah dia Seer.",
+  WOLF_CUB: "Jika ia tereliminasi kapan pun, kawanan Werewolf murka dan dapat memangsa dua pemain pada malam berikutnya.",
+  DIRE_WOLF: "Pilih satu rekan rahasia pada malam pertama; saat rekanmu mati, kamu langsung ikut tereliminasi.",
+  DREAM_WOLF: "Werewolf yang tertidur sepanjang malam, tidak ikut bangun, namun tetap dikenali sesama Werewolf.",
 };
 
 type Tone = "good" | "evil" | "neutral";
@@ -39,27 +50,12 @@ function playable(role: ClassicRole): CardData {
   return { key: role, name: info.name, faction: role === "CURSED" ? "Warga → Jahat" : faction.label, tone: faction.tone, twist: info.twist, ability: ABILITY[role], soon: false };
 }
 
-/** Roles in the design roster that the Classic engine does not deal yet; shown with a "Segera" tag. */
-const SOON: Record<string, CardData> = {
-  APPRENTICE_SEER: { key: "APPRENTICE_SEER", name: "Apprentice Seer", faction: "Warga", tone: "good", twist: false, soon: true, ability: "Warga biasa yang akan mewarisi kekuatan menerawang milik Seer secara otomatis jika Seer asli tereliminasi dari permainan." },
-  PRINCE: { key: "PRINCE", name: "Prince", faction: "Warga", tone: "good", twist: true, soon: true, ability: "Bangsawan desa yang kebal dari eksekusi voting siang pertama, identitasmu akan langsung terbongkar dan eksekusi hari itu dibatalkan." },
-  TROUBLEMAKER: { key: "TROUBLEMAKER", name: "Troublemaker", faction: "Warga", tone: "good", twist: true, soon: true, ability: "Satu kali dalam permainan pada siang hari, kamu dapat memicu kekacauan sehingga desa melakukan dua kali voting eksekusi berturut-turut." },
-  SPELLCASTER: { key: "SPELLCASTER", name: "Spellcaster", faction: "Warga", tone: "good", twist: true, soon: true, ability: "Pilih satu pemain setiap malam untuk dibungkam sihir sehingga ia dilarang berbicara sepatah kata pun sepanjang diskusi siang berikutnya." },
-  LONE_WOLF: { key: "LONE_WOLF", name: "Lone Wolf", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Bangun bersama Werewolf lain di malam hari, namun kamu hanya menang jika berhasil menjadi satu-satunya pemain yang bertahan hidup di akhir permainan." },
-  ALPHA_WOLF: { key: "ALPHA_WOLF", name: "Alpha Wolf", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Pemimpin kawanan Werewolf yang satu kali per permainan bisa mengubah korban mangsa malam menjadi Werewolf baru alih-alih membunuhnya." },
-  SORCERER: { key: "SORCERER", name: "Sorcerer", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Penyihir sekutu Werewolf yang bangun setiap malam untuk menerawang satu pemain demi menemukan siapa Seer di desa ini." },
-  WOLF_CUB: { key: "WOLF_CUB", name: "Wolf Cub", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Anak serigala yang setia, jika ia tereliminasi kapan pun, kawanan Werewolf murka dan dapat memangsa dua warga pada malam berikutnya." },
-  DIRE_WOLF: { key: "DIRE_WOLF", name: "Dire Wolf", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Pilih satu pemain sebagai rekan rahasia pada malam pertama, kapan pun rekanmu itu mati, kamu langsung ikut tereliminasi bersamanya." },
-  DREAM_WOLF: { key: "DREAM_WOLF", name: "Dream Wolf", faction: "Jahat", tone: "evil", twist: true, soon: true, ability: "Werewolf yang tertidur pulas sepanjang malam sehingga tidak ikut bangun bersama kawanan, namun identitasmu tetap diketahui oleh sesama Werewolf." },
-  VAMPIRE: { key: "VAMPIRE", name: "Vampire", faction: "Netral / Jahat", tone: "neutral", twist: true, soon: true, ability: "Pilih satu korban setiap malam yang baru akan tereliminasi pada voting siang berikutnya, dan kamu kebal dari serangan Werewolf di malam hari." },
-};
-
 /** Display order of the full roster (20 cards). */
 const CARDS: CardData[] = [
-  playable("WEREWOLF"), SOON.ALPHA_WOLF!, SOON.WOLF_CUB!, SOON.DIRE_WOLF!, SOON.DREAM_WOLF!, SOON.SORCERER!, playable("VILLAGER"), playable("SEER"), SOON.APPRENTICE_SEER!, playable("DOCTOR"),
+  playable("WEREWOLF"), playable("ALPHA_WOLF"), playable("WOLF_CUB"), playable("DIRE_WOLF"), playable("DREAM_WOLF"), playable("SORCERER"), playable("VILLAGER"), playable("SEER"), playable("APPRENTICE_SEER"), playable("DOCTOR"),
   playable("HUNTER"), playable("MASON"), playable("DISEASE"), playable("TANNER"), playable("LYCAN"),
   playable("CURSED"), playable("WITCH"), playable("CUPID"), playable("MINION"), playable("MAYOR"),
-  SOON.PRINCE!, SOON.TROUBLEMAKER!, SOON.SPELLCASTER!, SOON.LONE_WOLF!, SOON.VAMPIRE!,
+  playable("PRINCE"), playable("TROUBLEMAKER"), playable("SPELLCASTER"), playable("LONE_WOLF"), playable("VAMPIRE"),
 ];
 
 /** Cards are grouped by side so players can compare each team's roles at a glance. */

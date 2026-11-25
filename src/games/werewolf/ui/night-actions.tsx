@@ -14,26 +14,68 @@ function TargetList({ players, selectedId, marks, disabled, onPick }: { players:
   </button>)}</div>;
 }
 
+const nameOf = (view: WerewolfView, id: string) => view.public.players.find((player) => player.id === id)?.name ?? "Pemain";
+
 /** The `GILIRANMU` panel: shown only to the alive holder(s) of the active night role. */
 export function NightActionPanel({ view, busy, perform }: { view: WerewolfView; busy: boolean; perform: Perform }) {
   const [cupidPick, setCupidPick] = useState<string[]>([]);
+  const [wolfFirst, setWolfFirst] = useState<string | null>(null);
+  const [wolfSecond, setWolfSecond] = useState<string | null>(null);
+  const [convert, setConvert] = useState<boolean | null>(null);
   const me = view.you.playerId;
   const alive = view.public.players.filter((player) => player.alive);
   const others = alive.filter((player) => player.id !== me);
   const skip = <button type="button" className="ww-button" disabled={busy} onClick={() => void perform({ type: "night-action", actionType: "SKIP" })}>Lewati giliran</button>;
+  const pickOther = (hint: string, actionType: string) => <>
+    <p className="ww-night-hint">{hint}</p>
+    <TargetList players={others} disabled={busy} onPick={(id) => void perform({ type: "night-action", actionType, targetId: id })} />
+    {skip}
+  </>;
+  // The Dire Wolf and the other pack roles share the Werewolf turn, so the panel follows the turn, not only the role.
+  const turn = view.public.activeNightRole ?? view.you.role;
 
-  switch (view.you.role) {
+  switch (turn) {
+    case "DIRE_WOLF": {
+      if (view.direPartnerId) return <p className="ww-result" role="status">Rekan rahasiamu: <strong>{nameOf(view, view.direPartnerId)}</strong>. Jika ia mati, kamu ikut gugur.</p>;
+      return pickOther("Pilih satu pemain sebagai rekan rahasiamu. Jika ia mati, kamu langsung ikut tereliminasi.", "DIRE_PARTNER");
+    }
     case "WEREWOLF": {
       if (view.werewolvesDiseased) return <p className="ww-night-hint">Kawananmu tertular penyakit dan tidak dapat berburu malam ini.</p>;
       const marks: Record<string, number> = {};
       for (const target of Object.values(view.wolfTargets ?? {})) if (target) marks[target] = (marks[target] ?? 0) + 1;
-      const prey = others.filter((player) => view.knownRoles[player.id] !== "WEREWOLF");
+      for (const target of Object.values(view.wolfSecondTargets ?? {})) if (target) marks[target] = (marks[target] ?? 0) + 1;
+      const pack = new Set(["WEREWOLF", "ALPHA_WOLF", "WOLF_CUB", "DIRE_WOLF", "DREAM_WOLF", "LONE_WOLF"]);
+      const prey = others.filter((player) => !pack.has(view.knownRoles[player.id] ?? ""));
+      const alpha = view.alpha;
+      const converting = convert ?? alpha?.converting ?? false;
+      const alphaToggle = alpha?.available ? <label className="ww-night-hint"><input type="checkbox" checked={converting} disabled={busy} onChange={(event) => setConvert(event.target.checked)} /> Ubah korban jadi Werewolf (1x per permainan)</label> : null;
+      if (view.doubleAttack) {
+        const first = wolfFirst ?? view.wolfTargets?.[me] ?? null;
+        const second = wolfSecond ?? view.wolfSecondTargets?.[me] ?? null;
+        return <>
+          <p className="ww-night-hint">Wolf Cub gugur, kawanan murka: pilih dua korban berbeda. Tanda cakar menunjukkan pilihan rekanmu.</p>
+          <p className="ww-night-hint">Korban pertama</p>
+          <TargetList players={prey} selectedId={first} marks={marks} disabled={busy} onPick={setWolfFirst} />
+          <p className="ww-night-hint">Korban kedua</p>
+          <TargetList players={prey.filter((player) => player.id !== first)} selectedId={second} marks={marks} disabled={busy} onPick={setWolfSecond} />
+          {alphaToggle}
+          <button type="button" className="ww-button ww-primary" disabled={busy || !first || !second || first === second} onClick={() => void perform({ type: "wolf-target", targetId: first, secondTargetId: second, convert: converting })}>Kunci dua korban</button>
+        </>;
+      }
       return <>
         <p className="ww-night-hint">Pilih mangsa bersama kawanan. Tanda cakar menunjukkan pilihan rekanmu. Suara terbanyak menang; seri berarti tidak ada serangan.</p>
-        <TargetList players={prey} selectedId={view.wolfTargets?.[me] ?? null} marks={marks} disabled={busy} onPick={(id) => void perform({ type: "wolf-target", targetId: id })} />
-        <button type="button" className="ww-button" disabled={busy} onClick={() => void perform({ type: "wolf-target", targetId: null })}>Tidak memangsa</button>
+        <TargetList players={prey} selectedId={view.wolfTargets?.[me] ?? null} marks={marks} disabled={busy} onPick={(id) => void perform({ type: "wolf-target", targetId: id, convert: converting })} />
+        {alphaToggle}
+        <button type="button" className="ww-button" disabled={busy} onClick={() => void perform({ type: "wolf-target", targetId: null, convert: false })}>Tidak memangsa</button>
       </>;
     }
+    case "SORCERER": {
+      const tonight = view.sorcererResults.find((result) => result.night === view.public.nightNumber);
+      if (tonight) return <p className="ww-result" role="status"><strong>{nameOf(view, tonight.targetId)}</strong> {tonight.isSeer ? "adalah Seer" : "bukan Seer"}.</p>;
+      return pickOther("Pilih satu pemain. Kamu hanya akan tahu apakah dia Seer atau bukan.", "SORCERER_INSPECT");
+    }
+    case "SPELLCASTER": return pickOther("Pilih satu pemain untuk dibungkam: ia tidak boleh berbicara selama diskusi siang berikutnya.", "SPELLCASTER_SILENCE");
+    case "VAMPIRE": return pickOther("Pilih satu pemain untuk digigit. Ia akan binasa setelah voting siang berikutnya, kecuali dilindungi malam ini.", "VAMPIRE_BITE");
     case "DOCTOR": {
       const allowed = alive.filter((player) => player.id !== view.doctor?.lastTarget);
       return <>
@@ -42,17 +84,12 @@ export function NightActionPanel({ view, busy, perform }: { view: WerewolfView; 
         {skip}
       </>;
     }
-    case "SEER": {
+    case "SEER":
+    case "APPRENTICE_SEER": {
+      if (turn === "APPRENTICE_SEER" && view.seerAlive) return <p className="ww-night-hint">Seer masih hidup. Kamu belum mewarisi kekuatannya; tunggu gilirannya selesai.</p>;
       const tonight = view.seerResults.find((result) => result.night === view.public.nightNumber);
-      if (tonight) {
-        const name = view.public.players.find((player) => player.id === tonight.targetId)?.name ?? "Pemain";
-        return <p className="ww-result" role="status"><strong>{name}</strong> terbaca sebagai <strong>{tonight.appearsAs === "WEREWOLF" ? "Werewolf" : "warga"}</strong>.</p>;
-      }
-      return <>
-        <p className="ww-night-hint">Pilih satu pemain untuk diterawang.</p>
-        <TargetList players={others} disabled={busy} onPick={(id) => void perform({ type: "night-action", actionType: "SEER_INSPECT", targetId: id })} />
-        {skip}
-      </>;
+      if (tonight) return <p className="ww-result" role="status"><strong>{nameOf(view, tonight.targetId)}</strong> terbaca sebagai <strong>{tonight.appearsAs === "WEREWOLF" ? "Werewolf" : "warga"}</strong>.</p>;
+      return pickOther("Pilih satu pemain untuk diterawang.", "SEER_INSPECT");
     }
     case "WITCH": {
       const witch = view.witch!;

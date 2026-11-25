@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, CLASSIC_ROLES, TWIST_ROLES, type ClassicRole, type ClassicSettings } from "@/games/werewolf/contract";
+import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, CLASSIC_ROLES, HUNTING_ROLES, PACK_ROLES, TWIST_ROLES, type ClassicRole, type ClassicSettings } from "@/games/werewolf/contract";
 import { CLASSIC_ROLE_INFO, recommendedComposition } from "@/games/werewolf/roles";
 
 const roleCountSchema = z.number().int().min(0).max(CLASSIC_MAX_PLAYERS);
@@ -46,8 +46,10 @@ export function validateClassicSettings(input: unknown, playerCount: number): Cl
     if (count > info.max) throw new Error(`${info.name} maksimal ${info.max}.`);
     if (count > 0 && count < info.minWhenPresent) throw new Error(`${info.name} minimal ${info.minWhenPresent} jika dipakai.`);
   }
-  const werewolves = roles.WEREWOLF ?? 0;
-  if (werewolves < 1) throw new Error("Minimal ada satu Werewolf.");
+  // The pack: Werewolves plus the wolf-side roles that count as Werewolves. At least one must wake and hunt.
+  const hunters = HUNTING_ROLES.reduce((sum, role) => sum + (roles[role] ?? 0), 0);
+  const werewolves = PACK_ROLES.reduce((sum, role) => sum + (roles[role] ?? 0), 0);
+  if (hunters < 1) throw new Error("Minimal ada satu Werewolf yang bangun dan memangsa.");
   if (werewolves >= playerCount - werewolves) throw new Error("Werewolf harus lebih sedikit daripada pemain lain.");
   return { ...parsed.data, advanced, roles };
 }

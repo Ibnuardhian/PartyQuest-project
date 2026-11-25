@@ -57,6 +57,39 @@ export const CLASSIC_ROLE_INFO: Record<ClassicRole, ClassicRoleInfo> = {
   MAYOR: { name: "Mayor", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: true,
     description: "Sebagai pemimpin tertinggi desa yang dihormati, suaramu memiliki bobot dua kali lipat setiap kali voting eksekusi berlangsung di siang hari. Gunakan pengaruh besarmu dengan bijak saat perdebatan memanas.",
     artPrompt: "Dark gothic tarot card illustration of an ornate golden seal ring and ceremonial gavel resting on a velvet ledger, gold line art on obsidian background." },
+  APPRENTICE_SEER: { name: "Apprentice Seer", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: false,
+    description: "Kamu warga biasa yang belajar dari Seer. Selama Seer masih hidup kamu tidak melakukan apa pun, tetapi begitu Seer tereliminasi, kamu mewarisi kekuatannya dan menerawang satu pemain setiap malam.",
+    artPrompt: "Dark gothic tarot card illustration of a young apprentice in a hooded robe holding a dimmed crystal shard beside a fading oracle eye, fine line art on obsidian background." },
+  PRINCE: { name: "Prince", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: true,
+    description: "Kamu bangsawan desa yang kebal dari eksekusi voting satu kali. Saat suara terbanyak jatuh padamu, identitasmu terbongkar dan eksekusi hari itu dibatalkan; eksekusi berikutnya tetap membunuhmu.",
+    artPrompt: "Dark gothic tarot card illustration of a young noble in a crimson cloak and a slender silver crown shielded by a pale golden ward, fine line art on obsidian background." },
+  TROUBLEMAKER: { name: "Troublemaker", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: true,
+    description: "Satu kali dalam permainan, saat voting siang, kamu dapat memicu kekacauan sehingga desa memilih dan mengeksekusi satu kali lagi pada hari yang sama setelah eksekusi pertama.",
+    artPrompt: "Dark gothic tarot card illustration of a grinning rogue tossing a cracked ballot into the air amid scattered torn papers, fine line art on obsidian background." },
+  SPELLCASTER: { name: "Spellcaster", alignment: "VILLAGER", max: 1, minWhenPresent: 1, twist: true,
+    description: "Setiap malam kamu memilih satu pemain untuk dibungkam sihir. Pemain itu dilarang berbicara selama diskusi siang berikutnya, tetapi tetap boleh memberikan suara.",
+    artPrompt: "Dark gothic tarot card illustration of a hooded mage sealing a floating mouth-shaped rune with a violet ward, fine line art on obsidian background." },
+  LONE_WOLF: { name: "Lone Wolf", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Kamu bangun bersama kawanan Werewolf dan terbaca sebagai Werewolf oleh Seer, tetapi kamu menang sendirian: hanya saat kamu satu-satunya anggota kawanan yang tersisa dan jumlahmu menyamai pemain lain.",
+    artPrompt: "Dark gothic tarot card illustration of a solitary scarred wolf standing on a cliff apart from a distant pack under a pale moon, fine line art on obsidian background." },
+  VAMPIRE: { name: "Vampire", alignment: "INDEPENDENT", max: 1, minWhenPresent: 1, twist: true,
+    description: "Kamu berburu sendirian. Setiap malam kamu menggigit satu pemain yang akan binasa setelah voting siang berikutnya, dan Werewolf tidak dapat membunuhmu. Kamu menang jika hanya tersisa dua pemain hidup termasuk dirimu.",
+    artPrompt: "Dark gothic tarot card illustration of a pale aristocrat with crimson eyes and long fangs framed by a swarm of bats, fine line art on obsidian background." },
+  ALPHA_WOLF: { name: "Alpha Wolf", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Pemimpin kawanan. Satu kali per permainan kamu dapat mengubah korban mangsa malam menjadi Werewolf baru alih-alih membunuhnya, selama korban itu tidak terlindungi.",
+    artPrompt: "Dark gothic tarot card illustration of a massive scarred alpha wolf howling above a circle of bowing wolves under a blood moon, fine line art on obsidian background." },
+  SORCERER: { name: "Sorcerer", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Penyihir sekutu Werewolf. Setiap malam kamu menerawang satu pemain, tetapi hasilnya hanya memberi tahu apakah ia Seer atau bukan. Seer membaca kamu sebagai warga.",
+    artPrompt: "Dark gothic tarot card illustration of a robed sorcerer peering through a smoky ring toward a faint oracle silhouette, fine line art on obsidian background." },
+  WOLF_CUB: { name: "Wolf Cub", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Anak serigala yang bangun bersama kawanan. Jika ia tereliminasi kapan pun, kawanan murka dan dapat memangsa dua pemain pada malam berikutnya.",
+    artPrompt: "Dark gothic tarot card illustration of a small wolf pup with glowing eyes guarded by looming wolf shadows, fine line art on obsidian background." },
+  DIRE_WOLF: { name: "Dire Wolf", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Bangun bersama kawanan. Pada malam pertama kamu memilih satu pemain sebagai rekan rahasia; saat rekanmu mati karena sebab apa pun, kamu langsung ikut tereliminasi.",
+    artPrompt: "Dark gothic tarot card illustration of a huge armored wolf bound by a glowing thread to a hidden silhouette, fine line art on obsidian background." },
+  DREAM_WOLF: { name: "Dream Wolf", alignment: "WEREWOLF", max: 1, minWhenPresent: 1, twist: true,
+    description: "Werewolf yang tertidur sepanjang malam. Kamu tidak bangun dan tidak ikut memangsa, tetapi namamu tetap muncul di daftar rekan Werewolf lain. Kamu dihitung sebagai Werewolf untuk kondisi menang.",
+    artPrompt: "Dark gothic tarot card illustration of a sleeping wolf curled in drifting dream clouds beneath a crescent moon, fine line art on obsidian background." },
 };
 
 /**
@@ -78,7 +111,7 @@ export function recommendedComposition(playerCount: number): Partial<Record<Clas
 }
 
 /** Twist roles in the order Advanced mode adds them: strong, readable ones first, win-condition changers last. */
-const ADVANCED_ORDER: readonly ClassicRole[] = ["WITCH", "MAYOR", "CUPID", "LYCAN", "TANNER", "CURSED", "MINION"];
+const ADVANCED_ORDER: readonly ClassicRole[] = ["WITCH", "MAYOR", "CUPID", "LYCAN", "TANNER", "CURSED", "MINION", "PRINCE", "SPELLCASTER", "TROUBLEMAKER"];
 
 export function isTwistRole(role: ClassicRole): boolean {
   return TWIST_ROLES.includes(role);

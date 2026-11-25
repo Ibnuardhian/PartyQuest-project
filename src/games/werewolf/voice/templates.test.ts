@@ -7,9 +7,9 @@ import { indonesianVoices, splitSentences } from "@/games/werewolf/voice/narrato
 import { classicVoice, elevenLabsText, joinNames, NAME_LINES, nameLine, onuwVoice, packLine, renderLine, stripAudioTags, supportsAudioTags, VOICE_PACK } from "@/games/werewolf/voice/templates";
 
 describe("voice pack", () => {
-  it("has all 50 lines with a generated, non-empty MP3 in public/", () => {
-    expect(VOICE_PACK.items).toHaveLength(50);
-    expect(VOICE_PACK.items.filter((item) => item.mode === "classic")).toHaveLength(31);
+  it("has all 52 lines with a generated, non-empty MP3 in public/", () => {
+    expect(VOICE_PACK.items).toHaveLength(52);
+    expect(VOICE_PACK.items.filter((item) => item.mode === "classic")).toHaveLength(33);
     for (const item of VOICE_PACK.items) {
       const file = path.join(process.cwd(), "public", item.file);
       expect(statSync(file).size, item.file).toBeGreaterThan(1000);

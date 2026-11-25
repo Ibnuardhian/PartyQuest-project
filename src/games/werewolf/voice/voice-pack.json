@@ -290,6 +290,20 @@
       "elevenlabsText": "[warmly] Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!"
     },
     {
+      "key": "CLASSIC_WIN_LONE_WOLF",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/win_lone_wolf.mp3",
+      "text": "Permainan berakhir! Satu serigala bertahan sendirian di tengah reruntuhan desa... Kemenangan tunggal diraih oleh Lone Wolf!",
+      "elevenlabsText": "[evil laugh] Permainan berakhir! Satu serigala bertahan sendirian di tengah reruntuhan desa... [laughs] Kemenangan tunggal diraih oleh Lone Wolf!"
+    },
+    {
+      "key": "CLASSIC_WIN_VAMPIRE",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/win_vampire.mp3",
+      "text": "Permainan berakhir! Malam tidak pernah benar-benar usai bagi sang pengisap darah... Kemenangan tunggal diraih oleh Vampire!",
+      "elevenlabsText": "[ominous] Permainan berakhir! Malam tidak pernah benar-benar usai bagi sang pengisap darah... [laughs] Kemenangan tunggal diraih oleh Vampire!"
+    },
+    {
       "key": "ONUW_ONUW_INTRO",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_intro.mp3",

@@ -1,6 +1,6 @@
-import type { ClassicGameState, ClassicPlayer, ClassicRole, LogEntry, NightRole, VoteRecord } from "@/games/werewolf/contract";
-import { activeNightRole } from "@/games/werewolf/engine/classic/engine";
-import { alignmentOf, currentWolfVictim } from "@/games/werewolf/engine/classic/resolve";
+import { PACK_ROLES, type ClassicGameState, type ClassicPlayer, type ClassicRole, type LogEntry, type NightRole, type VoteRecord } from "@/games/werewolf/contract";
+import { activeNightRole, turnRoles } from "@/games/werewolf/engine/classic/engine";
+import { alignmentOf, currentWolfVictim, isDoubleAttackNight, isPackRole } from "@/games/werewolf/engine/classic/resolve";
 
 /**
  * Per-player views for Werewolf Classic (docs/04 §6). Pure functions over server state.
@@ -19,7 +19,8 @@ export type PublicLogEntry =
   | { type: "DAWN"; night: number; deadPlayerIds: string[] }
   | { type: "EXECUTION"; day: number; playerId: string | null; votes: VoteRecord[] }
   | { type: "HUNTER"; hunterId: string; targetId: string | null; deadPlayerIds: string[] }
-  | { type: "AFK_ELIM"; playerId: string; deadPlayerIds: string[] };
+  | { type: "AFK_ELIM"; playerId: string; deadPlayerIds: string[] }
+  | { type: "PRINCE"; day: number; playerId: string };
 
 function publicLog(log: LogEntry[]): PublicLogEntry[] {
   return log.flatMap((entry): PublicLogEntry[] => {
@@ -30,6 +31,7 @@ function publicLog(log: LogEntry[]): PublicLogEntry[] {
       case "AFK_ELIM": return [{ type: "AFK_ELIM", playerId: entry.playerId, deadPlayerIds: entry.deaths.map((death) => death.playerId) }];
       // Which role was reassigned is secret.
       case "AFK_PROMOTION": return [];
+      case "PRINCE": return [{ type: "PRINCE", day: entry.day, playerId: entry.playerId }];
     }
   });
 }
@@ -52,6 +54,11 @@ export function buildPublicView(state: ClassicGameState) {
     tiedPlayerIds: pub.tiedPlayerIds,
     lastVoteReveal: pub.lastVoteReveal,
     hunterId: pub.phase === "HUNTER_REVENGE" ? pub.hunterQueue[0] ?? null : null,
+    /** Public effects of the Phase 8 roles: today's silenced player, Vampire marks, revealed Princes, a queued second vote. */
+    silencedId: pub.silencedId,
+    doomedIds: pub.doomedIds,
+    revealedPrinceIds: pub.revealedPrinceIds,
+    secondVoteQueued: pub.secondVoteQueued,
     /** The configured role list is public, like a physical deck on the table. */
     composition: state.settings.roles,
     deadRevealMode: state.settings.deadRevealMode,
@@ -86,7 +93,8 @@ export function knownRolesFor(state: ClassicGameState, playerId: string): Record
   const reveal = (role: ClassicRole) => {
     for (const [id, value] of Object.entries(roles)) if (value === role) known[id] = value;
   };
-  if (myRole === "WEREWOLF" || myRole === "MINION") reveal("WEREWOLF");
+  // The pack knows itself (a sleeping Dream Wolf is listed for the others but knows no one); the Minion knows the pack.
+  if ((isPackRole(myRole) && myRole !== "DREAM_WOLF") || myRole === "MINION") for (const packRole of PACK_ROLES) reveal(packRole);
   if (myRole === "MASON" && masonsHaveMet(state)) reveal("MASON");
   return known;
 }
@@ -97,7 +105,8 @@ export function buildPlayerView(state: ClassicGameState, viewer: { userId: strin
   const secret = state.secret;
   const role = secret.roles[viewer.userId]!;
   const turn: NightRole | null = activeNightRole(state);
-  const myTurn = Boolean(me.alive && turn && role === turn);
+  const myTurn = Boolean(me.alive && turn && turnRoles(turn).includes(role));
+  const wolfTurn = myTurn && turn === "WEREWOLF";
   const lovers = secret.lovers;
   const knowsLovers = lovers && (lovers.includes(viewer.userId) || (role === "CUPID" && me.alive) || secret.originalRoles[viewer.userId] === "CUPID");
 
@@ -117,9 +126,18 @@ export function buildPlayerView(state: ClassicGameState, viewer: { userId: strin
     knownRoles: knownRolesFor(state, viewer.userId),
     lovers: knowsLovers ? lovers : null,
     /** Live picks of fellow alive Werewolves during their turn (claw markers). */
-    wolfTargets: myTurn && role === "WEREWOLF" ? secret.night.wolfTargets : null,
-    werewolvesDiseased: role === "WEREWOLF" && myTurn ? secret.werewolvesDiseased : null,
-    seerResults: role === "SEER" || secret.originalRoles[viewer.userId] === "SEER" ? secret.seerResults.filter((result) => result.seerId === viewer.userId) : [],
+    wolfTargets: wolfTurn ? secret.night.wolfTargets : null,
+    /** Second picks and the Alpha Wolf's conversion switch, only during the pack's own turn. */
+    wolfSecondTargets: wolfTurn && isDoubleAttackNight(state) ? secret.night.wolfSecondTargets : null,
+    doubleAttack: wolfTurn && isDoubleAttackNight(state),
+    alpha: role === "ALPHA_WOLF" ? { available: !secret.alphaUsed, converting: secret.night.alphaConvert } : null,
+    werewolvesDiseased: wolfTurn ? secret.werewolvesDiseased : null,
+    seerResults: ["SEER", "APPRENTICE_SEER"].includes(role) || ["SEER", "APPRENTICE_SEER"].includes(secret.originalRoles[viewer.userId]!) ? secret.seerResults.filter((result) => result.seerId === viewer.userId) : [],
+    /** The Apprentice Seer only reads once no Seer is alive. */
+    seerAlive: role === "APPRENTICE_SEER" ? state.public.players.some((player) => player.alive && secret.roles[player.id] === "SEER") : null,
+    sorcererResults: role === "SORCERER" ? secret.sorcererResults.filter((result) => result.sorcererId === viewer.userId) : [],
+    direPartnerId: role === "DIRE_WOLF" && secret.direBond?.direId === viewer.userId ? secret.direBond.partnerId : null,
+    troublemaker: role === "TROUBLEMAKER" ? { available: !secret.troublemakerUsed } : null,
     doctor: role === "DOCTOR" ? { lastTarget: secret.doctorLastTarget, tonight: myTurn ? secret.night.doctorTarget : null } : null,
     witch: role === "WITCH" ? {
       healAvailable: !secret.witchHealUsed,
