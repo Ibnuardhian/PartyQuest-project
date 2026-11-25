@@ -41,7 +41,7 @@ Panduan ini mendokumentasikan gaya UI PartyQuest agar game baru tetap terasa sat
 - Beri state hover/focus yang terlihat dan state disabled yang jelas. Semua kontrol harus dapat digunakan dengan keyboard.
 - Label form harus terhubung ke input. Timer menggunakan elemen `<time>` dengan angka tabular agar tidak bergeser saat berubah.
 - Dalam Pass-and-Play, clue, diskusi, dan voting dilakukan lisan di luar aplikasi. Tampilkan satu timer maksimum 3 menit untuk ronde clue; setelah voting, pemain memilih dan mengonfirmasi pemain tereliminasi di aplikasi. Jangan menyimpan clue, giliran clue, atau pilihan voting.
-- Kartu privat Pass-and-Play menampilkan kata saja; jangan menampilkan label role sebelum permainan selesai. Tetap gunakan hand-off sebelum membuka kartu.
+- Kartu privat Pass-and-Play menampilkan kata saja; jangan menampilkan label role sebelum permainan selesai. Satu pengecualian yang disengaja: Mr. White tidak punya kata, sehingga kartunya bertuliskan "Kamu adalah Mr. White!". Tetap gunakan hand-off sebelum membuka kartu.
 - Online Room tetap memakai clue bergiliran dan voting online dengan state server dan deadline server.
 
 ## Kit UI game (katalog, landing & setup)
