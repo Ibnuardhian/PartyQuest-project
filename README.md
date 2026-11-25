@@ -143,7 +143,7 @@ Platform (katalog, lobi, API room, auth, database) tidak berisi aturan game. Unt
 
 ## Deploy ke VPS dengan Docker (Hostinger)
 
-`compose.prod.yaml` menjalankan PostgreSQL, migrasi sekali jalan, Next.js standalone (target `runner`), dan Caddy (HTTPS otomatis untuk `DOMAIN`). Salin `.env.production.example` ke `.env.production` di server, isi rahasianya, lalu jalankan `docker compose -f compose.prod.yaml --env-file .env.production up -d --build`. Langkah lengkap untuk Hostinger VPS, termasuk deploy otomatis dari GitHub Actions (`.github/workflows/deploy.yml`): [deploy/HOSTINGER.md](deploy/HOSTINGER.md).
+`compose.prod.yaml` menjalankan PostgreSQL, migrasi sekali jalan, Next.js standalone (target `runner`), dan menyajikan web di `127.0.0.1:3005` untuk Nginx host (HTTPS ditangani Nginx). Salin `.env.production.example` ke `.env.production` di server, isi rahasianya, lalu jalankan `docker compose -f compose.prod.yaml --env-file .env.production up -d --build`. Langkah lengkap untuk Hostinger VPS, termasuk deploy otomatis dari GitHub Actions (`.github/workflows/deploy.yml`): [deploy/HOSTINGER.md](deploy/HOSTINGER.md).
 
 ## Deploy ke Vercel
 

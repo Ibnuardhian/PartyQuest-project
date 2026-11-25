@@ -142,7 +142,7 @@ Never claim tests passed unless they were actually executed.
 - Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()`; `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. Guest row retention is an operator policy.
 - `LISTEN/NOTIFY` needs a direct or session-pooled connection; with transaction pooling, clients fall back to polling.
 - Ensure the application can also be deployed to Vercel.
-- Production on a VPS (Hostinger) uses `compose.prod.yaml` (Postgres, one-shot `migrate` from the `runner` image, `web`, Caddy HTTPS) with secrets in `.env.production` only; see `deploy/HOSTINGER.md`. `.github/workflows/deploy.yml` verifies every push to `main` and, when `DEPLOY_ENABLED=true`, deploys that exact commit over SSH (pinned host key; app secrets never leave the VPS).
+- Production on a VPS (Hostinger) uses `compose.prod.yaml` (Postgres, one-shot `migrate` from the `runner` image, `web` on `127.0.0.1:3005`; HTTPS terminates in the host Nginx) with secrets in `.env.production` only; see `deploy/HOSTINGER.md`. `.github/workflows/deploy.yml` verifies every push to `main` and, when `DEPLOY_ENABLED=true`, deploys that exact commit over SSH (pinned host key; app secrets never leave the VPS).
 - Do not claim deployment is complete without verifying it.
 
 ## Documentation Maintenance

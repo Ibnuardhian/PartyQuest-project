@@ -8,15 +8,31 @@ Stack (`compose.prod.yaml`):
 |---|---|
 | `postgres` | PostgreSQL 17, data di volume `postgres_data`, tidak dibuka ke internet |
 | `migrate` | Sekali jalan: `node scripts/migrate.mjs` dari image produksi, lalu berhenti |
-| `web` | Next.js standalone (target `runner`), port 3000 hanya di jaringan Docker |
-| `caddy` | Port 80/443, HTTPS otomatis (Let's Encrypt) untuk `DOMAIN`, meneruskan ke `web` |
+| `web` | Next.js standalone (target `runner`), hanya di `127.0.0.1:3005` (ubah dengan `WEB_HOST_PORT`) |
+
+HTTPS dan domain ditangani **Nginx di host VPS** (sudah terpasang di server ini), bukan oleh Docker, sehingga port 80/443 tetap dipegang Nginx.
 
 ## 1. Siapkan VPS dan domain
 
 1. Di hPanel → VPS, pasang template **Ubuntu 24.04 with Docker** (atau Ubuntu biasa lalu pasang Docker Engine + Compose plugin).
 2. Di DNS domain Anda, buat **A record** (misalnya `partyquest.domainanda.com`) ke IP VPS. Tunggu sampai `ping` ke domain itu menunjukkan IP VPS.
-3. Pastikan port **80** dan **443** terbuka (firewall hPanel / `ufw allow 80,443/tcp`). Jangan buka 5432.
-4. Jika template VPS sudah menjalankan reverse proxy lain di port 80/443 (misalnya Traefik dari Docker Manager), hentikan dulu, atau hapus layanan `caddy` dan arahkan proxy itu ke `web:3000`.
+3. Pastikan port **80** dan **443** terbuka (firewall hPanel / `ufw allow 80,443/tcp`). Jangan buka 5432 maupun 3005: keduanya hanya dipakai di dalam server.
+4. Buat server block Nginx yang meneruskan domain ke `127.0.0.1:3005`, lalu pasang sertifikat (misalnya `certbot --nginx -d partyquest.domainanda.com`). Pengaturan `proxy_buffering off` wajib agar stream realtime (SSE) tidak tertahan:
+   ```nginx
+   server {
+     server_name partyquest.domainanda.com;
+     listen 80;
+     location / {
+       proxy_pass http://127.0.0.1:3005;
+       proxy_http_version 1.1;
+       proxy_set_header Host $host;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+       proxy_buffering off;      # Server-Sent Events: /api/rooms/<kode>/events
+       proxy_read_timeout 1h;
+     }
+   }
+   ```
 
 ## 2. Ambil kode dan isi konfigurasi
 
@@ -24,7 +40,7 @@ Stack (`compose.prod.yaml`):
 ssh root@IP_VPS
 git clone https://github.com/<akun>/<repo>.git partyquest && cd partyquest
 cp .env.production.example .env.production
-nano .env.production   # isi DOMAIN, POSTGRES_PASSWORD, GUEST_SESSION_SECRET
+nano .env.production   # isi POSTGRES_PASSWORD, GUEST_SESSION_SECRET (WEB_HOST_PORT opsional)
 ```
 
 Buat rahasia acak dengan `openssl rand -hex 24` (password) dan `openssl rand -hex 32` (secret cookie). `.env.production` tidak pernah di-commit. `ELEVENLABS_API_KEY` boleh kosong: suara bawaan memakai voice pack Adam yang sudah ada di repo.
@@ -36,7 +52,7 @@ docker compose -f compose.prod.yaml --env-file .env.production up -d --build
 docker compose -f compose.prod.yaml --env-file .env.production ps
 ```
 
-`migrate` harus berstatus `Exited (0)`; `web`, `postgres`, `caddy` berstatus `Up`. Buka `https://DOMAIN`. Sertifikat dibuat otomatis pada permintaan pertama (butuh DNS yang sudah benar).
+`migrate` harus berstatus `Exited (0)`; `web` dan `postgres` berstatus `Up (healthy)`. Cek lokal di server: `curl -I http://127.0.0.1:3005/`, lalu buka domain Anda lewat HTTPS (Nginx).
 
 ## 4. Update versi baru
 
@@ -90,4 +106,4 @@ Rahasia aplikasi (`POSTGRES_PASSWORD`, `GUEST_SESSION_SECRET`, `ELEVENLABS_API_K
 
 ## Sudah diuji
 
-Stack ini sudah dijalankan di Docker lokal dengan `DOMAIN=localhost`: migrasi teraplikasi, halaman dan MP3 tersaji lewat HTTPS Caddy, sesi tamu dan pembuatan room berhasil, dan stream SSE (`/api/rooms/<kode>/events`) mengalir lewat Caddy. Deploy ke VPS Hostinger sendiri belum dilakukan.
+Stack Docker (Postgres, migrasi, web) sudah dijalankan di Docker lokal: ketiga migrasi teraplikasi, halaman dan MP3 tersaji, sesi tamu dan pembuatan room berhasil, dan stream SSE mengalir. Versi sebelumnya diuji lewat proxy Caddy; konfigurasi Nginx host (server block di atas) belum diuji, begitu juga deploy ke VPS Hostinger sendiri.
