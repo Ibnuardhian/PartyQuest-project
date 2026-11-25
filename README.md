@@ -33,6 +33,14 @@ Salin `.env.example` ke `.env` bila perlu mengubah nilai default.
 | `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Opsional. Suara dan model ElevenLabs. |
 | `POSTGRES_*`, `WEB_PORT` | Hanya untuk Compose lokal. |
 
+### Werewolf Classic: mode dasar dan mode lanjutan
+
+Host memilih di editor pengaturan lobi. **Mode dasar** (bawaan) hanya memakai role standar (Werewolf, Villager, Seer, Guardian Angel, Hunter, Mason, Disease). **Mode lanjutan** menambah role penuh twist: Witch, Mayor, Cupid, Lycan, Tanner, Cursed, dan Minion, yaitu role yang mengubah informasi tersembunyi atau syarat menang. Selama mode lanjutan mati, server menolak komposisi yang memuat role itu dan komposisi otomatis tidak memakainya; saat menyala, komposisi otomatis menambahkannya bertahap sesuai jumlah pemain (maksimal `ceil(pemain / 4)`, selalu menyisakan minimal satu Villager). Komposisi manual tetap bisa diatur sendiri.
+
+Cakupan suara: role yang bergiliran di malam (Cupid, Mason, Werewolf, Guardian Angel, Seer, Witch) dan keempat kemenangan (Warga, Werewolf, Tanner, Lovers) sudah punya baris suara di kedua pack (Microsoft dan ElevenLabs Adam). Role lain tidak mengucapkan apa pun. Menambah role bersuara baru: ikuti daftar langkah di `src/games/werewolf/docs/03-ai-voice-and-ux-specs.md` (§1.2b); `voice-coverage.test.ts` gagal bila role malam tidak punya baris suara atau ada MP3 yang hilang.
+
+Di ponsel, kartu role yang diketuk terbalik dan memenuhi layar dengan margin 16 px (teks 17 px, bisa di-scroll bila lebih panjang) agar deskripsi tidak terpotong; ketuk kartu, area gelap, atau tekan Escape untuk menutup. Di layar lebar kartu hanya terbalik di tempat.
+
 ### ONUW satu HP: menentukan pemenang
 
 Di malam hari narator memanggil role sesuai urutan resmi dengan jeda hening 3 detik setelah setiap "… tutup mata" (`ONUW_ROLE_GAP_SECONDS`). Saat pagi, pemain diminta menggesek kartu sambil menutup mata (menyamarkan suara kartu), lalu membuka mata, dan narator memerintahkan berhenti menggesek.

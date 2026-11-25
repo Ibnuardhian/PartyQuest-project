@@ -86,3 +86,9 @@ The eleven roles below appear on the role cards (4.7) but are not in `CLASSIC_RO
 - [ ] **8.6** Bilingual option: add the new English role names (Apprentice Seer, Prince, Spellcaster, Lone Wolf, Vampire, Alpha Wolf, Sorcerer, Wolf Cub, Dire Wolf, Dream Wolf) to `bilingual.englishTerms` in `voice-pack.json` so they are pronounced correctly.
 - [ ] **8.7** Narration wiring and tests: map each new role and event to its voice key in `ui/narration.ts` (host device or TV only, never both), extend `narration.test.ts` and the voice route tests (allowed templates, host-only, fallback), and verify Edge and ElevenLabs on the TV and host device.
 - [ ] **8.8** Docs: update `02-game-rules-and-rosters.md` (roster, night order, win rules), `03-ai-voice-and-ux-specs.md` (new calls and durations), AGENTS.md and the README; then remove the `Segera` tag from the role cards.
+
+## Phase 9: Advanced mode and role card (2026-11-25)
+- [x] **9.1** `advanced` room setting (default off): twist roles are rejected and hidden while it is off; AUTO adds twist roles only when it is on (`recommendedAdvancedComposition`); lobby editor toggle; summary shows the mode.
+- [x] **9.2** Voice audit for twist roles: Cupid and Witch (the only twist roles that wake at night) and all four win lines already exist for Microsoft and ElevenLabs; `voice-coverage.test.ts` now guards this for future roles (see docs/03 §1.2b).
+- [x] **9.3** Role card on phones (≤ 640 px): a tapped card flips and fills the screen with a 16 px margin, 17 px description, scrolls if taller, closes on tap, backdrop, or Escape; desktop keeps the inline flip.
+

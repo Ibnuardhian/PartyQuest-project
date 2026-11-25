@@ -52,6 +52,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - The catalog renders every game through `GameCatalogCard` (`src/components/catalog/`); a game's `CatalogCard` only passes metadata, accent, and banner artwork.
 - Every game screen links back to the catalog (`CatalogLink`), except inside an active Online Room lobby, whose only exit is the confirmed "Keluar dari Room" flow (with a Back-button guard); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
 - Game landing/setup screens use the platform UI kit `src/components/ui/game-ui.tsx` (cards, filled inputs, buttons, stepper tiles, sliders, validation banner); a game theme only sets `--game-accent`/`--game-accent-ink`.
+- Werewolf Classic has an `advanced` room setting (default off): twist roles (`TWIST_ROLES`) are rejected by the server and excluded from AUTO until it is on (`recommendedAdvancedComposition`). Roles that wake at night or end the game need voice lines for both voices; `voice-coverage.test.ts` enforces it (checklist in `docs/03` §1.2b).
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
 ## Game Rules

@@ -15,6 +15,9 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Werewolf: mode lanjutan.** Role penuh twist (Witch, Mayor, Cupid, Lycan, Tanner, Cursed, Minion) hanya muncul bila host menyalakan "Mode lanjutan" di editor lobi (bawaan mati). Server menolak komposisi yang memuat role itu saat mati; komposisi otomatis lanjutan menambahkannya bertahap (maks. `ceil(pemain / 4)`, minimal satu Villager tersisa). Ringkasan room menampilkan mode, dan tile role lanjutan berlabel "lanjutan". Room lama tanpa pengaturan ini dianggap mode dasar.
+- **Audit suara role bertwist**: tidak ada celah. Cupid dan Witch (satu-satunya role bertwist yang bergiliran di malam) dan keempat baris kemenangan sudah ada di pack Microsoft dan ElevenLabs. Ditambah `voice-coverage.test.ts` yang gagal bila role malam baru tidak punya baris suara sendiri (bukan baris "giliranmu selesai") atau ada MP3 yang hilang, plus daftar langkah di docs/03 §1.2b.
+- **Kartu role di ponsel memenuhi layar**: diketuk, kartu terbalik dan mengisi layar dengan margin 16 px, teks 17 px, bisa di-scroll, dan ditutup dengan mengetuk kartu, area gelap, atau Escape; di layar lebar tetap terbalik di tempat.
 - **Navbar katalog**: tombol "Online Room ↗" (yang hanya menuju Undercover) diganti **Gabung Room**: popover untuk memasukkan kode room dari game mana pun, diperiksa dulu lalu diarahkan ke lobi yang tepat.
 - **Textarea nama pemain bergaya buku catatan**: tinggi baris, offset teks, dan garis memakai satu `--row-height`; garis ikut ter-scroll (`background-attachment: local`) untuk 10+ nama.
 - **Dropdown kategori kata kustom** dengan badge jumlah pasangan (Campuran 307, Makanan 52, Hewan 52, Benda 52, Tempat 51, Pekerjaan 53), tanda ✓, dan keyboard penuh; dipakai di setup lokal, form buat room online, dan editor lobi.
