@@ -69,9 +69,10 @@ const SIDES: Array<{ tone: Tone; title: string; note: string }> = [
   { tone: "neutral", title: "Netral", note: "Punya tujuan menang sendiri" },
 ];
 
-function RoleCard({ card, flipped, onToggle }: { card: CardData; flipped: boolean; onToggle: () => void }) {
+function RoleCard({ card, flipped, expanded, onToggle }: { card: CardData; flipped: boolean; expanded: boolean; onToggle: () => void }) {
   const icon = ROLE_ICONS[card.key];
-  return <button type="button" className={`ww-rg-card tone-${card.tone}${card.soon ? " is-soon" : ""}${flipped ? " is-flipped" : ""}`} aria-pressed={flipped} aria-label={`${card.name}, ${card.faction}${card.soon ? ", segera hadir" : ""}. ${flipped ? "Sembunyikan" : "Lihat"} kemampuan`} onClick={onToggle}>
+  // The slot keeps the grid cell in place while a tapped card expands to the full screen on phones.
+  return <span className="ww-rg-slot"><button type="button" className={`ww-rg-card tone-${card.tone}${card.soon ? " is-soon" : ""}${flipped ? " is-flipped" : ""}${expanded ? " is-expanded" : ""}`} aria-pressed={flipped} aria-label={`${card.name}, ${card.faction}${card.soon ? ", segera hadir" : ""}. ${flipped ? "Sembunyikan" : "Lihat"} kemampuan`} onClick={onToggle}>
     <span className="ww-rg-inner">
       <span className="ww-rg-face ww-rg-front">
         <span className="ww-rg-top"><i className="ww-rg-dot" aria-hidden="true" /><span className="ww-rg-tags">{card.twist && <b className="ww-rg-twist">Twist</b>}{card.soon && <b className="ww-rg-twist ww-rg-soon">Segera</b>}</span></span>
@@ -82,35 +83,65 @@ function RoleCard({ card, flipped, onToggle }: { card: CardData; flipped: boolea
       <span className="ww-rg-face ww-rg-back">
         <span className="ww-rg-head"><strong>{card.name}</strong><em className="ww-rg-pill">{card.faction}</em></span>
         <span className="ww-rg-text">{card.ability}</span>
-        <span className="ww-rg-foot">{card.soon ? "Segera hadir · " : ""}Ketuk untuk balik</span>
+        <span className="ww-rg-foot">{card.soon ? "Segera hadir · " : ""}{expanded ? "Ketuk untuk menutup" : "Ketuk untuk balik"}</span>
       </span>
     </span>
-  </button>;
+  </button></span>;
 }
+
+/** Phones: a flipped card fills the screen (with a margin) so its description is large and never clipped. */
+const PHONE_QUERY = "(max-width: 640px)";
 
 /** "Daftar role": a compact trigger that opens a modal with all roles as flip cards. */
 export function RoleFlipGrid() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [flipped, setFlipped] = useState<Partial<Record<RoleIconKey, boolean>>>({});
+  const [expanded, setExpanded] = useState<RoleIconKey | null>(null);
+
+  function collapse() {
+    if (expanded) setFlipped((current) => ({ ...current, [expanded]: false }));
+    setExpanded(null);
+  }
+
+  function toggle(key: RoleIconKey) {
+    const open = Boolean(flipped[key]);
+    if (!window.matchMedia(PHONE_QUERY).matches) { setFlipped((current) => ({ ...current, [key]: !open })); return; }
+    if (open) { setFlipped((current) => ({ ...current, [key]: false })); setExpanded(null); return; }
+    setFlipped((current) => ({ ...current, [key]: true }));
+    setExpanded(key);
+  }
 
   useEffect(() => {
     const node = dialog.current;
     if (!node) return;
-    const onClose = () => setFlipped({});
+    const onClose = () => { setFlipped({}); setExpanded(null); };
     node.addEventListener("close", onClose);
     return () => node.removeEventListener("close", onClose);
   }, []);
+
+  // Escape closes an expanded card first (not the whole list), and the card shrinks if the screen grows past phone size.
+  useEffect(() => {
+    const node = dialog.current;
+    if (!node || !expanded) return;
+    const query = window.matchMedia(PHONE_QUERY);
+    const onCancel = (event: Event) => { event.preventDefault(); setFlipped((current) => ({ ...current, [expanded]: false })); setExpanded(null); };
+    const onResize = () => { if (!query.matches) setExpanded(null); };
+    node.addEventListener("cancel", onCancel);
+    query.addEventListener("change", onResize);
+    return () => { node.removeEventListener("cancel", onCancel); query.removeEventListener("change", onResize); };
+  }, [expanded]);
 
   return <>
     <button type="button" className="ww-rg-trigger" onClick={() => dialog.current?.showModal()}>Daftar role ({CARDS.length}) <span aria-hidden="true">↗</span></button>
     <dialog ref={dialog} className="ww-rg-dialog" aria-label="Daftar role Werewolf" onClick={(event) => { if (event.target === dialog.current) dialog.current.close(); }}>
       <div className="ww-rg-panel">
+        {expanded && <span className="ww-rg-backdrop" onClick={collapse} aria-hidden="true" />}
         <div className="ww-rg-bar"><div><h2>Daftar role ({CARDS.length})</h2><p>Ketuk kartu untuk melihat kemampuan</p></div><button type="button" className="ww-rg-close" autoFocus onClick={() => dialog.current?.close()} aria-label="Tutup daftar role">✕</button></div>
         {SIDES.map((side) => {
           const cards = CARDS.filter((card) => card.tone === side.tone).sort((a, b) => Number(a.soon) - Number(b.soon));
           return <details key={side.tone} className={`ww-rg-side tone-${side.tone}`} open>
             <summary className="ww-rg-side-title"><i className="ww-rg-dot" aria-hidden="true" />{side.title} <span>{cards.length}</span><small>{side.note}</small><b className="ww-rg-chevron" aria-hidden="true">▾</b></summary>
-            <div className="ww-rg-grid">{cards.map((card) => <RoleCard key={card.key} card={card} flipped={Boolean(flipped[card.key])} onToggle={() => setFlipped((current) => ({ ...current, [card.key]: !current[card.key] }))} />)}</div>
+            <div className="ww-rg-grid">{cards.map((card) => <RoleCard key={card.key} card={card} flipped={Boolean(flipped[card.key])} expanded={expanded === card.key} onToggle={() => toggle(card.key)} />)}</div>
           </details>;
         })}
       </div>
