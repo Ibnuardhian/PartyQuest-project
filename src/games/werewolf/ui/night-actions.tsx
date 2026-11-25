@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { WerewolfView } from "@/games/werewolf/ui/labels";
+import { ROLE_ICONS } from "@/games/werewolf/ui/role-icons";
 
 type Perform = (action: Record<string, unknown>) => Promise<void>;
 type Player = WerewolfView["public"]["players"][number];
@@ -10,7 +11,7 @@ function TargetList({ players, selectedId, marks, disabled, onPick }: { players:
   if (players.length === 0) return <p className="ww-night-hint">Tidak ada target yang dapat dipilih.</p>;
   return <div className="ww-targets">{players.map((player) => <button key={player.id} type="button" className={`ww-target${selectedId === player.id ? " is-selected" : ""}`} disabled={disabled} aria-pressed={selectedId === player.id} onClick={() => onPick(player.id)}>
     <span>{player.name}</span>
-    {marks?.[player.id] ? <span className="ww-claw" aria-label={`${marks[player.id]} pilihan kawanan`}>{"⟋".repeat(marks[player.id]!)}</span> : null}
+    {marks?.[player.id] ? <span className="ww-claw" role="img" aria-label={`${marks[player.id]} pilihan kawanan`}>{Array.from({ length: marks[player.id]! }, (_, index) => <svg key={index} viewBox="0 0 512 512" fill="currentColor" aria-hidden="true" focusable="false"><path d={ROLE_ICONS.WEREWOLF.d} /></svg>)}</span> : null}
   </button>)}</div>;
 }
 

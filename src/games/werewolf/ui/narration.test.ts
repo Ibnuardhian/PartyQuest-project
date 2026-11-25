@@ -17,7 +17,11 @@ function game(roleList: ClassicRole[]): ClassicGameState {
   return { ...state, secret: { ...state.secret, roles: { ...assigned }, originalRoles: { ...assigned } } };
 }
 
-const expire = (state: ClassicGameState) => advanceClassic(state, Date.parse(state.public.phaseDeadlineAt!))!;
+/** Lets the phase run out; a night turn nobody acted in gets its overtime first, so run out that too. */
+const expire = (state: ClassicGameState) => {
+  const next = advanceClassic(state, Date.parse(state.public.phaseDeadlineAt!))!;
+  return next.public.overtime && !state.public.overtime ? advanceClassic(next, Date.parse(next.public.phaseDeadlineAt!))! : next;
+};
 const act = (state: ClassicGameState, id: string, action: ClassicAction) =>
   applyClassicAction(state, { playerId: id, isHost: id === "p1" }, action, { now: state.public.phaseDeadlineAt ? Date.parse(state.public.phaseDeadlineAt) - 1000 : NOW });
 const readyAll = (state: ClassicGameState) => state.public.players.reduce((current, player) => act(current, player.id, { type: "ready" }), state);

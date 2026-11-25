@@ -20,6 +20,9 @@ export const werewolfRoomSettingsSchema = classicSettingsSchema.extend({
 }).strict();
 export type WerewolfRoomSettings = z.infer<typeof werewolfRoomSettingsSchema>;
 
+/** The shortest discussion: the "one minute left" warning would otherwise collide with the dawn narration. */
+const MIN_DISCUSSION_SECONDS = 180;
+
 export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180, advanced: false };
 
 const playerId = z.string().uuid();
@@ -88,7 +91,9 @@ export const werewolfOnline: OnlineGameServer = {
     return settings;
   },
   createRound(members, rawSettings) {
-    const room = werewolfRoomSettingsSchema.safeParse(rawSettings);
+    // Rooms saved before the 3-minute minimum may still hold a shorter discussion: raise it instead of refusing to start.
+    const stored = rawSettings && typeof rawSettings === "object" ? rawSettings as Record<string, unknown> : {};
+    const room = werewolfRoomSettingsSchema.safeParse(typeof stored.dayDiscussionSeconds === "number" && stored.dayDiscussionSeconds < MIN_DISCUSSION_SECONDS ? { ...stored, dayDiscussionSeconds: MIN_DISCUSSION_SECONDS } : rawSettings);
     if (!room.success) throw new OnlineGameError(409, "invalid_settings", "Pengaturan Werewolf tidak valid.");
     let state: ClassicGameState;
     try {

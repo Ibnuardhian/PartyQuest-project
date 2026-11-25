@@ -46,7 +46,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
   const view = data?.session?.view ?? null;
   const deadlineAt = view?.phaseDeadlineAt ?? null;
   const secondsLeft = useCountdown(deadlineAt, data?.serverNow ?? 0, data?.receivedAt ?? 0);
-  const narration = useNarration(view, data?.session?.sessionId ?? null, true, secondsLeft);
+  const narration = useNarration(view, data?.session?.sessionId ?? null, true, secondsLeft, true);
   const nameOf = (id: string | null | undefined) => view?.players.find((player) => player.id === id)?.name ?? "—";
   const lastDawn = view ? [...view.log].reverse().find((entry) => entry.type === "DAWN") : undefined;
 
@@ -59,7 +59,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
           <span className="ww-tv-code">{data.room.code}</span>
           <span className="ww-tv-phase">{view ? PHASE_LABELS[view.phase] : "Lobi"}{view?.activeNightRole && view.phase === "NIGHT_TURN" ? ` · ${roleName(view.activeNightRole)}` : ""}</span>
           {secondsLeft !== null && <time className="ww-tv-timer">{formatSeconds(secondsLeft)}</time>}
-          {!narration.enabled ? <button type="button" className="ww-button ww-primary" onClick={() => void narration.enable()}>Aktifkan suara</button> : <button type="button" className="ww-button" onClick={narration.disable}>Matikan suara</button>}
+          {narration.enabled ? <button type="button" className="ww-button" onClick={narration.disable}>Matikan suara</button> : <button type="button" className="ww-button" onClick={() => void narration.enable()}>Nyalakan suara</button>}
         </header>
 
         {!view && <div className="ww-panel"><h2>Menunggu pemain</h2>{data.room.status === "lobby" && <QrCode className="ww-tv-qr" path={`/room/${data.room.code}`} label={`Pindai untuk bergabung · kode ${data.room.code}`} />}<ul className="ww-tv-grid">{data.members.map((member) => <li key={member.name} className={member.ready ? "is-ready" : ""}><strong>{member.name}</strong><small>{member.ready ? "Siap" : member.online ? "Online" : "Offline"}</small></li>)}</ul></div>}
@@ -75,7 +75,7 @@ export default function WerewolfTvStage({ code }: { code: string }) {
           {view.phase === "DAY_DISCUSSION" && lastDawn?.type === "DAWN" && <p className="ww-tv-ticker">{lastDawn.deadPlayerIds.length ? `Korban semalam: ${lastDawn.deadPlayerIds.map(nameOf).join(", ")}` : "Tidak ada korban semalam."}</p>}
         </>}
         {/* Live moderator subtitle bar (docs/03 §3). */}
-        <p className="ww-tv-subtitle" aria-live="polite">{narration.subtitle || (narration.enabled ? "…" : "Ketuk “Aktifkan suara” agar TV menjadi narator.")}</p>
+        <p className="ww-tv-subtitle" aria-live="polite">{narration.subtitle || (narration.enabled ? "…" : "Suara dimatikan. Pilih “Nyalakan suara” agar TV menjadi narator.")}</p>
       </>}
     </section>
     <SiteFooter left="WEREWOLF · TV" right="Layar baca-saja: role baru terbuka saat permainan selesai" />

@@ -90,6 +90,10 @@ export interface ClassicPublicState {
   nightNumber: number;
   dayNumber: number;
   phaseDeadlineAt: string | null;
+  /** When the narrator is done and the players' own countdown starts; null when the phase has no spoken lead-in. */
+  actionStartsAt: string | null;
+  /** The role holder had not acted when time ran out, so the turn was extended once. */
+  overtime: boolean;
   /** Night turns for the current night, in priority order. Fixed even when holders are dead. */
   nightQueue: NightRole[];
   nightTurnIndex: number;

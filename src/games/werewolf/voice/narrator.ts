@@ -197,6 +197,7 @@ export class Narrator {
 
   cancel() {
     this.generation += 1;
+    this.endPendingClip();
     if (this.audio) {
       this.audio.pause();
       this.audio.removeAttribute("src");
@@ -204,11 +205,22 @@ export class Narrator {
     if (isSpeechSupported()) window.speechSynthesis.cancel();
   }
 
+  /** The clip being awaited, so a newer clip or a cancel can end it instead of leaving it hanging. */
+  private pendingClip: ((ok: boolean) => void) | null = null;
+
+  private endPendingClip() {
+    this.pendingClip?.(false);
+    this.pendingClip = null;
+  }
+
   private playClip(url: string, generation: number) {
+    // One shared audio element: starting a clip ends the previous one first, so two clips never talk over each other.
+    this.endPendingClip();
     return new Promise<boolean>((resolve) => {
       this.audio ??= new Audio();
       const audio = this.audio;
-      const done = (ok: boolean) => { audio.onended = null; audio.onerror = null; resolve(ok && generation === this.generation); };
+      const done = (ok: boolean) => { audio.onended = null; audio.onerror = null; if (this.pendingClip === done) this.pendingClip = null; resolve(ok && generation === this.generation); };
+      this.pendingClip = done;
       audio.onended = () => done(true);
       audio.onerror = () => done(false);
       audio.src = url;

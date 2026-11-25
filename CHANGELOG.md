@@ -15,6 +15,10 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Werewolf online: narator bicara dulu, baru timer jalan** (seperti ONUW). Server menambah lama suara (diukur ke `voice-pack.json` lewat `npm run voice:measure`; kalimat bernama diperkirakan dari panjang teks) ke tenggat tiap fase: intro malam (sebelumnya 6 dtk padahal klipnya 10,2 dtk), giliran role, pagi, Hunter, voting, dan pembelaan. Waktu aksi giliran malam minimal 10 detik setelah panggilan selesai (`nightTurnSeconds` tetap berlaku bila lebih besar). `actionStartsAt` dikirim ke klien: layar menampilkan "Narator berbicara…" lalu hitung mundur.
+- **Waktu tambahan giliran malam**: bila pemegang role belum beraksi saat waktu habis (mis. Guardian Angel), giliran diperpanjang sekali 10 detik ("Waktu tambahan") sebelum dilewati. "Paksa lanjut" dari host saat narator masih memanggil tidak lagi memberi pemain strike AFK.
+- **Suara tidak lagi saling menabrak**: narasi dimainkan satu per satu (permainan baru menghentikan yang lama, klip lama diselesaikan dulu sebelum klip berikut dimulai), sehingga kalimat pagi, pembacaan korban (Edge TTS), dan cadangan suara browser tidak tumpang tindih.
+- **ONUW lokal: hasil dari kartu pemain yang mati saja.** Layar hasil tidak lagi meminta kartu akhir semua pemain: hanya kartu pemain yang mati (dan sasaran Hunter) yang diisi, lalu paling banyak dua pertanyaan ya/tidak soal Werewolf/Minion bila deck tidak bisa menjawabnya sendiri (tanpa Drunk tidak ada pertanyaan). Layar hasil menyebut tim pemenang, bukan nama pemenang. Logika di `engine/onuw/verdict.ts`, dengan tes yang membandingkannya dengan perhitungan meja penuh.
 - **Mesin Werewolf: sebelas role baru (Fase 8, tugas 8.1/8.1b)**: Apprentice Seer, Prince, Troublemaker (suara kedua sekali per game), Spellcaster, Lone Wolf, Vampire, Alpha Wolf, Sorcerer, Wolf Cub, Dire Wolf, dan Dream Wolf, lengkap dengan urutan malam, aturan menang (`LONE_WOLF`, `VAMPIRE`), validasi komposisi, panel aksi malam, tampilan pemain per role, dua kalimat kemenangan baru, dan 15 tes. Sepuluh role selain Apprentice Seer hanya tersedia di mode lanjutan. Belum ada: tombol siang Troublemaker, banner bungkam/binasa, dan penyambungan narasi (8.7, 8.9).
 - **Suara untuk role Fase 8** (belum dipanggil game karena mesinnya belum ada, tugas 8.1): 5 panggilan malam (Spellcaster, Vampire, Apprentice Seer, Sorcerer, Dire Wolf), 4 kalimat siang bernama (Pangeran terungkap, suara ganda Troublemaker, pemain dibungkam, korban Vampire) beserta klip cadangan, 10 istilah Inggris untuk mode bilingual, dan 18 MP3 (Edge + ElevenLabs Adam). Template bernama tetap hanya lolos `isAllowedNarration` dengan nama pemain nyata. Sisa: 8.1 (mesin), 8.7 (penyambungan narasi), 8.8 (dokumen).
 - **Baris tamu ikut dibersihkan bersama room-nya** (`202611260002`): `cleanup_expired_rooms()` kini juga menghapus `guest_users` milik room yang dihapus, kecuali anggota/host room lain atau tamu yang terlihat <5 menit; tamu tanpa room dihapus setelah 1 jam. Mencatat `NOTICE: cleanup: N room(s), M guest(s) removed`. Diverifikasi lewat service `cleanup` di stack produksi (1 room dan 3 tamu terhapus; room berjalan, host, dan tamu baru aman) dan tes integrasi.
@@ -60,12 +64,19 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diubah
 
+- **Cooldown tombol Werewolf online**: tiap ketukan Fake Tap mengunci grid 0,5 detik, dan aksi nyata (target, voting, tembakan Hunter) mengunci tombol 0,5 detik setelah jawaban server, jadi tidak bisa ditekan beruntun.
+- **Kotak "Kamu telah tereliminasi" berwarna merah**, dan tanda pilihan kawanan Werewolf saat memilih mangsa memakai ikon werewolf (bukan garis miring).
+- **Suara narator di TV menyala otomatis** setelah pairing (tombol "Aktifkan suara" tidak perlu ditekan lagi). Kalau browser TV masih memblokir suara, tombol apa pun di remote atau satu ketukan membukanya; tombol "Matikan/Nyalakan suara" tetap ada sebagai opsi.
+- **Fake Tap mengikuti grid pemilihan sungguhan**: pemain yang bukan gilirannya kini melihat kotak-kotak (jumlah sama dengan daftar target asli, gaya sama) yang isinya hanya angka, dengan tombol "Lewati giliran" seperti layar aksi asli; ketuk angka 1 sampai 3/4 berurutan. Sebelumnya berupa lingkaran acak yang jelas berbeda dari layar aksi, sehingga mudah dikenali dari samping.
+- **Diskusi siang Werewolf minimal 3 menit** (sebelumnya 1 menit): dengan 1 menit, peringatan "satu menit lagi" bertabrakan dengan suara pagi dan pembacaan korban. Slider dan validasi server memakai batas baru; room lama yang tersimpan dengan diskusi lebih pendek otomatis dinaikkan saat ronde dimulai.
 - Narator: pengumuman siang menyebut nama pemain, giliran malam hanya menyebut role.
 - Doctor tampil dan diucapkan sebagai **Guardian Angel** (ID internal tetap `DOCTOR`).
 - `ffmpeg` ditambahkan ke image Docker **dev** saja (untuk menggabungkan segmen suara).
 
 ### Diperbaiki
 
+- **Dropdown "Kartu role saya" (Werewolf online)** tidak lagi muncul mendadak di bawah layar: kini terbuka sedikit demi sedikit (tinggi dan transparansi bertransisi) sambil halaman otomatis digulir ke atas sampai kartu terlihat. Mengikuti pengaturan "kurangi gerakan" perangkat.
+- **Mengubah konfigurasi room tidak lagi membatalkan status siap** (Werewolf dan Undercover; migrasi `202611260003`): pemain yang sudah siap tetap siap saat host mengganti pengaturan. Validasi komposisi tetap dijalankan saat host memulai ronde.
 - **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.
 - Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).
 - Form gabung room kini memakai tema game sebelum pemain bergabung (`gameKey` publik ikut dalam error `not_a_member`).

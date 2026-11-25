@@ -1,7 +1,7 @@
 "use client";
 
 import "./werewolf.css";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatalogLink } from "@/components/site/catalog-link";
 import { ConnectionNote, SiteFooter, SiteHeader } from "@/components/site/site-chrome";
@@ -11,6 +11,7 @@ import { FACTION_LABELS, isNightPhase, PHASE_LABELS, roleName, type WerewolfSnap
 import { NightActionPanel } from "@/games/werewolf/ui/night-actions";
 import { HunterShot } from "@/games/werewolf/ui/hunter-shot";
 import { RoleCard } from "@/games/werewolf/ui/role-card";
+import { TAP_COOLDOWN_MS } from "@/games/werewolf/ui/use-cooldown";
 import { formatSeconds, useCountdown } from "@/games/werewolf/ui/use-countdown";
 import { useNarration } from "@/games/werewolf/ui/use-narration";
 import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
@@ -58,10 +59,17 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   }, [deadlineAt, skew, load]);
 
   const secondsLeft = useCountdown(deadlineAt, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
+  // The narrator speaks first; the players' own countdown only starts once the voice is done.
+  const narratorLeft = useCountdown(snapshot?.public.actionStartsAt ?? null, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
+  const narratorSpeaking = narratorLeft !== null && narratorLeft > 0;
   const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected), secondsLeft);
 
+  const performing = useRef(false);
+
   async function perform(action: Record<string, unknown>) {
-    if (!snapshot) return;
+    // A second click while one action is in flight (or just finished) is ignored.
+    if (!snapshot || performing.current) return;
+    performing.current = true;
     setBusy(true);
     setError("");
     try {
@@ -72,7 +80,8 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
       setError("Aksi belum tersimpan. Periksa koneksi.");
     } finally {
       await load();
-      setBusy(false);
+      // Keep the buttons locked a moment after the answer, so actions cannot be fired back to back.
+      window.setTimeout(() => { performing.current = false; setBusy(false); }, TAP_COOLDOWN_MS);
     }
   }
 
@@ -84,6 +93,8 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   const phase = view?.public.phase;
   const night = phase ? isNightPhase(phase) : false;
   const me = view?.public.players.find((player) => player.id === view.you.playerId);
+  /** How many tiles the real night picker shows (everyone alive but me); the Fake Tap grid copies it. */
+  const targetCount = view ? view.public.players.filter((player) => player.alive && player.id !== view.you.playerId).length : 0;
   const nameOf = (id: string | null | undefined) => view?.public.players.find((player) => player.id === id)?.name ?? "—";
 
   return <main className={`page-shell werewolf-theme${night && view?.you.alive ? " ww-is-night" : ""}`}>
@@ -97,7 +108,9 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
       {!view || !phase ? <div className="ww-panel"><span className="section-kicker">MEMUAT</span><h2>Menyiapkan desa…</h2>{error && <p className="ww-alert" role="alert">{error}</p>}</div> : <>
         <header className="ww-phase">
           <span className="section-kicker">{PHASE_LABELS[phase]}{view.public.activeNightRole && phase === "NIGHT_TURN" && (view.you.isMyTurn || !view.you.alive) ? ` · ${roleName(view.public.activeNightRole)}` : ""}</span>
-          {secondsLeft !== null && <time className="ww-timer" aria-label={`Sisa waktu ${secondsLeft} detik`}>{formatSeconds(secondsLeft)}</time>}
+          {secondsLeft !== null && (narratorSpeaking
+            ? <span className="ww-timer ww-timer-wait" role="status">Narator berbicara…</span>
+            : <time className="ww-timer" aria-label={`Sisa waktu ${secondsLeft} detik`}>{view.public.overtime ? "Waktu tambahan " : ""}{formatSeconds(secondsLeft)}</time>)}
         </header>
 
         {view.notices.map((notice) => <p key={notice} className="ww-notice" role="status">{notice}</p>)}
@@ -112,7 +125,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
         {night && (!view.you.alive ? <DeadView view={view} nameOf={nameOf} /> : <div className="ww-night-stage">
           {view.you.isMyTurn
             ? <div key={`turn-${view.public.activeNightRole}`} className="ww-panel ww-fade"><span className="ww-your-turn">GILIRANMU</span><NightActionPanel view={view} busy={busy} perform={perform} /></div>
-            : <div key="fake" className="ww-fade"><FakeTap /></div>}
+            : <div key="fake" className="ww-fade"><FakeTap key={targetCount} size={targetCount} /></div>}
         </div>)}
 
         {!night && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <div className="ww-panel">
@@ -132,7 +145,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
 
         {phase === "GAME_OVER" && <GameOver view={view} nameOf={nameOf} onLobby={() => router.push(`/room/${roomCode}`)} />}
 
-        {view.you.alive && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <details className="ww-mycard"><summary>Kartu role saya</summary><RoleCard role={view.you.role} initiallyOpen /><KnownTeam view={view} nameOf={nameOf} /></details>}
+        {view.you.alive && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <MyCardPanel><RoleCard role={view.you.role} initiallyOpen /><KnownTeam view={view} nameOf={nameOf} /></MyCardPanel>}
 
         {error && <p className="ww-alert" role="alert">{error}</p>}
 
@@ -224,4 +237,33 @@ function GameOver({ view, nameOf, onLobby }: ViewProps & { onLobby: () => void }
     }</li>)}</ol>
     <button type="button" className="ww-button ww-primary" onClick={onLobby}>Kembali ke lobi untuk main ulang</button>
   </div>;
+}
+
+
+/**
+ * "Kartu role saya" drop-down. It sits at the bottom of the screen, so opening it grows downwards: the page
+ * scrolls up to bring the card into view and the card eases open a little at a time instead of popping in.
+ * The content stays mounted once opened, so closing and reopening keeps the card where it was.
+ */
+function MyCardPanel({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const bringIntoView = () => panel.current?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "end" });
+
+  function toggle() {
+    if (open) { setOpen(false); return; }
+    setMounted(true);
+    // Start growing on the next frame (so the closed height is painted first), then follow it with the scroll.
+    window.requestAnimationFrame(() => setOpen(true));
+    window.setTimeout(bringIntoView, reduced() ? 0 : 120);
+  }
+
+  return <section ref={panel} className="ww-mycard">
+    <button type="button" className="ww-mycard-toggle" aria-expanded={open} onClick={toggle}>Kartu role saya<span aria-hidden="true">{open ? "▴" : "▾"}</span></button>
+    <div className={`ww-mycard-body${open ? " is-open" : ""}`} aria-hidden={!open} inert={!open} onTransitionEnd={() => { if (open) bringIntoView(); }}>
+      <div className="ww-mycard-inner">{mounted && children}</div>
+    </div>
+  </section>;
 }
