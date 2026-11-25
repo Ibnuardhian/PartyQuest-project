@@ -120,15 +120,15 @@ describe("Undercover Online Room adapter", () => {
     expect(undercoverOnline.advance(clue, now)).toBeNull();
     const missing = undercoverOnline.advance({ ...clue, publicState: { ...publicState, clueDeadlineAt: null } }, now)!.publicState as unknown as PublicState;
     expect(Date.parse(missing.clueDeadlineAt!)).toBe(now + 180_000);
-    // Round 1 has two windows: the first one ending opens the second with a full new deadline.
+    // One window per round: when its server deadline passes, the table goes straight to voting.
     const expiredAt = Date.parse(publicState.clueDeadlineAt!) + 1;
-    const second = undercoverOnline.advance(clue, expiredAt)!.publicState as unknown as PublicState;
-    expect(second.phase).toBe("clue");
-    expect(second.clueIndex).toBe(1);
-    expect(Date.parse(second.clueDeadlineAt!) - expiredAt).toBe(180_000);
+    const voting = undercoverOnline.advance(clue, expiredAt)!.publicState as unknown as PublicState;
+    expect(voting.phase).toBe("voting");
+    expect(voting.clueDeadlineAt).toBeNull();
+    expect(undercoverOnline.advance({ ...clue, publicState: voting }, expiredAt + 1)).toBeNull();
   });
 
-  it("uses the clue minutes the host chose for every window and ends in a discussion after two", () => {
+  it("uses the clue minutes the host chose and opens voting when that window ends", () => {
     const chosen = { ...settings, clueMinutes: 5 };
     const round = undercoverOnline.createRound(members, chosen);
     expect((round.publicState as PublicState).clueMinutes).toBe(5);
@@ -137,11 +137,9 @@ describe("Undercover Online Room adapter", () => {
     expect(Date.parse((session.publicState as PublicState).clueDeadlineAt!)).toBe(now + 300_000);
     const missing = undercoverOnline.advance({ ...session, publicState: { ...(session.publicState as PublicState), clueDeadlineAt: null } }, now)!.publicState as unknown as PublicState;
     expect(Date.parse(missing.clueDeadlineAt!)).toBe(now + 300_000);
-    for (let window = 0; window < 2; window += 1) {
-      const deadline = Date.parse((session.publicState as PublicState).clueDeadlineAt!);
-      session = { ...session, publicState: undercoverOnline.advance(session, deadline + 1)!.publicState };
-    }
-    expect((session.publicState as PublicState).phase).toBe("discussion");
+    const deadline = Date.parse((session.publicState as PublicState).clueDeadlineAt!);
+    session = { ...session, publicState: undercoverOnline.advance(session, deadline + 1)!.publicState };
+    expect((session.publicState as PublicState).phase).toBe("voting");
     expect((session.publicState as PublicState).clueDeadlineAt).toBeNull();
     expect(undercoverOnline.advance(session, now + 10_000_000)).toBeNull();
   });

@@ -20,7 +20,7 @@ export function formatClueMinutes(minutes: number): string {
   return `${minutes} menit`;
 }
 /** Timed clue windows (putaran) before a vote: two before the first vote, one after every vote without a winner. */
-export const CLUE_PASSES_FIRST_ROUND = 2;
+export const CLUE_PASSES_FIRST_ROUND = 1;
 export const CLUE_PASSES_LATER_ROUNDS = 1;
 
 export type GamePhase = (typeof GAME_PHASES)[number];

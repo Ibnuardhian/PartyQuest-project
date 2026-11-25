@@ -21,7 +21,7 @@ function cluesAndVoting(state: GameState): GameState {
   while (state.public.phase === "clue") {
     state = endClueWindow(state, 0);
   }
-  return run(state, { type: "finish-discussion" });
+  return state;
 }
 
 function voteFor(state: GameState, target: string, voters = state.public.players.filter((player) => player.alive).map((player) => player.id)): GameState {
@@ -78,35 +78,28 @@ describe("Undercover engine", () => {
     expect(() => run(game, { type: "submit-clue", playerId: "player-1" } as unknown as GameAction)).toThrow();
   });
 
-  it("moves to discussion when the last clue window ends and then opens voting", () => {
+  it("opens voting as soon as the clue window ends, without a discussion step", () => {
     const game = cluesAndVoting(start());
     expect(game.public.phase).toBe("voting");
     expect(game.public.clues).toHaveLength(0);
     expect(() => run(game, { type: "finish-discussion" })).toThrow("Diskusi belum");
   });
 
-  it("runs two clue windows before the first vote and one in every later round", () => {
+  it("runs one clue window per round and votes right after it", () => {
     let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
-    expect(cluePassesForRound(game.public.round)).toBe(2);
-    const firstDeadline = game.public.clueDeadlineAt!;
+    expect(cluePassesForRound(game.public.round)).toBe(1);
     game = endClueWindow(game, 500_000);
-    // After one window the first round opens a second one with a fresh, equally long deadline.
-    expect(game.public.phase).toBe("clue");
-    expect(game.public.clueIndex).toBe(1);
-    expect(Date.parse(game.public.clueDeadlineAt!) - 500_000).toBe(180_000);
-    expect(game.public.clueDeadlineAt).not.toBe(firstDeadline);
-    game = endClueWindow(game, 900_000);
-    expect(game.public.phase).toBe("discussion");
+    // The single window ends in voting; the timer is not started a second time.
+    expect(game.public.phase).toBe("voting");
     expect(game.public.clueDeadlineAt).toBeNull();
-    game = run(game, { type: "finish-discussion" });
-    // Vote out a civilian: nobody has won yet, so the next round has a single clue window.
+    // Vote out a civilian: nobody has won yet, so the next round again has a single clue window.
     const civilianId = game.secret.assignments.find((item) => item.role === "civilian")!.playerId;
     game = voteFor(game, civilianId);
     expect(game.public.phase).toBe("clue");
     expect(game.public.round).toBe(2);
     expect(cluePassesForRound(game.public.round)).toBe(1);
     game = endClueWindow(game, 1_000_000);
-    expect(game.public.phase).toBe("discussion");
+    expect(game.public.phase).toBe("voting");
     expect(() => endClueWindow(game, 1_100_000)).toThrow("tidak aktif");
   });
 
