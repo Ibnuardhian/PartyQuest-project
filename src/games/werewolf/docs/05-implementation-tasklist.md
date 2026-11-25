@@ -87,8 +87,15 @@ The eleven roles below appear on the role cards (4.7) but are not in `CLASSIC_RO
 - [ ] **8.7** Narration wiring and tests: map each new role and event to its voice key in `ui/narration.ts` (host device or TV only, never both), extend `narration.test.ts` and the voice route tests (allowed templates, host-only, fallback), and verify Edge and ElevenLabs on the TV and host device.
 - [ ] **8.8** Docs: update `02-game-rules-and-rosters.md` (roster, night order, win rules), `03-ai-voice-and-ux-specs.md` (new calls and durations), AGENTS.md and the README; then remove the `Segera` tag from the role cards.
 
+### Phase 8 decisions: Advanced mode gating and day actions (2026-11-25)
+- **Advanced-mode gate.** Every Phase 8 role except `APPRENTICE_SEER` is a twist role (matching the *Twist* tag on the role cards): add `PRINCE`, `TROUBLEMAKER`, `SPELLCASTER`, `LONE_WOLF`, `VAMPIRE`, `ALPHA_WOLF`, `SORCERER`, `WOLF_CUB`, `DIRE_WOLF`, and `DREAM_WOLF` to `TWIST_ROLES` (they then appear only when Advanced mode is on and are rejected otherwise) and to the `ADVANCED_ORDER` in `roles.ts`. `APPRENTICE_SEER` stays a base role: it only inherits the Seer's reading and adds no new rule.
+- **Day actions.** Today the only player action outside a night turn is the Hunter's last shot, now a pick-then-**Tembak** button (a stray tap can no longer fire it; running out the timer means no shot). Of the new roles only the **Troublemaker** needs a player-triggered day button (once per game during `OPEN_VOTING`: "Pakai suara ganda", with a confirm step and an announcement). Prince (revealed automatically when he would be executed), Spellcaster and Vampire (picked at night, resolved by the server at day), and the wolf-side roles need no day button.
+- [ ] **8.9** Day-action UI for the Troublemaker (button, confirm, once-only state, `OPEN_VOTING` handling, named announcement, tests) after 8.1.
+
 ## Phase 9: Advanced mode and role card (2026-11-25)
 - [x] **9.1** `advanced` room setting (default off): twist roles are rejected and hidden while it is off; AUTO adds twist roles only when it is on (`recommendedAdvancedComposition`); lobby editor toggle; summary shows the mode.
 - [x] **9.2** Voice audit for twist roles: Cupid and Witch (the only twist roles that wake at night) and all four win lines already exist for Microsoft and ElevenLabs; `voice-coverage.test.ts` now guards this for future roles (see docs/03 §1.2b).
 - [x] **9.3** Role card on phones (≤ 640 px): a tapped card flips and fills the screen with a 16 px margin, 17 px description, scrolls if taller, closes on tap, backdrop, or Escape; desktop keeps the inline flip.
-
+- [x] **9.4** The Hunter's last shot is a pick-then-**Tembak** button (no tap-to-fire).
+- [x] **9.5** Host can rename a player in the lobby (`PATCH /api/rooms/<code>/members/<id>` → `rename_room_member`, Werewolf opt-in via `hostCanRenameMembers`) so a guest cannot pass as another player.
+- [x] **9.6** Role list (`RoleFlipGrid`) cards on phones: a flipped card fills the screen with a 16 px margin and 18 px text instead of a clipped 149 px card.

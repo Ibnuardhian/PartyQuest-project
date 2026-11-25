@@ -15,6 +15,9 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Werewolf: host bisa mengganti nama pemain** di lobi (ikon pensil), agar pemain tidak bisa memalsukan identitas sebagai pemain lain. Hanya host, hanya sebelum ronde berjalan, nama unik per room (tanpa memandang huruf besar-kecil dan spasi ganda), berlaku hanya di room itu. Fungsi `rename_room_member` (migration `202611260001`), route `PATCH /api/rooms/<kode>/members/<id>`, opt-in per game, dengan tes integrasi.
+- **Tembakan Hunter kini pilih target lalu tombol Tembak** (sebelumnya langsung menembak saat nama diketuk).
+- **Kartu "Daftar role" di ponsel memenuhi layar**: kartu yang dibalik terbuka 358×812 dengan margin 16 px dan teks 18 px (sebelumnya 149×199 px dengan teks 12 px, deskripsi Vampire terpotong).
 - **Werewolf: mode lanjutan.** Role penuh twist (Witch, Mayor, Cupid, Lycan, Tanner, Cursed, Minion) hanya muncul bila host menyalakan "Mode lanjutan" di editor lobi (bawaan mati). Server menolak komposisi yang memuat role itu saat mati; komposisi otomatis lanjutan menambahkannya bertahap (maks. `ceil(pemain / 4)`, minimal satu Villager tersisa). Ringkasan room menampilkan mode, dan tile role lanjutan berlabel "lanjutan". Room lama tanpa pengaturan ini dianggap mode dasar.
 - **Audit suara role bertwist**: tidak ada celah. Cupid dan Witch (satu-satunya role bertwist yang bergiliran di malam) dan keempat baris kemenangan sudah ada di pack Microsoft dan ElevenLabs. Ditambah `voice-coverage.test.ts` yang gagal bila role malam baru tidak punya baris suara sendiri (bukan baris "giliranmu selesai") atau ada MP3 yang hilang, plus daftar langkah di docs/03 §1.2b.
 - **Kartu role di ponsel memenuhi layar**: diketuk, kartu terbalik dan mengisi layar dengan margin 16 px, teks 17 px, bisa di-scroll, dan ditutup dengan mengetuk kartu, area gelap, atau Escape; di layar lebar tetap terbalik di tempat.

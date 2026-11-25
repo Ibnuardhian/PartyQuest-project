@@ -39,7 +39,11 @@ Host memilih di editor pengaturan lobi. **Mode dasar** (bawaan) hanya memakai ro
 
 Cakupan suara: role yang bergiliran di malam (Cupid, Mason, Werewolf, Guardian Angel, Seer, Witch) dan keempat kemenangan (Warga, Werewolf, Tanner, Lovers) sudah punya baris suara di kedua pack (Microsoft dan ElevenLabs Adam). Role lain tidak mengucapkan apa pun. Menambah role bersuara baru: ikuti daftar langkah di `src/games/werewolf/docs/03-ai-voice-and-ux-specs.md` (§1.2b); `voice-coverage.test.ts` gagal bila role malam tidak punya baris suara atau ada MP3 yang hilang.
 
-Di ponsel, kartu role yang diketuk terbalik dan memenuhi layar dengan margin 16 px (teks 17 px, bisa di-scroll bila lebih panjang) agar deskripsi tidak terpotong; ketuk kartu, area gelap, atau tekan Escape untuk menutup. Di layar lebar kartu hanya terbalik di tempat.
+Host dapat mengganti nama pemain di lobi (ikon pensil di baris pemain, khusus Werewolf) agar tidak ada yang menyamar sebagai pemain lain. Nama harus unik di room tanpa memandang huruf besar-kecil dan spasi ganda, hanya host yang boleh, hanya sebelum ronde dimulai, dan hanya berlaku di room itu (profil tamu dan room lain tidak berubah); fungsinya `rename_room_member` di migration `202611260001`.
+
+Tembakan terakhir Hunter (satu-satunya aksi pemain di luar giliran malam) kini berupa pilih target lalu tombol **Tembak**, bukan langsung menembak saat nama diketuk; bila waktu habis, Hunter tidak menembak.
+
+Di ponsel, kartu role yang diketuk terbalik dan memenuhi layar dengan margin 16 px (teks 17 px, bisa di-scroll bila lebih panjang) agar deskripsi tidak terpotong; ketuk kartu, area gelap, atau tekan Escape untuk menutup. Hal yang sama berlaku untuk kartu di "Daftar role" pada halaman setup (sebelumnya 149 px dengan teks 12 px sehingga deskripsi terpotong). Di layar lebar kartu hanya terbalik di tempat.
 
 ### ONUW satu HP: menentukan pemenang
 
