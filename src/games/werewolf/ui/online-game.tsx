@@ -3,6 +3,7 @@
 import "./werewolf.css";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CatalogLink } from "@/components/site/catalog-link";
 import { ConnectionNote, SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import type { ClassicRole } from "@/games/werewolf/contract";
 import { FakeTap } from "@/games/werewolf/ui/fake-tap";
@@ -88,7 +89,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
     <SiteHeader><ConnectionNote label={connection} /></SiteHeader>
     <section className="ww-game">
       <div className="ww-topline">
-        <button type="button" className="text-button" onClick={() => router.push(`/room/${roomCode}`)}>← Lobi</button>
+        <span className="topline-links"><button type="button" className="text-button" onClick={() => router.push(`/room/${roomCode}`)}>← Lobi</button><CatalogLink /></span>
         <span>ROOM {roomCode}{view ? ` · ${view.public.dayNumber > 0 ? `HARI ${view.public.dayNumber}` : `MALAM ${Math.max(1, view.public.nightNumber)}`}` : ""}</span>
       </div>
 

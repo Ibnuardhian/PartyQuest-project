@@ -3,6 +3,7 @@
 import "./werewolf.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { CatalogLink } from "@/components/site/catalog-link";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { GameButton, GameCard, GameCardHeading, StepperGrid, StepperTile, ThemedSlider, ValidationBanner, type TileTone } from "@/components/ui/game-ui";
 import { ONUW_MAX_PLAYERS, ONUW_MIN_PLAYERS, ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
@@ -220,7 +221,7 @@ export default function OnuwLocalGame() {
   return <main className={`page-shell werewolf-theme${phase === "night" ? " ww-is-night" : ""}`}>
     <SiteHeader><span className="topbar-note"><span className="live-dot" /> Werewolf · ONUW satu HP</span></SiteHeader>
     <section className="ww-game">
-      <div className="ww-topline"><Link className="text-button" href={WEREWOLF_SETUP_PATH}>← Werewolf</Link><span>MODE 2 · ONE NIGHT</span></div>
+      <div className="ww-topline"><span className="topline-links"><Link className="text-button" href={WEREWOLF_SETUP_PATH}>← Werewolf</Link><CatalogLink /></span><span>MODE 2 · ONE NIGHT</span></div>
 
       {phase === "setup" && <GameCard aria-labelledby="onuw-deck-title">
         <GameCardHeading kicker="DECK KARTU FISIK" title="Atur deck" id="onuw-deck-title" description={<>Masukkan jumlah pemain dan kartu yang benar-benar dipakai: {playerCount} kartu dibagikan dan {ONUW_CENTER_CARDS} kartu tertutup di tengah meja.</>} />
