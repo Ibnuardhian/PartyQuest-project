@@ -97,6 +97,23 @@ describe("Undercover Online Room adapter", () => {
     expectGameError(() => undercoverOnline.applyIntent({ ...clue, publicState: voting }, { type: "end-clue" }, host).publicState, 400, "invalid_action");
   });
 
+  it("awards one point to each member of the winning side of a finished round only", () => {
+    const session = revealAll(newSession());
+    expect(undercoverOnline.roundPoints!(session)).toBeNull();
+    const pub = session.publicState as PublicState;
+    const secret = session.secretState as { assignments: Array<{ playerId: string; role: string }> };
+    const finished = { ...session, publicState: { ...pub, phase: "finished", winner: "civilian" } };
+    const points = undercoverOnline.roundPoints!(finished)!;
+    const civilians = secret.assignments.filter((item) => item.role === "civilian").map((item) => item.playerId);
+    expect(Object.keys(points).sort()).toEqual([...civilians].sort());
+    expect(Object.values(points).every((value) => value === 1)).toBe(true);
+    const withWhite = { ...settings, mrWhiteEnabled: true };
+    const round = undercoverOnline.createRound(members, withWhite);
+    const whiteSession = { publicState: { ...(round.publicState as PublicState), phase: "finished", winner: "mr-white" }, secretState: round.secretState, settings: withWhite };
+    const white = (round.secretState as { assignments: Array<{ playerId: string; role: string }> }).assignments.find((item) => item.role === "mr-white")!;
+    expect(undercoverOnline.roundPoints!(whiteSession)).toEqual({ [white.playerId]: 3 });
+  });
+
   it("advances the clue window from server time only", () => {
     const clue = revealAll(newSession());
     const publicState = clue.publicState as PublicState;

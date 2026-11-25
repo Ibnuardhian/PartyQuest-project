@@ -97,6 +97,15 @@ export const undercoverOnline: OnlineGameServer = {
   retryOnConflict(intent) {
     return typeof intent === "object" && intent !== null && (intent as { type?: unknown }).type === "cast-vote";
   },
+  /** Each member of the winning side scores 1 point; a winning Mr. White scores 3. */
+  roundPoints(session) {
+    const state = restoreState(session);
+    const winner = state.public.winner;
+    if (state.public.phase !== "finished" || !winner) return null;
+    const points: Record<string, number> = {};
+    for (const assignment of state.secret.assignments) if (assignment.role === winner) points[assignment.playerId] = winner === "mr-white" ? 3 : 1;
+    return points;
+  },
   advance(session, now) {
     const next = advanceClueDeadline(restoreState(session), now);
     return next ? { publicState: next.public } : null;

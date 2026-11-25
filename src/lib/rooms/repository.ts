@@ -66,6 +66,18 @@ export function findLatestSession(roomId: string) {
   );
 }
 
+/** Finished rounds of a room with their stored states, oldest first, for the scoreboard. */
+export function listFinishedSessions(roomId: string) {
+  return query<{ public_state: unknown; private_state: unknown; settings: unknown }>(
+    `select s.public_state, p.private_state, r.settings
+     from game_sessions s
+     join game_private_state p on p.session_id = s.id
+     join game_rooms r on r.id = s.room_id
+     where s.room_id = $1 and s.status = 'finished' order by s.round_no`,
+    [roomId],
+  );
+}
+
 export function findSession<TPublic>(sessionId: string) {
   return queryOne<SessionRow<TPublic>>(`select ${SESSION_COLUMNS} from game_sessions where id = $1`, [sessionId]);
 }
