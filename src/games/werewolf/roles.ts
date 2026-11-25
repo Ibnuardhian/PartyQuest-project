@@ -1,4 +1,4 @@
-import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, type Alignment, type ClassicRole, type OnuwRole } from "@/games/werewolf/contract";
+import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, TWIST_ROLES, type Alignment, type ClassicRole, type OnuwRole } from "@/games/werewolf/contract";
 
 /** Roster data from docs/02 §2.2. Descriptions are shown on role cards. */
 export interface ClassicRoleInfo {
@@ -74,6 +74,26 @@ export function recommendedComposition(playerCount: number): Partial<Record<Clas
   roles.WEREWOLF = playerCount <= 6 ? 1 : playerCount <= 11 ? 2 : playerCount <= 14 ? 3 : 4;
   const special = Object.values(roles).reduce((sum, count) => sum + (count ?? 0), 0);
   roles.VILLAGER = playerCount - special;
+  return roles;
+}
+
+/** Twist roles in the order Advanced mode adds them: strong, readable ones first, win-condition changers last. */
+const ADVANCED_ORDER: readonly ClassicRole[] = ["WITCH", "MAYOR", "CUPID", "LYCAN", "TANNER", "CURSED", "MINION"];
+
+export function isTwistRole(role: ClassicRole): boolean {
+  return TWIST_ROLES.includes(role);
+}
+
+/**
+ * Advanced-mode recommended composition: the base composition with some Villager seats turned into twist
+ * roles (about one per four players, never the last Villager). Every twist role appears at most once.
+ */
+export function recommendedAdvancedComposition(playerCount: number): Partial<Record<ClassicRole, number>> {
+  const roles = recommendedComposition(playerCount);
+  const villagers = roles.VILLAGER ?? 0;
+  const take = Math.min(Math.ceil(playerCount / 4), ADVANCED_ORDER.length, Math.max(0, villagers - 1));
+  for (const role of ADVANCED_ORDER.slice(0, take)) roles[role] = 1;
+  roles.VILLAGER = villagers - take;
   return roles;
 }
 

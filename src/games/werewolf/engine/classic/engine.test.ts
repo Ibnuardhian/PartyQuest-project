@@ -11,7 +11,7 @@ function game(roleList: ClassicRole[], overrides: Partial<ClassicSettings> = {})
   const players = roleList.map((_, index) => ({ id: `p${index + 1}`, name: `Pemain ${index + 1}` }));
   const roles: Partial<Record<ClassicRole, number>> = {};
   for (const role of roleList) roles[role] = (roles[role] ?? 0) + 1;
-  const state = createClassicGame(players, { roles, deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180, ...overrides }, { now: NOW, random: () => 0 });
+  const state = createClassicGame(players, { roles, deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180, advanced: true, ...overrides }, { now: NOW, random: () => 0 });
   const assigned = Object.fromEntries(players.map((player, index) => [player.id, roleList[index]!])) as Record<string, ClassicRole>;
   return { ...state, secret: { ...state.secret, roles: { ...assigned }, originalRoles: { ...assigned } } };
 }

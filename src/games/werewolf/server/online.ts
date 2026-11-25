@@ -5,8 +5,8 @@ import {
   type ClassicAction, type ClassicGameState, type ClassicPublicState, type ClassicRole, type ClassicSecretState, type ClassicSettings,
 } from "@/games/werewolf/contract";
 import { advanceClassic, applyClassicAction, ClassicRuleError, createClassicGame } from "@/games/werewolf/engine/classic/engine";
-import { classicSettingsSchema, countRoles, validateClassicSettings } from "@/games/werewolf/engine/classic/settings";
-import { CLASSIC_ROLE_INFO, recommendedComposition } from "@/games/werewolf/roles";
+import { classicSettingsSchema, countRoles, twistRolesIn, twistRolesMessage, validateClassicSettings } from "@/games/werewolf/engine/classic/settings";
+import { CLASSIC_ROLE_INFO, recommendedAdvancedComposition, recommendedComposition } from "@/games/werewolf/roles";
 import { buildPlayerView, buildPublicView } from "@/games/werewolf/server/view";
 
 /** Werewolf Classic adapter for Online Room (docs/04). Pure: no database, no HTTP. */
@@ -20,7 +20,7 @@ export const werewolfRoomSettingsSchema = classicSettingsSchema.extend({
 }).strict();
 export type WerewolfRoomSettings = z.infer<typeof werewolfRoomSettingsSchema>;
 
-export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180 };
+export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180, advanced: false };
 
 const playerId = z.string().uuid();
 export const werewolfIntentSchema = z.discriminatedUnion("type", [
@@ -58,7 +58,7 @@ function invalidSettings(message: string): never {
 }
 
 export function resolveClassicSettings(room: WerewolfRoomSettings, playerCount: number): ClassicSettings {
-  const roles = room.roles === "AUTO" ? recommendedComposition(playerCount) : room.roles;
+  const roles = room.roles === "AUTO" ? (room.advanced ? recommendedAdvancedComposition(playerCount) : recommendedComposition(playerCount)) : room.roles;
   return validateClassicSettings({ ...room, roles }, playerCount);
 }
 
@@ -77,6 +77,7 @@ export const werewolfOnline: OnlineGameServer = {
       const total = countRoles(roles);
       if (total < CLASSIC_MIN_PLAYERS || total > CLASSIC_MAX_PLAYERS) invalidSettings(`Komposisi harus berisi ${CLASSIC_MIN_PLAYERS}–${CLASSIC_MAX_PLAYERS} role.`);
       if ((roles.WEREWOLF ?? 0) < 1) invalidSettings("Minimal ada satu Werewolf.");
+      if (!settings.advanced && twistRolesIn(roles).length > 0) invalidSettings(twistRolesMessage(roles));
       for (const role of CLASSIC_ROLES) {
         const count = roles[role as ClassicRole] ?? 0;
         if (count > CLASSIC_ROLE_INFO[role].max) invalidSettings(`${CLASSIC_ROLE_INFO[role].name} maksimal ${CLASSIC_ROLE_INFO[role].max}.`);

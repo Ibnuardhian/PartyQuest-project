@@ -36,6 +36,8 @@ export interface ClassicSettings {
   deadRevealMode: DeadRevealMode;
   nightTurnSeconds: number;
   dayDiscussionSeconds: number;
+  /** Advanced mode: twist roles (TWIST_ROLES) may be in the game. Off (or absent) means base roles only. */
+  advanced?: boolean;
 }
 
 export const CLASSIC_MIN_PLAYERS = 5;

@@ -103,7 +103,8 @@ Triggered when the Host presses **`Paksa Lanjut`** during a stalled Night Turn o
    - **Description (ID):** *"Tubuhmu membawa wabah misterius yang mematikan bagi para monster. Jika Werewolf memangsamu di malam hari, mereka akan tertular penyakitmu sehingga tidak mampu berburu atau membunuh siapa pun pada malam berikutnya."*
    - **Card Art Prompt:** `Dark gothic tarot card illustration of a cracked dark glass flask releasing bioluminescent violet spores into the night air, fine line art on obsidian background.`
 
-#### Optional Twist Roles (Toggleable by Host)
+#### Optional Twist Roles (Advanced mode only)
+> **PartyQuest decision (2026-11-25):** the twist roles below (`TWIST_ROLES`) appear only when the host switches on **Advanced mode** (`advanced` room setting, off by default). With it off, a custom composition containing a twist role is rejected and AUTO uses only base roles. With it on, AUTO adds twist roles by priority (Witch, Mayor, Cupid, Lycan, Tanner, Cursed, Minion), at most `ceil(players / 4)` of them and always keeping at least one Villager (`recommendedAdvancedComposition`). These are the roles that change hidden information or win conditions: Tanner (own win), Cupid (Lovers win), Cursed (switches team), Witch (one-shot heal/poison), Minion (ally with false information), Lycan (misleads the Seer), Mayor (double vote). Disease stays base because the recommended matrix above uses it.
 8. **Tanner** (`INDEPENDENT` Team)
    - **Description (ID):** *"Kamu membenci hidupmu di desa ini dan hanya menginginkan akhir di tiang gantungan. Kamu tidak berpihak pada warga maupun Werewolf—jika warga mengeksekusimu lewat voting siang hari, kamulah pemenang tunggalnya."*
    - **Card Art Prompt:** `Dark gothic tarot card illustration of a melancholic jester holding a broken wooden mask beside a hangman's knot, muted ochre and crimson line art on obsidian background.`
