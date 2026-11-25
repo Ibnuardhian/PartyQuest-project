@@ -153,7 +153,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   // Back button / tab close inside an active room asks first instead of silently dropping the player.
   useEffect(() => {
     if (!isMember) return;
-    window.history.pushState({ lobbyGuard: true }, "", window.location.href);
+    if (!(window.history.state as { lobbyGuard?: boolean } | null)?.lobbyGuard) window.history.pushState({ lobbyGuard: true }, "", window.location.href);
     const onPop = () => {
       if (!guardOn.current) return;
       window.history.pushState({ lobbyGuard: true }, "", window.location.href);
