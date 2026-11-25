@@ -126,6 +126,12 @@ export async function returnToLobby(roomId: string, userId: string, force: boole
   return row?.status ?? "finished";
 }
 
+/** Opens a finished room's lobby when nobody online is still on a result screen (presence can expire without any request). */
+export async function openLobbyIfReady(roomId: string) {
+  const row = await queryOne<{ opened: boolean }>("select open_lobby_if_ready($1, false) as opened", [roomId]);
+  return Boolean(row?.opened);
+}
+
 export function leaveRoom(roomId: string, userId: string) {
   return query("select leave_room($1, $2)", [roomId, userId]);
 }

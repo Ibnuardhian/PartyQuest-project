@@ -2,7 +2,7 @@ import { apiError, apiSuccess, UNAUTHORIZED_MESSAGE } from "@/lib/api";
 import { requireGuest } from "@/lib/auth/require-guest";
 import { normalizeRoomCode } from "@/lib/room-code";
 import { getOnlineGame } from "@/games/online-registry";
-import { findLatestSession, listFinishedSessions, findRoomByCode, isActiveMember, listActiveMembers, touchMember } from "@/lib/rooms/repository";
+import { findLatestSession, listFinishedSessions, findRoomByCode, isActiveMember, listActiveMembers, openLobbyIfReady, touchMember } from "@/lib/rooms/repository";
 import { isTvConnected } from "@/lib/rooms/tv";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
   const code = normalizeRoomCode((await params).code);
   if (!code) return apiError(404, "room_not_found", "Room tidak ditemukan.");
   try {
-    const room = await findRoomByCode(code);
+    let room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
     if (room.expires_at.getTime() <= Date.now()) return apiError(410, "room_expired", "Room ini sudah kedaluwarsa.");
     if (!(await isActiveMember(room.id, guest.userId))) {
@@ -26,6 +26,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
       });
     }
     await touchMember(room.id, guest.userId);
+    // Members who left their tab never call us again, so each lobby refresh also checks whether the wait is over.
+    if (room.status === "finished" && (await openLobbyIfReady(room.id))) room = (await findRoomByCode(code)) ?? room;
     const [members, session, tvConnected] = await Promise.all([listActiveMembers(room.id), findLatestSession(room.id), isTvConnected(room.id)]);
     const scores: Record<string, number> = {};
     const game = getOnlineGame(room.game_key);
