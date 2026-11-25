@@ -50,7 +50,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Shared TV screen: host-issued single-use pairing code, TV token stored only as a SHA-256 hash, read-only public view (`OnlineGameServer.publicView`); while a TV is connected it is the only narrator device.
 - Optional ElevenLabs provider (`TTS_PROVIDER=elevenlabs` + `ELEVENLABS_API_KEY`): the key stays in runtime server env only (never `NEXT_PUBLIC_`, never a build arg, never committed); failures fall back to Microsoft. Voice presets, dramatic effects, and the bilingual role-name option live in `voice-pack.json`.
 - The catalog renders every game through `GameCatalogCard` (`src/components/catalog/`); a game's `CatalogCard` only passes metadata, accent, and banner artwork.
-- Every game screen links back to the catalog (`CatalogLink`); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
+- Every game screen links back to the catalog (`CatalogLink`), except inside an active Online Room lobby, whose only exit is the confirmed "Keluar dari Room" flow (with a Back-button guard); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
 - Game landing/setup screens use the platform UI kit `src/components/ui/game-ui.tsx` (cards, filled inputs, buttons, stepper tiles, sliders, validation banner); a game theme only sets `--game-accent`/`--game-accent-ink`.
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
