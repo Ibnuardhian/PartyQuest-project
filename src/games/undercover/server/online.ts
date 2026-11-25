@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { OnlineGameError, type OnlineGameServer, type StoredSession } from "@/games/online-game";
-import { CLUE_TURN_DURATION_MS, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
-import { undercoverGame } from "@/games/undercover/engine";
+import { DEFAULT_CLUE_MINUTES, isClueMinutesOption, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
+import { endClueWindow, undercoverGame } from "@/games/undercover/engine";
 
 /** Undercover adapter for Online Room. Pure functions: no database, no HTTP. */
 
@@ -9,11 +9,11 @@ export const undercoverRoomSettingsSchema = z.object({
   category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]),
   undercoverCount: z.number().int().min(1).max(4),
   mrWhiteEnabled: z.boolean(),
+  clueMinutes: z.number().refine(isClueMinutesOption).optional(),
 }).strict();
 
 export const undercoverActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("confirm-reveal") }).strict(),
-  z.object({ type: z.literal("submit-clue") }).strict(),
   z.object({ type: z.literal("finish-discussion") }).strict(),
   z.object({ type: z.literal("cast-vote"), targetPlayerId: z.string().uuid() }).strict(),
   z.object({ type: z.literal("guess-civilian-word"), guess: z.string().trim().min(1).max(60) }).strict(),
@@ -40,16 +40,15 @@ export function toGameAction(intent: UndercoverActionIntent, userId: string): Ga
   }
 }
 
-/** Creates a missing clue deadline or advances an expired clue turn using server time. */
+/** Creates a missing clue deadline or ends an expired clue window using server time. */
 export function advanceClueDeadline(state: GameState, serverNow: number): GameState | null {
   if (state.public.phase !== "clue") return null;
   const deadlineMs = state.public.clueDeadlineAt ? Date.parse(state.public.clueDeadlineAt) : Number.NaN;
   if (!Number.isFinite(deadlineMs)) {
-    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + CLUE_TURN_DURATION_MS).toISOString() } };
+    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + (state.settings.clueMinutes ?? DEFAULT_CLUE_MINUTES) * 60_000).toISOString() } };
   }
   if (deadlineMs > serverNow) return null;
-  const activePlayer = state.public.players.filter((player) => player.alive)[state.public.clueIndex];
-  return activePlayer ? undercoverGame.applyAction(state, { type: "submit-clue", playerId: activePlayer.id }, serverNow) : null;
+  return endClueWindow(state, serverNow);
 }
 
 export const undercoverOnline: OnlineGameServer = {

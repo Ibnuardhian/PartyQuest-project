@@ -15,6 +15,8 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Undercover online: jendela clue konstan, diatur host.** Clue diberikan lisan dan bebas, jadi tidak ada lagi giliran per pemain atau tombol "selesai memberi petunjuk" yang membuat timer tampak mereset. Satu jendela waktu konstan (dari deadline server) tampil di HP semua pemain. Host memilih 1, 3, atau 5 menit (awal 3 menit) saat membuat room atau lewat editor pengaturan baru di lobi (kategori, jumlah Undercover, Mr. White, waktu clue). Ronde pertama punya 2 jendela clue, ronde berikutnya (setelah voting tanpa pemenang) 1 jendela; saat habis server memajukan fase sendiri. Layar menampilkan nomor putaran. Nilai lain ditolak server. Pass-and-Play tidak berubah.
+- **Undercover online: role tidak lagi tampil atau terkirim.** Kartu privat hanya menampilkan kata (label CIVILIAN/UNDERCOVER dihapus); Mr. White, yang tidak punya kata, melihat "Kamu Mr. White". `PlayerView.private` tidak lagi memuat role (hanya `playerId` dan `word`), jadi role tidak bisa dibaca dari respons jaringan; role baru terbuka di hasil akhir. Dijaga test.
 - **Pustaka kata Undercover**: `kamus_undercover.json` (300 pasangan) dileburkan ke `src/games/undercover/word-pairs.ts` bersama pasangan awal (307 pasangan unik, tiga duplikat Tempat/Campuran dibuang) dan file JSON dihapus. Kategori Campuran kini memakai seluruh pustaka. Kata Civilian dan Undercover diacak per game (`word_a`/`word_b` tidak selalu Civilian), dengan test pustaka dan penetapan kata.
 - **Katalog seragam**: satu komponen `GameCatalogCard` untuk Undercover, Werewolf, dan kartu "segera hadir" (sudut, tinggi, tipografi, tombol, dan footer sejajar; pill jumlah pemain berikon; hover mengangkat kartu dan mengisi tombol dengan aksen). Motif tiap game tetap dipertahankan di banner; Undercover memakai aksen mawar `#E11D48`, Werewolf `#38BDF8`.
 - **GitHub Actions** (`.github/workflows/deploy.yml`): setiap push ke `main` diverifikasi (migrasi, typecheck, lint, test termasuk integrasi PostgreSQL, build image), lalu commit yang sama dideploy ke VPS lewat SSH dan Docker Compose dengan health check. Deploy aktif setelah variabel `DEPLOY_ENABLED=true` dan secret VPS diisi (panduan di `deploy/HOSTINGER.md`).
@@ -50,6 +52,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diperbaiki
 
+- **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.
 - Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).
 - Form gabung room kini memakai tema game sebelum pemain bergabung (`gameKey` publik ikut dalam error `not_a_member`).
 - Membuat room tanpa field `settings` ditolak; sekarang memakai pengaturan default game.

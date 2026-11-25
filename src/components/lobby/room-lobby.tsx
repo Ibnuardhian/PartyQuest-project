@@ -20,7 +20,7 @@ interface RoomData {
 }
 
 /** Platform lobby shared by every Online Room game. Game-specific labels come from the game module. */
-export default function RoomLobby({ code }: { code: string }) {
+export default function RoomLobby({ code, initialGameKey = null }: { code: string; initialGameKey?: string | null }) {
   const router = useRouter();
   const [room, setRoom] = useState<RoomData | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -28,7 +28,7 @@ export default function RoomLobby({ code }: { code: string }) {
   const [error, setError] = useState("");
   const [connection, setConnection] = useState("Menghubungkan…");
   const [tvCode, setTvCode] = useState<{ code: string; minutes: number } | null>(null);
-  const [gameKey, setGameKey] = useState<string | null>(null);
+  const [gameKey, setGameKey] = useState<string | null>(initialGameKey);
 
   const load = useCallback(async (redirect = true) => {
     try {
