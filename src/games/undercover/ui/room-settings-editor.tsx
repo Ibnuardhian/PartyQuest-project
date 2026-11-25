@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { RoomSettingsEditorProps } from "@/games/types";
 import { CLUE_MINUTES_OPTIONS, DEFAULT_CLUE_MINUTES, formatClueMinutes, type Category } from "@/games/undercover/contract";
-import { CATEGORY_LABELS } from "@/games/undercover/ui/labels";
+import { CategorySelect } from "@/games/undercover/ui/category-select";
 
 interface RoomSettings { category: Category; undercoverCount: number; mrWhiteEnabled: boolean; clueMinutes: number }
 
@@ -28,7 +28,7 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
   }
 
   return <div className="uc-online-stack">
-    <div className="form-field"><label className="field-label" htmlFor="room-category">Kategori kata</label><select id="room-category" value={category} disabled={disabled} onChange={(event) => setCategory(event.target.value as Category)}>{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+    <div className="form-field"><label className="field-label" htmlFor="room-category">Kategori kata</label><CategorySelect id="room-category" value={category} disabled={disabled} onChange={setCategory} /></div>
     <div className="form-field"><label className="field-label" htmlFor="room-undercover">Jumlah Undercover</label><select id="room-undercover" value={undercoverCount} disabled={disabled} onChange={(event) => setUndercoverCount(Number(event.target.value))}>{[1, 2, 3, 4].map((count) => <option key={count} value={count}>{count} orang</option>)}</select></div>
     <label className="toggle-row"><span><strong>Tambahkan Mr. White</strong><small>Tak punya kata—bisa menang dengan menebak</small></span><input type="checkbox" checked={mrWhiteEnabled} disabled={disabled} onChange={(event) => setMrWhiteEnabled(event.target.checked)} /><span className="toggle-ui" aria-hidden="true" /></label>
     {!fitsPlayers && <p className="error-message" role="alert">Sisakan minimal dua pemain Civilian: dengan {playerCount} pemain, pilih lebih sedikit Undercover atau matikan Mr. White.</p>}

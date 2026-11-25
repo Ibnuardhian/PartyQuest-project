@@ -19,3 +19,8 @@ export function getWordPairs(category: Category): ReadonlyArray<WordPair> {
   if (category === "campuran") return [...Object.values(WORD_PAIRS).flat(), ...GENERAL_WORD_PAIRS];
   return WORD_PAIRS[category];
 }
+
+/** How many word pairs a category offers; "campuran" counts the whole mixed pool, so the number matches what can be drawn. */
+export function countWordPairs(category: Category): number {
+  return getWordPairs(category).length;
+}
