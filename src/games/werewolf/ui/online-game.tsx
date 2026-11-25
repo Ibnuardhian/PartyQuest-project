@@ -58,6 +58,9 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   }, [deadlineAt, skew, load]);
 
   const secondsLeft = useCountdown(deadlineAt, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
+  // The narrator speaks first; the players' own countdown only starts once the voice is done.
+  const narratorLeft = useCountdown(snapshot?.public.actionStartsAt ?? null, snapshot?.serverNow ?? 0, snapshot?.receivedAt ?? 0);
+  const narratorSpeaking = narratorLeft !== null && narratorLeft > 0;
   const narration = useNarration(snapshot?.public ?? null, sessionId, Boolean(snapshot?.you.isHost && !snapshot.tvConnected), secondsLeft);
 
   async function perform(action: Record<string, unknown>) {
@@ -97,7 +100,9 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
       {!view || !phase ? <div className="ww-panel"><span className="section-kicker">MEMUAT</span><h2>Menyiapkan desa…</h2>{error && <p className="ww-alert" role="alert">{error}</p>}</div> : <>
         <header className="ww-phase">
           <span className="section-kicker">{PHASE_LABELS[phase]}{view.public.activeNightRole && phase === "NIGHT_TURN" && (view.you.isMyTurn || !view.you.alive) ? ` · ${roleName(view.public.activeNightRole)}` : ""}</span>
-          {secondsLeft !== null && <time className="ww-timer" aria-label={`Sisa waktu ${secondsLeft} detik`}>{formatSeconds(secondsLeft)}</time>}
+          {secondsLeft !== null && (narratorSpeaking
+            ? <span className="ww-timer ww-timer-wait" role="status">Narator berbicara…</span>
+            : <time className="ww-timer" aria-label={`Sisa waktu ${secondsLeft} detik`}>{view.public.overtime ? "Waktu tambahan " : ""}{formatSeconds(secondsLeft)}</time>)}
         </header>
 
         {view.notices.map((notice) => <p key={notice} className="ww-notice" role="status">{notice}</p>)}

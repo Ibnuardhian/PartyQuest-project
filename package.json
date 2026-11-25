@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "node scripts/migrate.mjs",
-    "voice:generate": "node scripts/generate-werewolf-voice.mjs"
+    "voice:generate": "node scripts/generate-werewolf-voice.mjs",
+    "voice:measure": "node scripts/measure-werewolf-clips.mjs"
   },
   "dependencies": {
     "next": "latest",

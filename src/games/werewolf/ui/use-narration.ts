@@ -18,12 +18,18 @@ export function useNarration(publicView: WerewolfView["public"] | null, sessionI
   const previous = useRef<NarrationKey | null>(null);
   const warnedDay = useRef<number | null>(null);
 
+  const playId = useRef(0);
+
+  /** One voice at a time: a new run stops whatever is still playing (clip or browser speech) before it starts. */
   async function play(lines: VoiceLine[]) {
+    const id = ++playId.current;
+    narrator.cancel();
     for (const line of lines) {
+      if (id !== playId.current) return;
       setSubtitle(line.text);
-      if (!(await narrator.speak(line))) return;
+      if (!(await narrator.speak(line)) || id !== playId.current) return;
     }
-    setSubtitle("");
+    if (id === playId.current) setSubtitle("");
   }
 
   useEffect(() => {

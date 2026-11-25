@@ -45,6 +45,8 @@ export function buildPublicView(state: ClassicGameState) {
     nightNumber: pub.nightNumber,
     dayNumber: pub.dayNumber,
     phaseDeadlineAt: pub.phaseDeadlineAt,
+    actionStartsAt: pub.actionStartsAt,
+    overtime: pub.overtime,
     nightQueue: pub.nightQueue,
     activeNightRole: activeNightRole(state),
     players: pub.players.map((player) => ({ id: player.id, name: player.name, alive: player.alive, death: publicDeath(player), canVote: player.canVote, hasAfkPenalty: player.hasAfkPenalty })),
