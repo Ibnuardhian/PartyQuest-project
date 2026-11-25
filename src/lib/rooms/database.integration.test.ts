@@ -143,7 +143,7 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
-  it("lets only the host change settings, only in the lobby, and resets other players' ready state", async () => {
+  it("lets only the host change settings, only in the lobby, and keeps everyone ready", async () => {
     await inRollback(async () => {
       const { room, ids } = await roomWithPlayers(3);
       for (const id of ids) await client.query("select set_room_ready($1, $2, true)", [room.id, id]);
@@ -154,7 +154,7 @@ suite("PostgreSQL room functions", () => {
       const settings = await client.query<{ settings: unknown }>("select settings from game_rooms where id = $1", [room.id]);
       expect(settings.rows[0]!.settings).toEqual({ x: 1 });
       const ready = await client.query<{ user_id: string; is_ready: boolean }>("select user_id, is_ready from room_members where room_id = $1 order by seat_no", [room.id]);
-      expect(ready.rows.map((row) => row.is_ready)).toEqual([true, false, false]);
+      expect(ready.rows.map((row) => row.is_ready)).toEqual([true, true, true]);
       await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
       expect(await errorOf(client.query("select update_room_settings($1, $2, '{}'::jsonb)", [room.id, ids[0]]))).toContain("room_not_in_lobby");
     });
