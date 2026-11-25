@@ -91,10 +91,11 @@ body:has(.werewolf-theme) { background-color: #020617; color: #94a3b8; }
 .ww-mycard { border: 1px solid var(--ww-line); border-radius: 4px; padding: 12px; }
 .ww-mycard[open] { display: grid; gap: 10px; justify-items: center; }
 /* Role card (3D flip) */
-.ww-role-card { width: min(300px, 100%); aspect-ratio: 3 / 4; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }
+.ww-role-slot { display: block; width: min(300px, 100%); aspect-ratio: 3 / 4; justify-self: center; margin: 0 auto; }
+.ww-role-card { display: block; width: 100%; height: 100%; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }
 .ww-role-inner { position: relative; display: block; width: 100%; height: 100%; transition: transform .5s ease; transform-style: preserve-3d; }
 .ww-role-card.is-open .ww-role-inner { transform: rotateY(180deg); }
-.ww-role-face { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 12px; padding: 22px; border: 1px solid var(--ww-accent); border-radius: 6px; backface-visibility: hidden; background: radial-gradient(circle at 50% 30%, #0f172a, #000 70%); }
+.ww-role-face { position: absolute; inset: 0; display: flex; overflow-y: auto; overscroll-behavior: contain; padding: 22px; border: 1px solid var(--ww-accent); border-radius: 6px; backface-visibility: hidden; background: radial-gradient(circle at 50% 30%, #0f172a, #000 70%); }
 .ww-role-front { transform: rotateY(180deg); }
 .ww-role-face strong { font: 30px Georgia, serif; color: var(--ww-text); letter-spacing: .06em; }
 .ww-role-face small { color: var(--ww-muted); font-size: 12px; line-height: 1.6; }
@@ -293,3 +294,20 @@ body:has(.ww-is-night) { background: #000; }
 .werewolf-theme .lb-card .lb-exit { color: #fca5a5; background: rgba(239, 68, 68, .08); border-color: rgba(239, 68, 68, .4); }
 .werewolf-theme .lb-card .lb-exit:hover:not(:disabled) { background: #b91c1c; color: #fff; }
 .werewolf-theme .lb-card .lb-chip { color: #cbd5e1; }.werewolf-theme .lb-card .lb-chip.host { color: #22d3ee; border-color: #22d3ee; }
+
+/* Role card content: auto margins center it, and let it scroll from the top when it is taller than the card. */
+.ww-role-content { display: grid; justify-items: center; gap: 12px; width: 100%; margin: auto; text-align: center; }
+.ww-role-hint, .ww-role-backdrop { display: none; }
+
+/* Phones: an open card fills the screen with a margin so the description is large and never cut off. */
+@media (max-width: 640px) {
+  .ww-role-backdrop { position: fixed; inset: 0; z-index: 79; display: block; background: #000000e6; }
+  .ww-role-card.is-expanded { position: fixed; z-index: 80; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 16px; width: auto; height: auto; }
+  .ww-role-card.is-expanded .ww-role-face { padding: 28px 22px; border-radius: 10px; }
+  .ww-role-card.is-expanded .ww-role-content { gap: 16px; }
+  .ww-role-card.is-expanded .ww-role-face strong { font-size: 40px; }
+  .ww-role-card.is-expanded .ww-role-front small { font-size: 17px; line-height: 1.7; color: #cbd5e1; }
+  .ww-role-card.is-expanded .ww-badge { padding: 5px 12px; font-size: 13px; }
+  .ww-role-card.is-expanded .ww-role-sigil { font-size: 72px; }
+  .ww-role-card.is-expanded .ww-role-hint { display: block; margin-top: 8px; color: var(--ww-muted); font-size: 12px; font-style: normal; letter-spacing: .12em; text-transform: uppercase; }
+}
