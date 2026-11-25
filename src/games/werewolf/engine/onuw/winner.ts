@@ -1,4 +1,5 @@
 import type { OnuwRole } from "@/games/werewolf/contract";
+import { onuwVerdict } from "@/games/werewolf/engine/onuw/verdict";
 
 export type OnuwTeam = "village" | "werewolf" | "tanner";
 
@@ -13,7 +14,7 @@ export function onuwTeam(role: OnuwRole): OnuwTeam {
  * Hunters that died and have not shot yet. A Hunter who dies takes the player they point at with
  * them; that player may be another Hunter, so the caller asks again until this list is empty.
  */
-export function pendingHunters(finalRoles: readonly OnuwRole[], dead: readonly number[], resolved: readonly number[]) {
+export function pendingHunters(finalRoles: ReadonlyArray<OnuwRole | null>, dead: readonly number[], resolved: readonly number[]) {
   return dead.filter((index) => finalRoles[index] === "HUNTER" && !resolved.includes(index));
 }
 
@@ -39,22 +40,10 @@ export interface OnuwOutcome {
  */
 export function onuwOutcome(finalRoles: readonly OnuwRole[], dead: readonly number[]): OnuwOutcome {
   const deadSet = new Set(dead);
-  const isDead = (role: OnuwRole) => finalRoles.some((value, index) => value === role && deadSet.has(index));
-  const werewolfInPlay = finalRoles.includes("WEREWOLF");
-  const tannerWins = isDead("TANNER");
-  let villageWins: boolean;
-  let werewolfWins: boolean;
-  let reason: string;
-  if (werewolfInPlay) {
-    villageWins = isDead("WEREWOLF");
-    werewolfWins = !villageWins && !tannerWins;
-    reason = villageWins ? "Werewolf tertangkap." : tannerWins ? "Tanner mati; Werewolf tidak tertangkap tetapi tidak ikut menang." : "Tidak ada Werewolf yang mati.";
-  } else {
-    const othersDied = dead.some((index) => finalRoles[index] !== "MINION");
-    villageWins = !othersDied;
-    werewolfWins = finalRoles.includes("MINION") && othersDied;
-    reason = dead.length === 0 ? "Tidak ada Werewolf di antara pemain dan tidak ada yang mati." : villageWins ? "Tidak ada Werewolf di antara pemain; hanya Minion yang mati." : werewolfWins ? "Tidak ada Werewolf di antara pemain; Minion menang karena pemain lain mati." : "Tidak ada Werewolf di antara pemain, tetapi ada warga yang mati.";
-  }
+  const { villageWins, werewolfWins, tannerWins, reason } = onuwVerdict(
+    dead.map((index) => finalRoles[index]!),
+    { werewolfInPlay: finalRoles.includes("WEREWOLF"), minionInPlay: finalRoles.includes("MINION") },
+  );
   const winners = finalRoles.flatMap((role, index) => {
     const team = onuwTeam(role);
     const wins = team === "village" ? villageWins : team === "werewolf" ? werewolfWins : deadSet.has(index);

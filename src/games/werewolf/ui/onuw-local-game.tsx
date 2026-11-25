@@ -9,8 +9,9 @@ import { GameButton, GameCard, GameCardHeading, StepperGrid, StepperTile, Themed
 import { ONUW_MAX_PLAYERS, ONUW_MIN_PLAYERS, ONUW_ROLES, type OnuwRole } from "@/games/werewolf/contract";
 import { deckSize, ONUW_CENTER_CARDS, validateOnuwSelections, type OnuwDeck, type OnuwMismatch } from "@/games/werewolf/engine/onuw/deck";
 import { buildOnuwNightSequence, ONUW_ROLE_GAP_SECONDS } from "@/games/werewolf/engine/onuw/night-sequence";
-import { onuwFinalCardOptions, validOnuwFinalCards } from "@/games/werewolf/engine/onuw/final-cards";
-import { onuwOutcome, onuwTeam, pendingHunters, type OnuwOutcome, type OnuwTeam } from "@/games/werewolf/engine/onuw/winner";
+import { onuwFinalCardOptions } from "@/games/werewolf/engine/onuw/final-cards";
+import { nextOnuwQuestion, onuwKnownCards, onuwVerdict, resolveOnuwFacts, type OnuwAnswers, type OnuwVerdict } from "@/games/werewolf/engine/onuw/verdict";
+import { onuwTeam, pendingHunters, type OnuwTeam } from "@/games/werewolf/engine/onuw/winner";
 import { adjustOnuwDeck, onuwDeckRoles, ONUW_ROLE_MAX, recommendedOnuwDeck, validateOnuwNames } from "@/games/werewolf/engine/onuw/setup";
 import { WEREWOLF_SETUP_PATH } from "@/games/werewolf/paths";
 import { ONUW_ROLE_INFO } from "@/games/werewolf/roles";
@@ -21,7 +22,7 @@ import { applyVoiceChoice, loadVoiceChoice } from "@/games/werewolf/voice/voice-
 const TEAM_TONE: Record<OnuwTeam, TileTone> = { werewolf: "danger", village: "ally", tanner: "neutral" };
 const TEAM_LABEL: Record<OnuwTeam, string> = { werewolf: "Kubu Werewolf", village: "Kubu warga", tanner: "Tanner (sendiri)" };
 
-type Phase = "setup" | "register" | "handoff" | "mismatch" | "repick" | "ready" | "night" | "day" | "vote" | "reveal" | "hunter" | "end";
+type Phase = "setup" | "register" | "handoff" | "mismatch" | "repick" | "ready" | "night" | "day" | "vote" | "reveal" | "hunter" | "facts" | "end";
 
 /**
  * Mode 2: One Night Ultimate Werewolf with physical cards and one shared phone (docs/01 §4).
@@ -46,24 +47,33 @@ export default function OnuwLocalGame() {
   const [countdown, setCountdown] = useState<{ left: number; total: number } | null>(null);
   /** Players with the most pointing fingers (indexes). */
   const [eliminated, setEliminated] = useState<number[]>([]);
-  /** Card each player holds after the night, confirmed when the cards are turned over. */
+  /** Final card of each dead player, read off the cards that are turned over (the other cards stay face down). */
   const [finalRoles, setFinalRoles] = useState<(OnuwRole | null)[]>([]);
   const dealt = picks.map((role) => role ?? "VILLAGER");
-  const finalsComplete = finalRoles.length === dealt.length && finalRoles.every((role) => role !== null);
-  const finalsValid = finalsComplete && validOnuwFinalCards(deck, dealt, finalRoles as OnuwRole[]);
-  /** Only read once every card is confirmed (the Hitung pemenang button is disabled until then). */
-  const confirmed = finalRoles as OnuwRole[];
   const [dead, setDead] = useState<number[]>([]);
   const [shotHunters, setShotHunters] = useState<number[]>([]);
-  const [outcome, setOutcome] = useState<OnuwOutcome | null>(null);
-  const hunter = phase === "hunter" ? pendingHunters(confirmed, dead, shotHunters)[0] : undefined;
+  /** Yes/no answers about cards that stay face down (only asked when the app cannot work them out). */
+  const [answers, setAnswers] = useState<OnuwAnswers>({});
+  const [verdict, setVerdict] = useState<OnuwVerdict | null>(null);
+  const hunter = phase === "hunter" ? pendingHunters(finalRoles, dead, shotHunters)[0] : undefined;
+  const deadCards = dead.flatMap((index) => finalRoles[index] ? [finalRoles[index]!] : []);
+  const known = onuwKnownCards(deck, dealt, deadCards);
+  const question = nextOnuwQuestion(known, answers);
 
-  /** Applies deaths, asks each dead Hunter for their target, then computes the winners. */
-  function settle(nextDead: number[], nextShot: number[]) {
+  /**
+   * Walks the result steps: every dead player's card, then each dead Hunter's target, then the yes/no
+   * questions the cards cannot answer, then the winning team.
+   */
+  function settle(nextDead: number[], nextShot: number[], finals: (OnuwRole | null)[], nextAnswers: OnuwAnswers) {
     setDead(nextDead);
     setShotHunters(nextShot);
-    if (pendingHunters(confirmed, nextDead, nextShot).length > 0) { setPhase("hunter"); return; }
-    setOutcome(onuwOutcome(confirmed, nextDead));
+    setAnswers(nextAnswers);
+    if (nextDead.some((index) => !finals[index])) { setPhase("reveal"); return; }
+    if (pendingHunters(finals, nextDead, nextShot).length > 0) { setPhase("hunter"); return; }
+    const cards = nextDead.map((index) => finals[index]!);
+    const knownNow = onuwKnownCards(deck, dealt, cards);
+    if (nextOnuwQuestion(knownNow, nextAnswers)) { setPhase("facts"); return; }
+    setVerdict(onuwVerdict(cards, resolveOnuwFacts(knownNow, nextAnswers)));
     setPhase("end");
   }
 
@@ -204,7 +214,7 @@ export default function OnuwLocalGame() {
     setEliminated([]);
     setDead([]);
     setShotHunters([]);
-    setOutcome(null);
+    setVerdict(null);
     if (keepPlayers) {
       setPicks(Array.from({ length: playerCount }, () => null));
       startRepick();
@@ -296,39 +306,46 @@ export default function OnuwLocalGame() {
         <h2>Tiga… dua… satu… tunjuk!</h2>
         <p className="ww-muted">Ketuk pemain yang paling banyak ditunjuk (pilih semuanya jika seri). Jika setiap pemain hanya ditunjuk satu kali, tidak ada yang mati: lanjut tanpa memilih.</p>
         <div className="ww-targets">{names.map((name, index) => <button key={name} type="button" className={`ww-target${eliminated.includes(index) ? " is-selected" : ""}`} aria-pressed={eliminated.includes(index)} onClick={() => setEliminated((list) => list.includes(index) ? list.filter((item) => item !== index) : [...list, index])}>{name}</button>)}</div>
-        <button type="button" className="ww-button ww-primary" onClick={() => { stopNarration(); setFinalRoles(picks.map(() => null)); setPhase("reveal"); }}>{eliminated.length ? "Lanjut: buka kartu" : "Tidak ada yang mati · buka kartu"}</button>
+        <button type="button" className="ww-button ww-primary" onClick={() => { stopNarration(); const empty = picks.map(() => null); setFinalRoles(empty); settle(eliminated, [], empty, {}); }}>{eliminated.length ? "Lanjut: buka kartu yang mati" : "Tidak ada yang mati · lanjut"}</button>
       </div>}
 
       {phase === "reveal" && <div className="ww-panel">
         <span className="section-kicker">BUKA KARTU</span>
-        <h2>Balik kartu di depan setiap pemain</h2>
-        <p className="ww-muted">Pilih kartu yang terbuka di depan setiap pemain. Robber dan Troublemaker hanya menukar kartu antarpemain{dealt.includes("DRUNK") ? "; Drunk menukar kartunya dengan satu kartu tengah, jadi satu kartu tengah bisa muncul" : ", jadi pilihan hanya berisi kartu yang dibagikan ke pemain"}. Kartu yang sudah dipilih pemain lain hilang dari daftar.</p>
-        <button type="button" className="ww-button" onClick={() => setFinalRoles(dealt)}>Isi sesuai kartu awal</button>
-        <ul className="ww-role-list">{names.map((name, index) => <li key={name}>
-          <label htmlFor={`final-${index}`}>{name}{eliminated.includes(index) ? " · mati" : ""}<small className="ww-muted"> · awal: {ONUW_ROLE_INFO[dealt[index]!].name}</small></label>
+        <h2>Balik kartu pemain yang mati</h2>
+        <p className="ww-muted">Hanya kartu pemain yang mati yang dibuka; kartu pemain lain tetap tertutup. Pilih kartu yang terbuka di depan mereka. Robber dan Troublemaker hanya menukar kartu antarpemain{dealt.includes("DRUNK") ? "; Drunk menukar kartunya dengan satu kartu tengah, jadi satu kartu tengah bisa muncul" : ", jadi pilihan hanya berisi kartu yang dibagikan ke pemain"}.</p>
+        <button type="button" className="ww-button" onClick={() => setFinalRoles((list) => list.map((role, at) => dead.includes(at) ? dealt[at]! : role))}>Isi sesuai kartu awal</button>
+        <ul className="ww-role-list">{dead.map((index) => <li key={names[index]}>
+          <label htmlFor={`final-${index}`}>{names[index]} · mati<small className="ww-muted"> · awal: {ONUW_ROLE_INFO[dealt[index]!].name}</small></label>
           <select id={`final-${index}`} className="ww-input ww-final-card" value={finalRoles[index] ?? ""} onChange={(event) => setFinalRoles((list) => list.map((role, at) => at === index ? (event.target.value || null) as OnuwRole | null : role))}>
             <option value="">Pilih kartu…</option>
             {onuwFinalCardOptions(deck, dealt, finalRoles, index).map((role) => <option key={role} value={role}>{ONUW_ROLE_INFO[role].name}</option>)}
           </select>
         </li>)}</ul>
-        {finalsComplete && !finalsValid && <p className="ww-alert" role="alert">Kombinasi kartu ini tidak mungkin terjadi{dealt.includes("DRUNK") ? ": hanya satu kartu tengah yang bisa masuk lewat Drunk" : ""}. Periksa lagi.</p>}
-        <button type="button" className="ww-button ww-primary" disabled={!finalsComplete || !finalsValid} onClick={() => settle(eliminated, [])}>Hitung pemenang</button>
+        <button type="button" className="ww-button ww-primary" disabled={dead.some((index) => !finalRoles[index])} onClick={() => settle(dead, shotHunters, finalRoles, answers)}>Lanjut</button>
       </div>}
 
       {phase === "hunter" && hunter !== undefined && <div className="ww-panel ww-center">
         <span className="section-kicker">HUNTER</span>
         <h2>{names[hunter]} adalah Hunter dan mati</h2>
         <p className="ww-muted">Hunter ikut membawa mati pemain yang ia tunjuk. Siapa yang ditunjuk {names[hunter]}?</p>
-        <div className="ww-targets">{names.map((name, index) => index === hunter || dead.includes(index) ? null : <button key={name} type="button" className="ww-target" onClick={() => settle([...dead, index], [...shotHunters, hunter])}>{name}</button>)}</div>
-        <button type="button" className="ww-button" onClick={() => settle(dead, [...shotHunters, hunter])}>Yang ditunjuk sudah mati / tidak ada</button>
+        <div className="ww-targets">{names.map((name, index) => index === hunter || dead.includes(index) ? null : <button key={name} type="button" className="ww-target" onClick={() => settle([...dead, index], [...shotHunters, hunter], finalRoles, answers)}>{name}</button>)}</div>
+        <button type="button" className="ww-button" onClick={() => settle(dead, [...shotHunters, hunter], finalRoles, answers)}>Yang ditunjuk sudah mati / tidak ada</button>
       </div>}
 
-      {phase === "end" && outcome && <div className="ww-panel">
+      {phase === "facts" && question && <div className="ww-panel ww-center">
+        <span className="section-kicker">SATU PERTANYAAN</span>
+        <h2>{question === "WEREWOLF" ? "Adakah kartu Werewolf di depan pemain yang masih hidup?" : "Adakah kartu Minion di depan pemain yang masih hidup?"}</h2>
+        <p className="ww-muted">Jawab dari kartu yang dipegang sekarang, termasuk setelah semua pertukaran malam. Kartu tengah meja tidak dihitung. Pertanyaan ini hanya muncul karena Drunk bisa memindahkan kartu; kalau ada yang ragu, balik saja kartu yang bersangkutan.</p>
+        <button type="button" className="ww-button ww-primary" onClick={() => settle(dead, shotHunters, finalRoles, { ...answers, [question]: true })}>Ya, ada</button>
+        <button type="button" className="ww-button" onClick={() => settle(dead, shotHunters, finalRoles, { ...answers, [question]: false })}>Tidak ada</button>
+      </div>}
+
+      {phase === "end" && verdict && <div className="ww-panel">
         <span className="section-kicker">PERMAINAN SELESAI</span>
-        <h2>{[outcome.villageWins && "Warga desa menang", outcome.werewolfWins && "Tim Werewolf menang", outcome.tannerWins && "Tanner menang"].filter(Boolean).join(" · ") || "Tidak ada yang menang"}</h2>
-        <p className="ww-muted">{outcome.reason} {dead.length ? `Mati: ${dead.map((index) => names[index]).join(", ")}.` : "Tidak ada yang mati."}</p>
-        <ul className="ww-role-list">{names.map((name, index) => <li key={name} className={outcome.winners.includes(index) ? "is-winner" : ""}><span>{name}{dead.includes(index) ? " ✝" : ""}</span><strong>{ONUW_ROLE_INFO[finalRoles[index]!].name}{finalRoles[index] !== picks[index] && picks[index] ? ` (awal: ${ONUW_ROLE_INFO[picks[index]!].name})` : ""}{outcome.winners.includes(index) ? " · MENANG" : ""}</strong></li>)}</ul>
-        <button type="button" className="ww-button" onClick={() => setPhase("reveal")}>Koreksi kartu</button>
+        <h2>{[verdict.villageWins && "Warga desa menang", verdict.werewolfWins && "Tim Werewolf menang", verdict.tannerWins && "Tanner menang"].filter(Boolean).join(" · ") || "Tidak ada yang menang"}</h2>
+        <p className="ww-muted">{verdict.reason}</p>
+        <ul className="ww-role-list">{dead.length ? dead.map((index) => <li key={names[index]} className={verdict.tannerWins && finalRoles[index] === "TANNER" ? "is-winner" : ""}><span>{names[index]} ✝</span><strong>{ONUW_ROLE_INFO[finalRoles[index]!].name}{finalRoles[index] !== picks[index] && picks[index] ? ` (awal: ${ONUW_ROLE_INFO[picks[index]!].name})` : ""}{verdict.tannerWins && finalRoles[index] === "TANNER" ? " · MENANG" : ""}</strong></li>) : <li><span>Tidak ada yang mati.</span></li>}</ul>
+        <button type="button" className="ww-button" onClick={() => { setDead(eliminated); setShotHunters([]); setAnswers({}); setPhase(eliminated.length ? "reveal" : "vote"); }}>Koreksi kartu</button>
         <button type="button" className="ww-button ww-primary" onClick={() => restart(true)}>Main lagi (pemain sama, kocok ulang)</button>
         <button type="button" className="ww-button" onClick={() => restart(false)}>Atur ulang deck</button>
       </div>}
