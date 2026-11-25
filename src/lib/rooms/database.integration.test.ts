@@ -69,8 +69,14 @@ suite("PostgreSQL room functions", () => {
       await client.query("savepoint s");
       expect(await errorOf(client.query("select join_room($1, $2, 'pemain 1')", [await guest(), room.code]))).toContain("duplicate_name");
       await client.query("rollback to savepoint s");
+      await client.query("savepoint s2");
       await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
       expect(await errorOf(client.query("select join_room($1, $2, 'Baru')", [await guest(), room.code]))).toContain("room_not_joinable");
+      await client.query("rollback to savepoint s2");
+      // A finished room (waiting for a rematch) accepts new players again.
+      await client.query("update game_rooms set status = 'finished' where id = $1", [room.id]);
+      const joined = await client.query("select join_room($1, $2, 'Baru')", [await guest(), room.code]);
+      expect(joined.rowCount).toBe(1);
     });
   });
 
