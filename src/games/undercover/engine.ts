@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { clueTurnsForRound, currentCluePlayer, DEFAULT_CLUE_SECONDS, isClueSecondsOption } from "@/games/undercover/contract";
+import { cluePassesForRound, DEFAULT_CLUE_MINUTES, isClueMinutesOption } from "@/games/undercover/contract";
 import type {
   GameAction,
   GameDefinition,
@@ -17,7 +17,7 @@ const settingsSchema = z.object({
   category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]),
   undercoverCount: z.number().int().min(1).max(4),
   mrWhiteEnabled: z.boolean(),
-  clueSeconds: z.number().refine(isClueSecondsOption, "Waktu clue harus 30 detik sampai 3 menit, kelipatan 30 detik.").optional(),
+  clueMinutes: z.number().refine(isClueMinutesOption, "Waktu clue harus 1, 3, atau 5 menit.").optional(),
 });
 const guessSchema = z.string().trim().min(1).max(60);
 
@@ -50,7 +50,7 @@ function validateSettings(input: unknown, playerCount: number): GameSettings {
   if (opposingRoles >= playerCount || playerCount - opposingRoles < 2) {
     throw new Error("Sisakan minimal dua pemain Civilian.");
   }
-  return { ...parsed.data, clueSeconds: parsed.data.clueSeconds ?? DEFAULT_CLUE_SECONDS };
+  return { ...parsed.data, clueMinutes: parsed.data.clueMinutes ?? DEFAULT_CLUE_MINUTES };
 }
 
 function countAlive(players: Player[], roles: GameState["secret"]["assignments"]): Record<Role, number> {
@@ -82,7 +82,7 @@ function endIfWon(state: GameState): GameState {
 }
 
 function deadlineAfter(now: number, settings: GameSettings): string {
-  return new Date(now + (settings.clueSeconds ?? DEFAULT_CLUE_SECONDS) * 1000).toISOString();
+  return new Date(now + (settings.clueMinutes ?? DEFAULT_CLUE_MINUTES) * 60_000).toISOString();
 }
 
 function resolveVotes(state: GameState, now: number): GameState {
@@ -105,6 +105,17 @@ function resolveVotes(state: GameState, now: number): GameState {
   };
   if (eliminatedRole === "mr-white") return { ...next, public: { ...next.public, phase: "mr-white-guess" } };
   return endIfWon({ ...next, public: { ...next.public, phase: "clue", round: next.public.round + 1, clueIndex: 0, clueDeadlineAt: deadlineAfter(now, state.settings), clues: [] } });
+}
+
+/**
+ * Ends the running timed clue window (the server calls this when its deadline passes). The next window
+ * starts with the same length; after the last window of the round the table moves to the discussion.
+ */
+export function endClueWindow(state: GameState, now: number): GameState {
+  if (state.public.phase !== "clue") throw new Error("Ronde petunjuk tidak aktif.");
+  const clueIndex = state.public.clueIndex + 1;
+  const more = clueIndex < cluePassesForRound(state.public.round);
+  return { ...state, public: { ...state.public, clueIndex, phase: more ? "clue" : "discussion", clueDeadlineAt: more ? deadlineAfter(now, state.settings) : null } };
 }
 
 /** Finish the spoken clue window before players vote away from the device. */
@@ -135,8 +146,6 @@ function validateAction(state: GameState, action: GameAction): { valid: true } |
   switch (action.type) {
     case "confirm-reveal":
       return state.public.phase === "reveal" && !state.public.revealedPlayerIds.includes(action.playerId) ? { valid: true } : fail("Kartu sudah dikonfirmasi atau fase pembagian selesai.");
-    case "submit-clue":
-      return state.public.phase !== "clue" ? fail("Fase petunjuk sedang tidak aktif.") : currentCluePlayer(state.public)?.id !== action.playerId ? fail("Bukan giliran memberi petunjuk.") : { valid: true };
     case "finish-discussion":
       return state.public.phase === "discussion" ? { valid: true } : fail("Diskusi belum dimulai.");
     case "cast-vote": {
@@ -150,6 +159,8 @@ function validateAction(state: GameState, action: GameAction): { valid: true } |
     }
     case "guess-civilian-word":
       return state.public.phase === "mr-white-guess" && action.playerId === state.public.eliminatedPlayerId && guessSchema.safeParse(action.guess).success ? { valid: true } : fail("Tebakan Mr. White tidak valid.");
+    default:
+      return fail("Aksi tidak dikenal.");
   }
 }
 
@@ -163,12 +174,6 @@ function applyAction(state: GameState, action: GameAction, now = Date.now()): Ga
       const revealedPlayerIds = [...current.revealedPlayerIds, action.playerId];
       const phase = revealedPlayerIds.length >= current.players.filter((player) => player.alive).length ? "clue" : "reveal";
       return { ...state, public: { ...current, revealIndex: nextIndex, revealedPlayerIds, phase, clueDeadlineAt: phase === "clue" ? deadlineAfter(now, state.settings) : null } };
-    }
-    case "submit-clue": {
-      const clues = [...current.clues, { playerId: action.playerId }];
-      const nextIndex = current.clueIndex + 1;
-      const phase = nextIndex >= clueTurnsForRound(current.round, current.players.filter((item) => item.alive).length) ? "discussion" : "clue";
-      return { ...state, public: { ...current, clues, clueIndex: nextIndex, phase, clueDeadlineAt: phase === "clue" ? deadlineAfter(now, state.settings) : null } };
     }
     case "finish-discussion":
       return { ...state, public: { ...current, phase: "voting", votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
@@ -237,7 +242,7 @@ function createInitialState(names: string[], input: GameSettings, pick = randomI
     return { playerId: player.id, role, word: role === "civilian" ? civilianWord : role === "undercover" ? undercoverWord : null };
   });
   const publicState: PublicState = {
-    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueSeconds: settings.clueSeconds, clues: [], votes: {}, tiedPlayerIds: [],
+    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueMinutes: settings.clueMinutes, clues: [], votes: {}, tiedPlayerIds: [],
     revoteUsed: false, eliminatedPlayerId: null, winner: null, resultReason: null, lastRoundTied: false,
   };
   return { public: publicState, secret: { civilianWord, undercoverWord, assignments }, settings };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { OnlineGameError, type StoredSession } from "@/games/online-game";
-import { currentCluePlayer, type PublicState, type SecretState } from "@/games/undercover/contract";
+import { type PublicState, type SecretState } from "@/games/undercover/contract";
 import { undercoverOnline } from "@/games/undercover/server/online";
 
 const members = [
@@ -39,12 +39,12 @@ function revealAll(session: StoredSession) {
 
 describe("Undercover Online Room adapter", () => {
   it("validates room settings", () => {
-    // The clue time defaults to three minutes when the host does not set it.
-    expect(undercoverOnline.parseSettings(settings)).toEqual({ ...settings, clueSeconds: 180 });
-    expect(undercoverOnline.parseSettings({ ...settings, clueSeconds: 90 })).toEqual({ ...settings, clueSeconds: 90 });
-    expectGameError(() => undercoverOnline.parseSettings({ ...settings, clueSeconds: 45 }), 400, "invalid_input");
-    expectGameError(() => undercoverOnline.parseSettings({ ...settings, clueSeconds: 300 }), 400, "invalid_input");
-    expectGameError(() => undercoverOnline.parseSettings({ ...settings, clueSeconds: 181 }), 400, "invalid_input");
+    // The clue window defaults to three minutes when the host does not set it.
+    expect(undercoverOnline.parseSettings(settings)).toEqual({ ...settings, clueMinutes: 3 });
+    for (const clueMinutes of [1, 3, 5]) expect(undercoverOnline.parseSettings({ ...settings, clueMinutes })).toEqual({ ...settings, clueMinutes });
+    for (const clueMinutes of [0, 2, 4, 6, 1.5]) expectGameError(() => undercoverOnline.parseSettings({ ...settings, clueMinutes }), 400, "invalid_input");
+    // The old per-player seconds setting no longer exists.
+    expectGameError(() => undercoverOnline.parseSettings({ ...settings, clueSeconds: 60 }), 400, "invalid_input");
     expectGameError(() => undercoverOnline.parseSettings({ ...settings, category: "senjata" }), 400, "invalid_input");
     expectGameError(() => undercoverOnline.parseSettings({ ...settings, extra: true }), 400, "invalid_input");
   });
@@ -78,52 +78,44 @@ describe("Undercover Online Room adapter", () => {
     expect(next.revealedPlayerIds).toEqual([members[1]!.userId]);
   });
 
-  it("rejects actions outside the current phase or turn", () => {
+  it("rejects actions outside the current phase and has no per-player clue action", () => {
     const session = newSession();
-    expectGameError(() => undercoverOnline.applyIntent(session, { type: "submit-clue" }, ctx(members[0]!.userId)).publicState, 400, "invalid_action");
+    expectGameError(() => undercoverOnline.applyIntent(session, { type: "finish-discussion" }, ctx(members[0]!.userId)).publicState, 400, "invalid_action");
     const clue = revealAll(session);
     expect((clue.publicState as PublicState).phase).toBe("clue");
-    const active = currentCluePlayer(clue.publicState as PublicState)!;
-    const waiting = members.find((member) => member.userId !== active.id)!;
-    expectGameError(() => undercoverOnline.applyIntent(clue, { type: "submit-clue" }, ctx(waiting.userId)).publicState, 400, "invalid_action");
+    // Clues are spoken freely during the timed window, so there is nothing for a player to submit.
+    expectGameError(() => undercoverOnline.applyIntent(clue, { type: "submit-clue" }, ctx(members[0]!.userId)).publicState, 400, "invalid_input");
   });
 
-  it("advances clue deadlines from server time only", () => {
+  it("advances the clue window from server time only", () => {
     const clue = revealAll(newSession());
     const publicState = clue.publicState as PublicState;
     expect(undercoverOnline.advance(clue, now)).toBeNull();
     const missing = undercoverOnline.advance({ ...clue, publicState: { ...publicState, clueDeadlineAt: null } }, now)!.publicState as unknown as PublicState;
     expect(Date.parse(missing.clueDeadlineAt!)).toBe(now + 180_000);
-    const expired = undercoverOnline.advance(clue, Date.parse(publicState.clueDeadlineAt!) + 1)!.publicState as unknown as PublicState;
-    expect(expired.clueIndex).toBe(1);
-    expect(expired.clues).toHaveLength(1);
+    // Round 1 has two windows: the first one ending opens the second with a full new deadline.
+    const expiredAt = Date.parse(publicState.clueDeadlineAt!) + 1;
+    const second = undercoverOnline.advance(clue, expiredAt)!.publicState as unknown as PublicState;
+    expect(second.phase).toBe("clue");
+    expect(second.clueIndex).toBe(1);
+    expect(Date.parse(second.clueDeadlineAt!) - expiredAt).toBe(180_000);
   });
 
-  it("uses the clue time the host chose for every turn", () => {
-    const chosen = { ...settings, clueSeconds: 90 };
+  it("uses the clue minutes the host chose for every window and ends in a discussion after two", () => {
+    const chosen = { ...settings, clueMinutes: 5 };
     const round = undercoverOnline.createRound(members, chosen);
-    expect((round.publicState as PublicState).clueSeconds).toBe(90);
+    expect((round.publicState as PublicState).clueMinutes).toBe(5);
     let session: StoredSession = { publicState: round.publicState, secretState: round.secretState, settings: chosen };
     session = revealAll(session);
-    expect(Date.parse((session.publicState as PublicState).clueDeadlineAt!)).toBe(now + 90_000);
+    expect(Date.parse((session.publicState as PublicState).clueDeadlineAt!)).toBe(now + 300_000);
     const missing = undercoverOnline.advance({ ...session, publicState: { ...(session.publicState as PublicState), clueDeadlineAt: null } }, now)!.publicState as unknown as PublicState;
-    expect(Date.parse(missing.clueDeadlineAt!)).toBe(now + 90_000);
-  });
-
-  it("gives each player two clue turns before the first vote", () => {
-    let session = revealAll(newSession());
-    const order: string[] = [];
-    for (let turn = 0; turn < members.length * 2; turn += 1) {
-      const state = session.publicState as PublicState;
-      expect(state.phase).toBe("clue");
-      const speaker = currentCluePlayer(state)!;
-      order.push(speaker.id);
-      session = { ...session, publicState: undercoverOnline.applyIntent(session, { type: "submit-clue" }, ctx(speaker.id)).publicState };
+    expect(Date.parse(missing.clueDeadlineAt!)).toBe(now + 300_000);
+    for (let window = 0; window < 2; window += 1) {
+      const deadline = Date.parse((session.publicState as PublicState).clueDeadlineAt!);
+      session = { ...session, publicState: undercoverOnline.advance(session, deadline + 1)!.publicState };
     }
-    // Everybody speaks once, then everybody speaks again in the same order, and only then comes the discussion.
-    expect(order.slice(0, members.length)).toEqual(order.slice(members.length));
-    expect(new Set(order).size).toBe(members.length);
     expect((session.publicState as PublicState).phase).toBe("discussion");
-    expect((session.publicState as PublicState).clues).toHaveLength(members.length * 2);
+    expect((session.publicState as PublicState).clueDeadlineAt).toBeNull();
+    expect(undercoverOnline.advance(session, now + 10_000_000)).toBeNull();
   });
 });

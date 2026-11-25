@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isClueSecondsOption, type GameState } from "@/games/undercover/contract";
+import { isClueMinutesOption, type GameState } from "@/games/undercover/contract";
 
 export const LOCAL_GAME_PATH = "/games/undercover/local";
 export const LOCAL_GAME_STORAGE_KEY = "partyquest:undercover:local:v2";
@@ -14,7 +14,7 @@ const localStateSchema = z.object({
     revealedPlayerIds: z.array(z.string()),
     clueIndex: z.number().int().min(0),
     clueDeadlineAt: z.string().datetime().nullable(),
-    clueSeconds: z.number().refine(isClueSecondsOption).optional(),
+    clueMinutes: z.number().refine(isClueMinutesOption).optional(),
     clues: z.array(z.object({ playerId: z.string() })),
     votes: z.record(z.string(), z.string()),
     tiedPlayerIds: z.array(z.string()),
@@ -33,7 +33,7 @@ const localStateSchema = z.object({
     category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]),
     undercoverCount: z.number().int().min(1).max(4),
     mrWhiteEnabled: z.boolean(),
-    clueSeconds: z.number().refine(isClueSecondsOption).optional(),
+    clueMinutes: z.number().refine(isClueMinutesOption).optional(),
   }),
 });
 

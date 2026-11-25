@@ -8,24 +8,18 @@ export const GAME_PHASES = [
   "finished",
 ] as const;
 export const CLUE_TURN_DURATION_MS = 180_000;
-/** Spoken-clue time per player is a room setting: the host picks one of these fixed choices (max 3 minutes). */
-export const CLUE_SECONDS_OPTIONS = [30, 60, 90, 120, 150, 180] as const;
-export const DEFAULT_CLUE_SECONDS = CLUE_TURN_DURATION_MS / 1000;
-/** Default pre-selected for new Online Rooms (the engine itself falls back to the 3 minute maximum). */
-export const SUGGESTED_CLUE_SECONDS = 60;
+/** The clue window is a room setting: the host picks one of these lengths (in minutes). */
+export const CLUE_MINUTES_OPTIONS = [1, 3, 5] as const;
+export const DEFAULT_CLUE_MINUTES = CLUE_TURN_DURATION_MS / 60_000;
 
-export function isClueSecondsOption(value: unknown): value is (typeof CLUE_SECONDS_OPTIONS)[number] {
-  return typeof value === "number" && (CLUE_SECONDS_OPTIONS as readonly number[]).includes(value);
+export function isClueMinutesOption(value: unknown): value is (typeof CLUE_MINUTES_OPTIONS)[number] {
+  return typeof value === "number" && (CLUE_MINUTES_OPTIONS as readonly number[]).includes(value);
 }
 
-/** "30 detik", "1 menit", "1 menit 30 detik", "3 menit". */
-export function formatClueSeconds(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  if (minutes === 0) return `${rest} detik`;
-  return rest === 0 ? `${minutes} menit` : `${minutes} menit ${rest} detik`;
+export function formatClueMinutes(minutes: number): string {
+  return `${minutes} menit`;
 }
-/** Clue turns each living player gets before a vote: two before the first vote, one after every vote without a winner. */
+/** Timed clue windows (putaran) before a vote: two before the first vote, one after every vote without a winner. */
 export const CLUE_PASSES_FIRST_ROUND = 2;
 export const CLUE_PASSES_LATER_ROUNDS = 1;
 
@@ -44,8 +38,8 @@ export interface GameSettings {
   category: Category;
   undercoverCount: number;
   mrWhiteEnabled: boolean;
-  /** Seconds each player has for a spoken clue (Online Room). Absent means the default. */
-  clueSeconds?: number;
+  /** Length in minutes of each timed clue window (Online Room, Pass-and-Play round timer). Absent means the default. */
+  clueMinutes?: number;
 }
 
 export interface PublicState {
@@ -54,10 +48,11 @@ export interface PublicState {
   round: number;
   revealIndex: number;
   revealedPlayerIds: string[];
+  /** Clue windows already finished in the current round (0-based index of the running window). */
   clueIndex: number;
   clueDeadlineAt: string | null;
-  /** Seconds per clue turn, copied from the room settings so every player's screen can show it. */
-  clueSeconds?: number;
+  /** Window length, copied from the room settings so every player's screen can show it. */
+  clueMinutes?: number;
   clues: Array<{ playerId: string }>;
   votes: Record<string, string>;
   tiedPlayerIds: string[];
@@ -94,7 +89,6 @@ export interface GameState {
 
 export type GameAction =
   | { type: "confirm-reveal"; playerId: string }
-  | { type: "submit-clue"; playerId: string }
   | { type: "finish-discussion" }
   | { type: "cast-vote"; playerId: string; targetPlayerId: string }
   | { type: "guess-civilian-word"; playerId: string; guess: string };
@@ -119,23 +113,7 @@ export interface GameDefinition {
   getResult(state: GameState): PlayerView["result"];
 }
 
-/** How many clue passes (one clue from each living player) the given round has before voting. */
+/** How many timed clue windows (one clue from everyone, in any order) the given round has before voting. */
 export function cluePassesForRound(round: number): number {
   return round <= 1 ? CLUE_PASSES_FIRST_ROUND : CLUE_PASSES_LATER_ROUNDS;
-}
-
-/** Total clue turns in a round; `clueIndex` counts them from 0. */
-export function clueTurnsForRound(round: number, livingCount: number): number {
-  return livingCount * cluePassesForRound(round);
-}
-
-/** The player whose clue turn it is: players speak in seat order and start over for each extra pass. */
-export function currentCluePlayer(state: Pick<PublicState, "players" | "clueIndex">): Player | undefined {
-  const living = state.players.filter((player) => player.alive);
-  return living.length > 0 ? living[state.clueIndex % living.length] : undefined;
-}
-
-/** 1-based pass the given clue turn belongs to. */
-export function cluePassOfTurn(clueIndex: number, livingCount: number): number {
-  return livingCount > 0 ? Math.floor(clueIndex / livingCount) + 1 : 1;
 }
