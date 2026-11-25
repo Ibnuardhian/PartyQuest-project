@@ -6,8 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { AccentPill, FilledInput, GameButton, GameCard, GameCardHeading, GameCardSection, GameField, GameLinkButton } from "@/components/ui/game-ui";
-import { CLASSIC_ROLE_INFO } from "@/games/werewolf/roles";
-import { CLASSIC_ROLES } from "@/games/werewolf/contract";
+import { RoleFlipGrid } from "@/games/werewolf/ui/role-flip-grid";
 import { WEREWOLF_ONUW_PATH, WEREWOLF_VOICE_PILOT_PATH } from "@/games/werewolf/paths";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 
@@ -56,7 +55,7 @@ export default function WerewolfSetup() {
         <h1>Desa ini <em>menyimpan rahasia.</em></h1>
         <p className="ww-setup-lead">Tidak ada yang perlu jadi moderator. Narator suara memandu malam, setiap pemain beraksi dari HP masing-masing, dan layar malam yang gelap serta mini-game ketuk membuat tidak ada yang bisa menebak role dari gerak-gerik.</p>
         <ul className="ww-facts"><li>5–16 pemain</li><li>Satu HP per pemain</li><li>Narator suara di HP host atau TV</li></ul>
-        <details className="ww-roster"><summary>Daftar role ({CLASSIC_ROLES.length})</summary><ul>{CLASSIC_ROLES.map((role) => <li key={role}><strong>{CLASSIC_ROLE_INFO[role].name}</strong>{CLASSIC_ROLE_INFO[role].twist ? " · twist" : ""}<small>{CLASSIC_ROLE_INFO[role].description}</small></li>)}</ul></details>
+        <RoleFlipGrid />
         <AccentPill href={WEREWOLF_VOICE_PILOT_PATH}><SpeakerIcon /> Coba suara moderator <span aria-hidden="true">→</span></AccentPill>
       </div>
 
