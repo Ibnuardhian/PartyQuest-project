@@ -159,17 +159,7 @@ body:has(.ww-is-night) { background: #000; }
 .werewolf-theme .action-form input, .werewolf-theme .ww-input, .werewolf-theme .ww-editor select { border: 1px solid var(--ww-line); background: #020617; color: var(--ww-text); }
 .werewolf-theme .error-message { border: 1px solid #7f1d1d; background: #1c0a0a; color: #fca5a5; }
 .werewolf-theme .tv-code { color: #38bdf8; letter-spacing: .2em; }
-/* Catalog card */
-.catalog-werewolf { border: 1px solid #1e293b; background: #020617; }
-.catalog-werewolf .werewolf-art { color: #cbd5e1; background: radial-gradient(circle at 75% 30%, #0f172a 0, #020617 60%); border-bottom: 1px solid #1e293b; }
-.catalog-werewolf .art-tag { color: #38bdf8; }
-.werewolf-moon { position: absolute; right: 26px; top: 26px; width: 54px; height: 54px; border-radius: 50%; box-shadow: inset -12px -4px 0 0 #cbd5e1; opacity: .7; }
-.catalog-werewolf .catalog-card-body { background: #020617; color: #cbd5e1; }
-.catalog-werewolf .catalog-meta { color: #64748b; }
-.catalog-werewolf .catalog-card-body h2 { color: #e2e8f0; }
-.catalog-werewolf .catalog-card-body p { color: #94a3b8; }
-.catalog-werewolf .primary-button { background: transparent; border: 1px solid #0ea5e959; color: #e2e8f0; text-decoration: none; }
-.catalog-werewolf .primary-button:hover { background: #0f172a; }
+.werewolf-moon { position: absolute; right: 26px; top: 22px; width: 54px; height: 54px; border-radius: 50%; box-shadow: inset -12px -4px 0 0 #cbd5e1; opacity: .7; }
 @media (max-width: 760px) { .ww-setup { grid-template-columns: 1fr; align-content: start; margin-top: 28px; } .ww-timer { font-size: 24px; } }
 
 /* TV lobby join QR: large enough to scan from the sofa. */
@@ -219,3 +209,6 @@ body:has(.ww-is-night) { background: #000; }
 .ww-setup .ww-facts { color: #94a3b8; }
 
 
+
+/* Catalog banner motif: midnight sky with a crescent moon (inside the unified card). */
+.ww-catalog-banner { background: radial-gradient(circle at 78% 28%, #0f2a44 0, transparent 42%), radial-gradient(circle at 75% 30%, #0f172a 0, #020617 64%); }

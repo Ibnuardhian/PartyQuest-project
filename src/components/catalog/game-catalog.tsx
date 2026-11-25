@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GameCatalogCard, GameCatalogGrid } from "@/components/catalog/game-catalog-card";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
 import { defaultOnlineGame, gameModules } from "@/games/registry";
 
@@ -6,7 +7,7 @@ const COMING_SOON = ["Game berikutnya", "Game baru lainnya"];
 
 /** Platform home: lists games from the registry. Game logic and setup live in src/games/<game>. */
 export default function GameCatalog() {
-  return <main className="page-shell">
+  return <main className="page-shell catalog-page">
     <SiteHeader>
       <div className="topbar-actions">
         <span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span>
@@ -15,10 +16,10 @@ export default function GameCatalog() {
     </SiteHeader>
     <section className="catalog-wrap" id="beranda">
       <div className="catalog-heading"><div className="eyebrow"><span>✦</span> PARTYQUEST · GAME BARENG</div><h1>Pilih game<br /><em>untuk dimainkan.</em></h1><p className="hero-description">Kumpulan permainan sosial untuk dimainkan bersama teman. Game baru akan ditambahkan di sini.</p></div>
-      <div className="catalog-grid" aria-label="Katalog game">
+      <GameCatalogGrid>
         {gameModules.map(({ key, CatalogCard }) => <CatalogCard key={key} />)}
-        {COMING_SOON.slice(0, Math.max(0, 3 - gameModules.length)).map((title, index) => <article className="catalog-card catalog-coming" key={title}><div className={`catalog-art coming-art coming-art-${index + 1}`}><span className="coming-symbol">{index === 0 ? "◇" : "✳"}</span><span className="art-tag">SEGERA HADIR</span></div><div className="catalog-card-body"><div className="catalog-meta"><span>GAME SOSIAL</span><span>DALAM PENGEMBANGAN</span></div><h2>{title}</h2><p>Lebih banyak permainan seru akan hadir di PartyQuest.</p><span className="coming-label">Segera hadir</span></div></article>)}
-      </div>
+        {COMING_SOON.slice(0, Math.max(0, 3 - gameModules.length)).map((title, index) => <GameCatalogCard key={title} id={`coming-${index}`} comingSoon indexLabel="Segera hadir" title={title} tagline="Dalam pengembangan" genre="Game sosial" description="Lebih banyak permainan seru akan hadir di PartyQuest." accentColor="#64748b" artwork={<span className="catalog-coming-symbol">{index === 0 ? "◇" : "✳"}</span>} />)}
+      </GameCatalogGrid>
     </section>
     <SiteFooter left="MAIN BARENG, PILIH GAME" right={`${gameModules.map((game) => game.title).join(", ")} · tersedia di katalog`} />
   </main>;

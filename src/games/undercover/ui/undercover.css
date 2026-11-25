@@ -1,6 +1,6 @@
 /* Undercover: Classic Noir / dossier theme. Owned by the Undercover game folder. */
 body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
-.undercover-theme { --game-accent: #b22222; --game-accent-ink: #f5f0e8; --ink: #e5e0d8; --muted: #aca69d; --paper: #0a0a0a; --green: #8b0000; --green-dark: #640000; --line: #34312e; --mint: #222222; color: var(--ink); background: transparent; }
+.undercover-theme { --game-accent: #e11d48; --game-accent-ink: #fff1f2; --ink: #e5e0d8; --muted: #aca69d; --paper: #0a0a0a; --green: #8b0000; --green-dark: #640000; --line: #34312e; --mint: #222222; color: var(--ink); background: transparent; }
 .undercover-theme::before { opacity: .55; }
 .catalog-wrap, .hero-grid, .game-wrap { animation: undercover-view-enter .58s cubic-bezier(.2,.72,.25,1) both; }
 @keyframes undercover-view-enter { from { opacity: 0; transform: translateY(12px); filter: saturate(.55); } to { opacity: 1; transform: translateY(0); filter: saturate(1); } }
@@ -51,7 +51,7 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .handoff-icon { border-radius: 0; color: #e5e0d8; background: #1b263b; }
 .undercover-theme .handoff-panel h3 { color: #282522; font-family: Cinzel, "Playfair Display", Georgia, serif; }
 .undercover-theme .handoff-panel p, .undercover-theme .secret-card small { color: #625d56; }
-.undercover-theme .secret-card > p { color: #8b0000; letter-spacing: .2em; }
+.undercover-theme .secret-card > p { color: #8b0000; letter-spacing: .14em; }
 .undercover-theme .secret-card > strong { color: #171513; font-family: Cinzel, "Playfair Display", Georgia, serif; }
 .undercover-theme .spoken-timer { width: 100%; border: 1px solid #a99f91; border-radius: 0; background: #d8d0c4; box-shadow: inset 0 0 35px #1b263b12; }
 .undercover-theme .timer-value { color: #1b263b; font-size: 68px; }
@@ -71,23 +71,6 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .footer-star { color: #8b0000; }
 .undercover-theme .footer span:last-child { color: #a9a39a; }
 
-/* Each catalog game owns its own visual identity. Undercover opens in noir. */
-.catalog-undercover { border: 1px solid #38332d; border-radius: 2px; background: #11100f; box-shadow: 0 18px 48px #0008, 0 0 0 4px #171615; }
-.catalog-undercover .catalog-art { height: 205px; border-bottom: 1px solid #55483e; color: #e5e0d8; background: radial-gradient(ellipse at 74% 38%, #1b263b 0, transparent 35%), radial-gradient(ellipse at center, #38302b 0, #141211 50%, #080808 100%); }
-.catalog-undercover .undercover-art::before { content: ""; position: absolute; inset: 0; background: linear-gradient(145deg, transparent 49.7%, #8b0000a0 49.85%, #8b0000a0 50.1%, transparent 50.25%); opacity: .8; }
-.catalog-undercover .undercover-art::after { width: 185px; height: 185px; right: -45px; bottom: -90px; border: 1px solid #e5e0d83d; border-radius: 50%; box-shadow: 0 0 0 12px #e5e0d80a, 0 0 0 32px #e5e0d808, inset 0 0 35px #8b00001a; }
-.catalog-undercover .catalog-emblem { position: absolute; top: 17px; right: 21px; z-index: 2; color: #8b0000; font-size: 17px; }
-.catalog-undercover .art-tag { top: 17px; left: 20px; z-index: 2; padding: 6px 8px; transform: rotate(-3deg); border: 1px solid #8b0000; color: #c88d86; background: #8b000018; font-size: 8px; font-weight: 700; letter-spacing: .2em; }
-.catalog-undercover .art-title { z-index: 2; margin-top: 17px; color: #e5e0d8; font-family: Cinzel, "Playfair Display", Georgia, serif; font-size: 39px; letter-spacing: .2em; line-height: .88; text-shadow: 0 4px 18px #000; }
-.catalog-undercover .art-subtitle { z-index: 2; color: #b7afa4; font-size: 7px; letter-spacing: .22em; }
-.catalog-undercover .catalog-file-no { position: absolute; right: 20px; bottom: 15px; z-index: 2; color: #a9a196; font: 8px/1 monospace; letter-spacing: .16em; }
-.catalog-undercover .catalog-card-body { color: #e5e0d8; background: linear-gradient(145deg, #1a1918, #11100f 72%); }
-.catalog-undercover .catalog-meta { color: #a79e93; letter-spacing: .16em; }
-.catalog-undercover .catalog-card-body h2 { color: #e5e0d8; font-family: Cinzel, "Playfair Display", Georgia, serif; font-size: 23px; letter-spacing: .1em; text-transform: uppercase; }
-.catalog-undercover .catalog-card-body p { color: #b7b0a5; }
-.catalog-undercover .catalog-card-body .primary-button { border: 1px solid #a53a3a; border-radius: 0; color: #e5e0d8; background: #8b0000; text-transform: uppercase; letter-spacing: .14em; }
-.catalog-undercover .catalog-card-body .primary-button:hover { background: #650000; }
-.catalog-undercover .catalog-new-game { color: #c2a5a1; }
 .setup-mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: -7px 0 22px; padding: 4px; border: 1px solid #b9afa3; background: #d2c9bc; }
 .mode-option { min-height: 35px; border: 1px solid transparent; color: #625d56; background: transparent; font-size: 9px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .mode-option:hover { color: #8b0000; }
@@ -121,7 +104,7 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .clue-item > span:nth-child(2) { color: #514c46; }
 .undercover-theme .clue-item strong { color: #8b0000; font-family: Cinzel, "Playfair Display", Georgia, serif; }
 .undercover-theme .role-pill { border-radius: 0; color: #e5e0d8; background: #8b0000; letter-spacing: .12em; text-transform: uppercase; }
-.undercover-theme .tv-code { color: #8b0000; letter-spacing: .2em; }
+.undercover-theme .tv-code { color: #8b0000; letter-spacing: .14em; }
 
 /* Setup card rhythm and hierarchy (same rules as the Werewolf landing, in the noir palette):
    flex stacks instead of stacked margins, a recessed tactile code field, and a Gabung button that
@@ -143,3 +126,10 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .secondary-button.is-ready:hover:not(:disabled) { background: #650000; }
 .undercover-theme .secondary-button:focus-visible, .undercover-theme .mode-option:focus-visible { outline: 2px solid #8b0000; outline-offset: 2px; }
 @media (max-width: 480px) { .undercover-theme .join-row { flex-direction: column; } .undercover-theme .join-row .secondary-button { width: 100%; } }
+
+/* Catalog banner motif: noir dossier with radar rings and a red diagonal (inside the unified card). */
+.uc-catalog-banner { background: radial-gradient(ellipse at 74% 38%, #1b263b 0, transparent 38%), radial-gradient(ellipse at center, #2a2320 0, #100d0c 78%); }
+.uc-catalog-banner .gcc-art::before { content: ""; position: absolute; inset: 0; background: linear-gradient(145deg, transparent 49.7%, #e11d4899 49.85%, #e11d4899 50.1%, transparent 50.25%); }
+.uc-catalog-rings { position: absolute; right: -45px; bottom: -90px; width: 185px; height: 185px; border: 1px solid #e5e0d83d; border-radius: 50%; box-shadow: 0 0 0 12px #e5e0d80a, 0 0 0 32px #e5e0d808, inset 0 0 35px #8b000026; }
+.uc-catalog-file { position: absolute; right: 20px; top: 24px; color: #a9a196; font: 9px/1 ui-monospace, monospace; letter-spacing: .16em; }
+.uc-catalog-banner .gcc-banner-title { color: #e5e0d8; font-family: Cinzel, "Playfair Display", Georgia, serif; letter-spacing: .14em; }
