@@ -196,7 +196,9 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const status = room?.room.status;
   const startBlocker = !room ? "" : room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : readyCount < room.members.length ? `MENUNGGU SEMUA SIAP (${readyCount}/${room.members.length})` : "";
   const showInvite = status === "lobby" || status === "finished";
-  const returnedCount = room?.members.filter((member) => member.returned).length ?? 0;
+  // Offline members cannot come back, so they neither block the lobby nor count toward the wait.
+  const waitingMembers = room?.members.filter((member) => member.returned || member.online) ?? [];
+  const returnedCount = waitingMembers.filter((member) => member.returned).length;
   const settingsItems = room ? (game?.describeRoomSettings?.(room.room.settings) ?? []) : [];
   const editable = Boolean(room?.isHost && status === "lobby" && game?.RoomSettingsEditor);
 
@@ -240,7 +242,10 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
             <div className="lb-card-head"><span className="section-kicker">{editable ? "PENGATURAN RONDE" : "ATURAN RONDE AKTIF"}</span>{!room.isHost && <span className="lb-badge">Diatur oleh Host</span>}</div>
             {editable && game?.RoomSettingsEditor
               ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} />
-              : <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>}
+              : <>
+                <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>
+                {status === "finished" && room.isHost && <p className="lb-callout">Pengaturan bisa diubah setelah semua pemain yang online kembali ke lobi. Pemain offline tidak ditunggu, atau tekan Buka lobi sekarang.</p>}
+              </>}
             <p className="lb-note">Setiap pemain menerima informasi rahasia sendiri. Jangan bagikan layar saat kartu dibuka.</p>
           </section>
           <section className="setup-card lb-card lb-people" aria-label="Kode room dan daftar pemain">
@@ -255,7 +260,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
               <span className="lb-name">{member.display_name}{member.user_id === room.currentUserId && <small className="lb-chip">Kamu</small>}{member.user_id === room.hostUserId && <small className="lb-chip host">♛ Host</small>}</span>
               {room.scores && <span className="lb-score" aria-label={`Skor ${room.scores[member.user_id] ?? 0}`}>🏆 {room.scores[member.user_id] ?? 0}</span>}
               {status === "finished"
-                ? <span className={member.returned ? "lb-pill ready" : "lb-pill"}>{member.returned ? "Di lobi ✓" : "Belum kembali"}</span>
+                ? <span className={member.returned ? "lb-pill ready" : "lb-pill"}>{member.returned ? "Di lobi ✓" : member.online ? "Belum kembali" : "Offline"}</span>
                 : <span className={member.is_ready ? "lb-pill ready" : "lb-pill"}>{member.is_ready ? "Siap ✓" : "Belum siap"}</span>}
             </div>)}
             {room.members.length < minPlayers && Array.from({ length: Math.min(2, minPlayers - room.members.length) }, (_, index) => <div className="lb-row lb-empty" key={`empty-${index}`}>Menunggu pemain lain…</div>)}</div>
@@ -263,10 +268,10 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
               {status === "lobby" && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "SUDAH SIAP ✓" : "TANDAI SIAP"}</button>}
               {room.isHost && status === "lobby" && <button className="lb-btn lb-start" disabled={busy || Boolean(startBlocker)} onClick={() => void roomAction("start")}>{startBlocker || "MULAI PERMAINAN →"}</button>}
               {status === "finished" && room.isHost && <>
-                <button className="lb-btn lb-start" disabled>{`MENUNGGU SEMUA KEMBALI KE LOBI (${returnedCount}/${room.members.length})`}</button>
+                <button className="lb-btn lb-start" disabled>{`MENUNGGU SEMUA KEMBALI KE LOBI (${returnedCount}/${waitingMembers.length})`}</button>
                 <button type="button" className="secondary-wide" disabled={busy} onClick={() => void roomAction("return", { force: true })}>Buka lobi sekarang</button>
               </>}
-              {status === "finished" && !room.isHost && <p className="status-note">Menunggu semua pemain kembali ke lobi ({returnedCount}/{room.members.length}). Setelah itu host dapat mengubah pengaturan dan memulai ronde baru.</p>}
+              {status === "finished" && !room.isHost && <p className="status-note">Menunggu semua pemain kembali ke lobi ({returnedCount}/{waitingMembers.length}). Setelah itu host dapat mengubah pengaturan dan memulai ronde baru.</p>}
               {room.isHost && game?.tvSetupHref && <div className="tv-pairing">
                 {room.tvConnected ? <p className="status-note">Layar TV terhubung ✓ · suara moderator diputar di TV</p> : <button className="secondary-wide" disabled={busy} onClick={() => void createTvCode()}>Hubungkan layar TV (opsional)</button>}
                 {tvCode && !room.tvConnected && <p className="status-note">Buka <strong>{typeof window === "undefined" ? game.tvSetupHref : `${window.location.origin}${game.tvSetupHref}`}</strong> di TV, masukkan kode room <strong>{room.room.code}</strong> dan kode TV <strong className="tv-code">{tvCode.code}</strong> (berlaku {tvCode.minutes} menit).</p>}
