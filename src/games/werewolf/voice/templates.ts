@@ -69,6 +69,26 @@ export const NAME_LINES = {
     elevenlabs: "[solemn] Warga desa telah memutuskan... {executedName} dieksekusi hari ini!",
     fallback: "CLASSIC_EXECUTION_RESULT",
   },
+  PRINCE_REVEAL: {
+    template: "Tunggu! {princeName} ternyata seorang Pangeran... eksekusi dibatalkan!",
+    elevenlabs: "[gasps] Tunggu! {princeName} ternyata seorang Pangeran... eksekusi dibatalkan!",
+    fallback: "CLASSIC_PRINCE_REVEAL",
+  },
+  TROUBLEMAKER_DOUBLE: {
+    template: "Sang Troublemaker, {troublemakerName}, memakai suara gandanya... satu suara tambahan dihitung hari ini!",
+    elevenlabs: "[dramatic] Sang Troublemaker, {troublemakerName}, memakai suara gandanya... satu suara tambahan dihitung hari ini!",
+    fallback: "CLASSIC_TROUBLEMAKER_DOUBLE",
+  },
+  SPELL_SILENCE: {
+    template: "Sebuah mantra jatuh semalam... {silencedName} dibungkam dan tidak boleh bicara hari ini.",
+    elevenlabs: "[ominous] Sebuah mantra jatuh semalam... {silencedName} dibungkam dan tidak boleh bicara hari ini.",
+    fallback: "CLASSIC_SPELL_SILENCE",
+  },
+  VAMPIRE_DOOM: {
+    template: "Gigitan vampir meninggalkan tanda semalam... {doomedName} akan binasa pada voting berikutnya.",
+    elevenlabs: "[ominous] Gigitan vampir meninggalkan tanda semalam... {doomedName} akan binasa pada voting berikutnya.",
+    fallback: "CLASSIC_VAMPIRE_DOOM",
+  },
 } as const;
 
 /** Only ElevenLabs v3/v4 understand audio tags; other models would read them aloud. */
@@ -101,7 +121,7 @@ export function elevenLabsText(text: string): string {
 }
 export type NameLineKey = keyof typeof NAME_LINES;
 
-export const NAME_VARIABLES = ["victimName", "victimList", "hunterName", "executedName"] as const;
+export const NAME_VARIABLES = ["victimName", "victimList", "hunterName", "executedName", "princeName", "troublemakerName", "silencedName", "doomedName"] as const;
 export type TemplateVars = Partial<Record<(typeof NAME_VARIABLES)[number], string>>;
 
 /** Fills {placeholders}; throws if one is missing or not allowed, so a broken line is never spoken. */

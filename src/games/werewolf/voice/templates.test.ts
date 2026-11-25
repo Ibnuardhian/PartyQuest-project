@@ -7,9 +7,9 @@ import { indonesianVoices, splitSentences } from "@/games/werewolf/voice/narrato
 import { classicVoice, elevenLabsText, joinNames, NAME_LINES, nameLine, onuwVoice, packLine, renderLine, stripAudioTags, supportsAudioTags, VOICE_PACK } from "@/games/werewolf/voice/templates";
 
 describe("voice pack", () => {
-  it("has all 41 lines with a generated, non-empty MP3 in public/", () => {
-    expect(VOICE_PACK.items).toHaveLength(41);
-    expect(VOICE_PACK.items.filter((item) => item.mode === "classic")).toHaveLength(22);
+  it("has all 50 lines with a generated, non-empty MP3 in public/", () => {
+    expect(VOICE_PACK.items).toHaveLength(50);
+    expect(VOICE_PACK.items.filter((item) => item.mode === "classic")).toHaveLength(31);
     for (const item of VOICE_PACK.items) {
       const file = path.join(process.cwd(), "public", item.file);
       expect(statSync(file).size, item.file).toBeGreaterThan(1000);
@@ -43,7 +43,7 @@ describe("named announcements", () => {
 
   it("never names players on night lines", () => {
     for (const role of NIGHT_ORDER) expect(classicVoice.turnStart(role).text).not.toMatch(/\{/);
-    expect(Object.keys(NAME_LINES).sort()).toEqual(["DAWN_MULTI_KILL", "DAWN_SINGLE_KILL", "EXECUTION_RESULT", "HUNTER_REVENGE"]);
+    expect(Object.keys(NAME_LINES).sort()).toEqual(["DAWN_MULTI_KILL", "DAWN_SINGLE_KILL", "EXECUTION_RESULT", "HUNTER_REVENGE", "PRINCE_REVEAL", "SPELL_SILENCE", "TROUBLEMAKER_DOUBLE", "VAMPIRE_DOOM"]);
     expect(joinNames(["Budi"])).toBe("Budi");
   });
 });

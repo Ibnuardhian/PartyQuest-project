@@ -23,3 +23,17 @@ describe("TTS allow-list", () => {
     expect(isAllowedNarration("", isPlayer)).toBe(false);
   });
 });
+
+describe("TTS allow-list: Phase 8 day announcements", () => {
+  const lines = [
+    "Tunggu! Budi ternyata seorang Pangeran... eksekusi dibatalkan!",
+    "Sang Troublemaker, Citra, memakai suara gandanya... satu suara tambahan dihitung hari ini!",
+    "Sebuah mantra jatuh semalam... Dimas dibungkam dan tidak boleh bicara hari ini.",
+    "Gigitan vampir meninggalkan tanda semalam... Eka akan binasa pada voting berikutnya.",
+  ];
+  it("accepts each named line only with a real player name", () => {
+    for (const text of lines) expect(isAllowedNarration(text, isPlayer)).toBe(true);
+    expect(isAllowedNarration(lines[0]!.replace("Budi", "Zorro"), isPlayer)).toBe(false);
+    expect(isAllowedNarration("Tunggu! Budi ternyata seorang Werewolf... dieksekusi!", isPlayer)).toBe(false);
+  });
+});
