@@ -188,3 +188,25 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
   .uc-hero .form-field select, .uc-hero .online-text-input, .uc-hero .primary-button, .uc-hero .secondary-button, .uc-hero .cs-trigger, .uc-hero .mode-option { min-height: 42px; }
   .uc-hero .form-field select, .uc-hero .online-text-input, .uc-hero .primary-button { height: 42px; }
 }
+/* Lobby cards sit on the light dossier surface, so text inside must use dark ink, never the theme's light page ink. */
+.undercover-theme .lb-card { --ink: #141923; --muted: #5c5449; --line: rgba(20, 25, 35, .15); --paper: #e5e0d8; color: #141923; }
+.undercover-theme .lb-card .lb-name { color: #141923; font-weight: 600; }
+.undercover-theme .lb-card .lb-count { color: #5c5449; font-weight: 600; }
+.undercover-theme .lb-card .lb-count b { color: #141923; font-weight: 600; font-variant-numeric: tabular-nums; }
+.undercover-theme .lb-card .lb-row { background: rgba(255, 255, 255, .6); border-color: rgba(20, 25, 35, .15); }
+.undercover-theme .lb-card .lb-empty { background: transparent; color: #5c5449; }
+.undercover-theme .lb-card .lb-score { color: #4a4238; font-weight: 600; }
+.undercover-theme .lb-card .lb-pill { background: rgba(20, 25, 35, .1); color: rgba(20, 25, 35, .75); font-weight: 500; }
+.undercover-theme .lb-card .lb-pill.ready { background: #0f7a4f; color: #fff; font-weight: 650; }
+.undercover-theme .lb-card .lb-chip { color: #4a4238; border-color: rgba(20, 25, 35, .3); }
+.undercover-theme .lb-card .lb-chip.host { color: #8b0000; border-color: #8b0000; }
+.undercover-theme .lb-card .lb-stat { background: rgba(255, 255, 255, .45); border-color: rgba(20, 25, 35, .15); }
+.undercover-theme .lb-card .lb-stat small { color: #5c5449; font-weight: 600; }
+.undercover-theme .lb-card .lb-stat strong { color: #141923; font-weight: 600; font-size: 16px; }
+.undercover-theme .lb-card .lb-badge { color: #141923; border-color: rgba(20, 25, 35, .3); background: rgba(20, 25, 35, .05); font-weight: 600; }
+.undercover-theme .lb-card .lb-note, .undercover-theme .lb-card .lb-hint, .undercover-theme .lb-card .lb-saved { color: #5c5449; }
+.undercover-theme .lb-card .lb-saved.on { color: #0f7a4f; }
+.undercover-theme .lb-card .lb-callout { color: #4a4238; }
+.undercover-theme .lb-card .toggle-row small { color: #5c5449; }
+.undercover-theme .lb-card .lb-save:not(.dirty) { color: #5c5449; border-color: rgba(20, 25, 35, .3); }
+.undercover-theme .lb-card .lb-start:disabled { background: rgba(20, 25, 35, .12); color: rgba(20, 25, 35, .6); }
