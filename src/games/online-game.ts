@@ -32,6 +32,8 @@ export interface OnlineGameServer {
   parseSettings(input: unknown): unknown;
   /** Default settings for a new room when the client sends none. */
   defaultSettings?(): unknown;
+  /** The host may rename members in the lobby (stops a guest from passing as another player). Opt-in per game. */
+  hostCanRenameMembers?: boolean;
   /** Deals a new round for the verified active members. */
   createRound(members: RoundMember[], settings: unknown): NewRound;
   /** Applies a browser intent for the verified actor; returns the next public state and, if changed, secret state. */

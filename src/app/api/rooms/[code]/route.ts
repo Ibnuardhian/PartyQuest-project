@@ -41,6 +41,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
       scores: game?.roundPoints ? scores : null,
       session,
       tvConnected,
+      hostCanRenameMembers: Boolean(game?.hostCanRenameMembers),
       currentUserId: guest.userId,
       hostUserId: room.host_user_id,
       isHost: room.host_user_id === guest.userId,

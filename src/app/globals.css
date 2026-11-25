@@ -172,3 +172,14 @@ body:has(.catalog-page) { background-color: #050914; color: #cbd5e1; }
 .lj-cta:disabled { cursor: not-allowed; }
 .lj-cta-link { width: 100%; }
 @media (max-width: 520px) { .lj-card { padding: 18px; } }
+
+/* Host renames a member in the lobby (games that opt in, such as Werewolf). */
+.lb-edit { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; opacity: .65; cursor: pointer; }
+.lb-edit:hover:not(:disabled), .lb-edit:focus-visible { opacity: 1; border-color: currentColor; }
+.lb-rename { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; margin: 0; }
+.lb-rename-input { flex: 1 1 0; width: 0; min-width: 0; padding: 6px 8px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 13px; }
+.lb-rename-save, .lb-rename-cancel { flex: none; padding: 6px 10px; border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.lb-rename-save:disabled, .lb-rename-cancel:disabled { opacity: .4; cursor: not-allowed; }
+/* Keep every roster row the width of the card: a grid track otherwise grows to the open rename input's minimum width. */
+.lb-roster { grid-template-columns: minmax(0, 1fr); }
+.lb-row:has(.lb-rename) .lb-pill, .lb-row:has(.lb-rename) .lb-score { display: none; }

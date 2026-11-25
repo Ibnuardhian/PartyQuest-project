@@ -67,6 +67,7 @@ export const werewolfOnline: OnlineGameServer = {
   minPlayers: CLASSIC_MIN_PLAYERS,
   maxPlayers: CLASSIC_MAX_PLAYERS,
   defaultSettings: () => DEFAULT_ROOM_SETTINGS,
+  hostCanRenameMembers: true,
   parseSettings(input) {
     const parsed = werewolfRoomSettingsSchema.safeParse(input);
     if (!parsed.success) invalidSettings("Pengaturan Werewolf tidak valid.");

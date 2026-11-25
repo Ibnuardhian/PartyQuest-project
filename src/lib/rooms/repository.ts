@@ -129,6 +129,11 @@ export function setRoomReady(roomId: string, userId: string, ready: boolean) {
   return query("select set_room_ready($1, $2, $3)", [roomId, userId, ready]);
 }
 
+/** Host renames an active member (SQL checks host, lobby phase, and unique name). */
+export function renameRoomMember(roomId: string, hostUserId: string, targetUserId: string, displayName: string) {
+  return queryOne<{ display_name: string }>("select rename_room_member($1, $2, $3, $4) as display_name", [roomId, hostUserId, targetUserId, displayName]);
+}
+
 export function leaveRoom(roomId: string, userId: string) {
   return query("select leave_room($1, $2)", [roomId, userId]);
 }

@@ -188,6 +188,41 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
+  it("lets only the host rename an active member, before the round, to a name no one else has", async () => {
+    await inRollback(async () => {
+      const { room, ids } = await roomWithPlayers(3, "werewolf", 16);
+      const rename = (host: string, target: string, name: string) => client.query<{ n: string }>("select rename_room_member($1, $2, $3, $4) as n", [room.id, host, target, name]);
+      const nameOf = async (id: string) => (await client.query<{ display_name: string }>("select display_name from room_members where room_id = $1 and user_id = $2", [room.id, id])).rows[0]!.display_name;
+      const fails = async (fn: () => Promise<unknown>) => {
+        await client.query("savepoint rename_try");
+        const message = await errorOf(fn());
+        await client.query("rollback to savepoint rename_try");
+        return message;
+      };
+      // Spaces are trimmed and collapsed; the guest's own profile and other rooms are untouched.
+      const profileBefore = (await client.query<{ display_name: string }>("select display_name from guest_profiles where user_id = $1", [ids[1]])).rows[0]?.display_name;
+      expect((await rename(ids[0]!, ids[1]!, "  Budi   Santoso ")).rows[0]!.n).toBe("Budi Santoso");
+      expect(await nameOf(ids[1]!)).toBe("Budi Santoso");
+      expect((await client.query<{ display_name: string }>("select display_name from guest_profiles where user_id = $1", [ids[1]])).rows[0]?.display_name).toBe(profileBefore);
+      // Only the host may rename; a lookalike of another member's name (any case, any spacing) is refused.
+      expect(await fails(() => rename(ids[2]!, ids[1]!, "Orang Lain"))).toContain("host_required");
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "budi  SANTOSO"))).toContain("duplicate_name");
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "Host"))).toContain("duplicate_name");
+      // Keeping a member's own name is fine, and the host can rename themselves.
+      expect((await rename(ids[0]!, ids[1]!, "budi santoso")).rows[0]!.n).toBe("budi santoso");
+      expect((await rename(ids[0]!, ids[0]!, "Ketua")).rows[0]!.n).toBe("Ketua");
+      // Invalid names, strangers, and a running round.
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "   "))).toContain("invalid_name");
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "x".repeat(25)))).toContain("invalid_name");
+      const stranger = await guest();
+      expect(await fails(() => rename(ids[0]!, stranger, "Orang Asing"))).toContain("member_not_found");
+      await client.query("select leave_room($1, $2)", [room.id, ids[2]]);
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "Sudah Keluar"))).toContain("member_not_found");
+      await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "Terlambat"))).toContain("room_not_in_lobby");
+    });
+  });
+
   it("pairs a TV once with a valid, unexpired code", async () => {
     await inRollback(async () => {
       const { room } = await roomWithPlayers(3);
