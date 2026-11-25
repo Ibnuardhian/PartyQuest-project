@@ -4,7 +4,7 @@ import { query, queryOne } from "@/lib/db/pool";
 /** Platform-level room/session persistence. Game rules live in src/games/<game>/. */
 
 export interface RoomRow { id: string; code: string; host_user_id: string; game_key: string; status: string; settings: unknown; expires_at: Date; max_players: number }
-export interface MemberRow { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean }
+export interface MemberRow { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean; returned: boolean }
 export interface SessionRow<TPublic = unknown> { id: string; room_id: string; round_no: number; status: string; phase: string; state_version: number; public_state: TPublic }
 export interface MutationResult { ok: boolean; state_version: number | null; error_code: string | null }
 
@@ -53,7 +53,8 @@ export async function isActiveMember(roomId: string, userId: string) {
 export function listActiveMembers(roomId: string) {
   return query<MemberRow>(
     `select user_id, display_name, seat_no, is_ready, is_alive,
-       coalesce(last_seen_at > now() - make_interval(secs => ${PRESENCE_WINDOW_SECONDS}), false) as online
+       coalesce(last_seen_at > now() - make_interval(secs => ${PRESENCE_WINDOW_SECONDS}), false) as online,
+       lobby_at >= coalesce((select max(s.finished_at) from game_sessions s where s.room_id = room_members.room_id), '-infinity'::timestamptz) as returned
      from room_members where room_id = $1 and left_at is null order by seat_no`,
     [roomId],
   );
@@ -74,16 +75,6 @@ export function listFinishedSessions(roomId: string) {
      join game_private_state p on p.session_id = s.id
      join game_rooms r on r.id = s.room_id
      where s.room_id = $1 and s.status = 'finished' order by s.round_no`,
-    [roomId],
-  );
-}
-
-/** Active members who joined after the latest round began and are not ready yet (they were never dealt in). */
-export function listUnreadyNewcomers(roomId: string) {
-  return query<{ user_id: string }>(
-    `select m.user_id from room_members m
-     join lateral (select started_at from game_sessions where room_id = $1 order by round_no desc limit 1) s on true
-     where m.room_id = $1 and m.left_at is null and m.joined_at > s.started_at and not m.is_ready`,
     [roomId],
   );
 }
@@ -129,16 +120,21 @@ export function setRoomReady(roomId: string, userId: string, ready: boolean) {
   return query("select set_room_ready($1, $2, $3)", [roomId, userId, ready]);
 }
 
+/** A member is back in the lobby after a round; `force` lets the host open it without waiting. Returns the room status. */
+export async function returnToLobby(roomId: string, userId: string, force: boolean) {
+  const row = await queryOne<{ status: string }>("select return_to_lobby($1, $2, $3) as status", [roomId, userId, force]);
+  return row?.status ?? "finished";
+}
+
 export function leaveRoom(roomId: string, userId: string) {
   return query("select leave_room($1, $2)", [roomId, userId]);
 }
 
 export interface NewRound { publicState: unknown; secretState: unknown; playerPrivate: unknown }
 
-export function startRound(kind: "start" | "rematch", roomId: string, hostUserId: string, round: NewRound) {
-  const fn = kind === "start" ? "start_game" : "rematch_room";
+export function startRound(roomId: string, hostUserId: string, round: NewRound) {
   return queryOne<{ id: string; state_version: number }>(
-    `select id, state_version from ${fn}($1, $2, $3::jsonb, $4::jsonb, $5::jsonb)`,
+    `select id, state_version from start_game($1, $2, $3::jsonb, $4::jsonb, $5::jsonb)`,
     [roomId, hostUserId, JSON.stringify(round.publicState), JSON.stringify(round.secretState), JSON.stringify(round.playerPrivate)],
   );
 }
