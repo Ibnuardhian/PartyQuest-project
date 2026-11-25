@@ -58,3 +58,11 @@ export async function isTvConnected(roomId: string) {
   );
   return Boolean(row?.connected);
 }
+
+/**
+ * Whether the TV should show the last round. After the host opens the lobby again (status `lobby`) the finished
+ * round is history, so the TV goes back to the lobby view (QR code and players) instead of its last vote.
+ */
+export function tvShowsLastRound(roomStatus: string) {
+  return roomStatus !== "lobby";
+}

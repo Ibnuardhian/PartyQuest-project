@@ -13,6 +13,11 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 - [ ] **Deploy ke VPS Hostinger** belum dilakukan (stack produksi sudah diuji lokal). **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
 
+### Diubah
+
+- **Generator voice pack Werewolf** kini memakai ElevenLabs secara default; Microsoft Edge Neural dipilih eksplisit dengan `--provider microsoft`.
+- **Werewolf: layar hasil akhir dirapikan.** Ringkasan kemenangan kini memakai banner sesuai kubu, daftar pemenang, identitas role per pemain, hasil voting terakhir, dan riwayat kronologis; label voting kosong menjadi “tidak memilih”. Pembelaan setelah hasil seri memakai hitung mundur 3 menit.
+
 ### Ditambahkan
 
 - **Werewolf online: narator bicara dulu, baru timer jalan** (seperti ONUW). Server menambah lama suara (diukur ke `voice-pack.json` lewat `npm run voice:measure`; kalimat bernama diperkirakan dari panjang teks) ke tenggat tiap fase: intro malam (sebelumnya 6 dtk padahal klipnya 10,2 dtk), giliran role, pagi, Hunter, voting, dan pembelaan. Waktu aksi giliran malam minimal 10 detik setelah panggilan selesai (`nightTurnSeconds` tetap berlaku bila lebih besar). `actionStartsAt` dikirim ke klien: layar menampilkan "Narator berbicara…" lalu hitung mundur.
@@ -64,6 +69,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diubah
 
+- **GitHub Actions naik ke `actions/checkout@v7` dan `actions/setup-node@v7`** (keduanya berjalan di Node 24) untuk menghilangkan peringatan deprecasi Node 20 pada job `verify`. Opsi workflow tidak berubah.
 - **Kotak target muncul satu per satu** (jeda 80 md per kotak, maksimal sekitar 1 detik) di layar aksi malam asli dan di Fake Tap, dengan animasi yang sama agar keduanya tetap tidak bisa dibedakan. Mengikuti pengaturan "kurangi gerakan".
 - **Cooldown tombol Werewolf online**: tiap ketukan Fake Tap mengunci grid 0,5 detik, dan aksi nyata (target, voting, tembakan Hunter) mengunci tombol 0,5 detik setelah jawaban server, jadi tidak bisa ditekan beruntun.
 - **Kotak "Kamu telah tereliminasi" berwarna merah**, dan tanda pilihan kawanan Werewolf saat memilih mangsa memakai ikon werewolf (bukan garis miring).
@@ -76,6 +82,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diperbaiki
 
+- **Layar TV kembali ke lobi saat room dibuka lagi**: sebelumnya, setelah game selesai dan host membuka lobi, TV masih menampilkan voting terakhir. Sekarang saat status room `lobby`, TV menampilkan lobi (kode QR dan daftar pemain beserta statusnya); hasil ronde tetap tampil selama room berstatus selesai.
 - **Dropdown "Kartu role saya" (Werewolf online)** tidak lagi muncul mendadak di bawah layar: kini terbuka sedikit demi sedikit (tinggi dan transparansi bertransisi) sambil halaman otomatis digulir ke atas sampai kartu terlihat. Mengikuti pengaturan "kurangi gerakan" perangkat.
 - **Mengubah konfigurasi room tidak lagi membatalkan status siap** (Werewolf dan Undercover; migrasi `202611260003`): pemain yang sudah siap tetap siap saat host mengganti pengaturan. Validasi komposisi tetap dijalankan saat host memulai ronde.
 - **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.

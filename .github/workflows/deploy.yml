@@ -34,8 +34,8 @@ jobs:
       GUEST_SESSION_SECRET: ci-only-guest-session-secret-not-used-in-production
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm

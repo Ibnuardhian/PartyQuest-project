@@ -15,7 +15,7 @@ LOBBY
                           └─> WIN_CHECK ──(Win Met)──> GAME_OVER
                                 └─(Continue)─> DAY_DISCUSSION (Countdown timer)
                                                   └─> OPEN_VOTING (Hidden picks -> Simultaneous reveal)
-                                                        ├─(Tie on 1st vote)──> TIE_DEFENSE (30s) -> TIE_REVOTE
+                                                        ├─(Tie on 1st vote)──> TIE_DEFENSE (180s) -> TIE_REVOTE
                                                         └─> EXECUTION_RESOLUTION
                                                               ├─> HUNTER_REVENGE (If Hunter executed)
                                                               └─> WIN_CHECK ──(Win Met)──> GAME_OVER
@@ -53,7 +53,7 @@ Triggered when the Host presses **`Paksa Lanjut`** during a stalled Night Turn o
 - Once all eligible players vote or timer expires, UI reveals the **Open Vote Matrix** simultaneously (e.g., `Andi -> Budi`, `Citra -> Budi`, `Budi -> Andi`).
 - **Mayor Passive:** Votes cast by `MAYOR` count as `2` votes.
 - **Tie-Breaker:**
-  - If 2+ players tie for highest votes (`> 0`), enter `TIE_DEFENSE` (`30s` timer) where only tied candidates speak to defend themselves.
+  - If 2+ players tie for highest votes (`> 0`), enter `TIE_DEFENSE` (`180s` timer) where only tied candidates speak to defend themselves.
   - Enter `TIE_REVOTE` (`20s` timer) where all alive voters vote **only among the tied candidates**.
   - If `TIE_REVOTE` results in a tie again, **no execution occurs** and the game proceeds directly to `NIGHT_INTRO`.
 
