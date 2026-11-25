@@ -23,7 +23,6 @@ export const undercoverModule: GameModule = {
       { label: "Undercover", value: String(settings.undercoverCount ?? "—") },
       { label: "Mr. White", value: settings.mrWhiteEnabled ? "Aktif" : "Nonaktif" },
       { label: "Waktu ronde petunjuk", value: formatClueMinutes(settings.clueMinutes ?? DEFAULT_CLUE_MINUTES) },
-      { label: "Putaran clue", value: "2 sebelum voting pertama, lalu 1" },
     ];
   },
 };

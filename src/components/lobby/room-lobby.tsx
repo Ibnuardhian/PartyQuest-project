@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatalogLink } from "@/components/site/catalog-link";
 import { QrCode } from "@/components/site/qr-code";
@@ -31,6 +31,13 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const [connection, setConnection] = useState("Menghubungkan…");
   const [tvCode, setTvCode] = useState<{ code: string; minutes: number } | null>(null);
   const [gameKey, setGameKey] = useState<string | null>(initialGameKey);
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [hostNotice, setHostNotice] = useState(false);
+  const guardOn = useRef(true);
+  const wasHost = useRef<boolean | null>(null);
+  const isMember = Boolean(room);
 
   const load = useCallback(async (redirect = true) => {
     try {
@@ -113,27 +120,111 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
     setTvCode(payload.data);
   }
 
-  async function shareRoom() {
-    try { await navigator.clipboard.writeText(`${window.location.origin}/room/${code}`); setError("Tautan room disalin."); }
-    catch { setError(`Bagikan kode room: ${code}`); }
+  async function copyText(kind: "code" | "link", text: string) {
+    try { await navigator.clipboard.writeText(text); setCopied(kind); window.setTimeout(() => setCopied(null), 1800); }
+    catch { setError(`Salin manual: ${text}`); }
   }
+
+  async function confirmLeave() {
+    guardOn.current = false;
+    setLeaveOpen(false);
+    await roomAction("leave");
+    guardOn.current = true;
+  }
+
+  // The host role moves when the host leaves; tell the player who just received it.
+  const isHostNow = room?.isHost;
+  useEffect(() => {
+    if (isHostNow === undefined) { wasHost.current = null; return; }
+    if (wasHost.current === false && isHostNow) {
+      const timer = window.setTimeout(() => setHostNotice(true), 0);
+      wasHost.current = true;
+      return () => window.clearTimeout(timer);
+    }
+    wasHost.current = isHostNow;
+  }, [isHostNow]);
+
+  // Back button / tab close inside an active room asks first instead of silently dropping the player.
+  useEffect(() => {
+    if (!isMember) return;
+    window.history.pushState({ lobbyGuard: true }, "", window.location.href);
+    const onPop = () => {
+      if (!guardOn.current) return;
+      window.history.pushState({ lobbyGuard: true }, "", window.location.href);
+      setLeaveOpen(true);
+    };
+    const onUnload = (event: BeforeUnloadEvent) => {
+      if (!guardOn.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("beforeunload", onUnload);
+    return () => { window.removeEventListener("popstate", onPop); window.removeEventListener("beforeunload", onUnload); };
+  }, [isMember]);
 
   const game = gameKey ? getGameModule(gameKey) : null;
   const me = room?.members.find((member) => member.user_id === room.currentUserId);
+  const minPlayers = 3;
+  const readyCount = room?.members.filter((member) => member.is_ready).length ?? 0;
+  const status = room?.room.status;
+  const startBlocker = !room ? "" : room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : readyCount < room.members.length ? `MENUNGGU SEMUA SIAP (${readyCount}/${room.members.length})` : "";
+  const showInvite = status === "lobby" || status === "finished";
+  const settingsItems = room ? (game?.describeRoomSettings?.(room.room.settings) ?? []) : [];
+  const editable = Boolean(room?.isHost && status === "lobby" && game?.RoomSettingsEditor);
 
   // The lobby wears the game's own theme so it matches its catalog card and in-game screens.
   return <main className={`page-shell${game?.themeClass ? ` ${game.themeClass}` : ""}`}><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
-    <section className="lobby-wrap">
-      <CatalogLink className="text-button catalog-back">← Kembali ke katalog</CatalogLink>
-      <div className="lobby-heading"><span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span><h1>Room <em>{code}</em></h1><p className="hero-description">Bagikan kode ini ke temanmu. Siapkan semua pemain sebelum host memulai.</p></div>
-      {!room ? <section className="setup-card lobby-card">{error && <p className="error-message" role="alert">{error}</p>}<h2>Gabung ke room</h2><form className="action-form" onSubmit={joinRoom}><label className="field-label" htmlFor="lobby-name">Nama tampilan</label><input id="lobby-name" maxLength={24} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" /><button className="primary-button" disabled={busy || !displayName.trim()}>Gabung <span>→</span></button></form></section>
-        : <div className="lobby-grid"><section className="setup-card lobby-card"><div className="lobby-card-head"><div><span className="section-kicker">KODE ROOM</span><strong className="room-code">{room.room.code}</strong></div><button className="secondary-button" onClick={shareRoom}>Salin tautan</button></div>{room.room.status === "lobby" && <QrCode path={`/room/${room.room.code}`} label="Pindai untuk bergabung" />}<p className="status-note">{room.room.status === "finished" ? "Ronde selesai" : room.room.status === "in_progress" ? "Permainan berjalan" : "Menunggu pemain"} · {room.members.length}/{room.room.maxPlayers} pemain</p><div className="member-list">{room.members.map((member) => <div className="member-row" key={member.user_id}><span className="avatar-dot">{member.display_name.slice(0, 1).toUpperCase()}</span><span className={member.online ? "presence-dot online" : "presence-dot"} role="img" aria-label={member.online ? "Online" : "Offline"} title={member.online ? "Online" : "Offline"} /><span className="member-name">{member.display_name}{member.user_id === room.currentUserId && <small> (kamu)</small>}{member.user_id === room.hostUserId && <small> · host</small>}</span>{room.scores && <span className="ready-tag" aria-label={`Skor ${room.scores[member.user_id] ?? 0}`}>🏆 {room.scores[member.user_id] ?? 0}</span>}{member.user_id === room.currentUserId ? <span className={member.is_ready ? "ready-tag ready" : "ready-tag"}>{member.is_ready ? "Siap" : "Belum siap"}</span> : <span className="ready-tag">{member.is_ready ? "Siap" : "Menunggu"}</span>}</div>)}</div>
-          <div className="lobby-actions">{room.room.status === "lobby" && <button className="primary-button" disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "Batalkan status siap" : "Saya siap"}<span>✓</span></button>}{room.isHost && room.room.status === "lobby" && <button className="secondary-wide" disabled={busy || room.members.length < 3 || room.members.some((member) => !member.is_ready)} onClick={() => void roomAction("start")}>Mulai permainan →</button>}{room.isHost && room.room.status === "finished" && <button className="primary-button" disabled={busy || room.members.length < 3} onClick={() => void roomAction("rematch")}>Main ulang <span>↻</span></button>}{room.isHost && game?.tvSetupHref && <div className="tv-pairing">
-            {room.tvConnected ? <p className="status-note">Layar TV terhubung ✓ · suara moderator diputar di TV</p> : <button className="secondary-wide" disabled={busy} onClick={() => void createTvCode()}>Hubungkan layar TV (opsional)</button>}
-            {tvCode && !room.tvConnected && <p className="status-note">Buka <strong>{typeof window === "undefined" ? game.tvSetupHref : `${window.location.origin}${game.tvSetupHref}`}</strong> di TV, masukkan kode room <strong>{room.room.code}</strong> dan kode TV <strong className="tv-code">{tvCode.code}</strong> (berlaku {tvCode.minutes} menit).</p>}
-          </div>}<button className="text-button" disabled={busy} onClick={() => void roomAction("leave")}>Keluar dari room</button></div>{error && <p className="error-message" role="alert">{error}</p>}</section>
-          <aside className="setup-card rules-card"><span className="section-kicker">PENGATURAN RONDE</span>{room.isHost && room.room.status === "lobby" && game?.RoomSettingsEditor
-            ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} />
-            : (game?.describeRoomSettings?.(room.room.settings) ?? []).map((item) => <p key={item.label}>{item.label} <strong>{item.value}</strong></p>)}<div className="privacy-note left-note">Setiap pemain menerima informasi rahasia sendiri. Jangan bagikan layar saat kartu dibuka.</div></aside></div>}
-    </section><SiteFooter left="LOBI" right={room ? `Koneksi: ${connection}` : "Sesi guest tersimpan di browser ini"} /></main>;
+    <section className="lb-wrap">
+      <div className="lb-bar">{!room && <CatalogLink className="text-button catalog-back">← Kembali ke katalog</CatalogLink>}<span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span>{room && <span className="lb-state">{status === "finished" ? "Ronde selesai" : status === "in_progress" ? "Permainan berjalan" : "Menunggu pemain"}</span>}</div>
+      {!room ? <section className="setup-card lobby-card lb-join"><div className="lb-bar-code">Room <em>{code}</em></div>{error && <p className="error-message" role="alert">{error}</p>}<h2>Gabung ke room</h2><form className="action-form" onSubmit={joinRoom}><label className="field-label" htmlFor="lobby-name">Nama tampilan</label><input id="lobby-name" maxLength={24} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" /><button className="primary-button" disabled={busy || !displayName.trim()}>Gabung <span>→</span></button></form></section>
+        : <div className="lb-grid">
+          <section className="setup-card lb-card lb-settings" aria-label="Pengaturan ronde">
+            <div className="lb-card-head"><span className="section-kicker">{editable ? "PENGATURAN RONDE" : "ATURAN RONDE AKTIF"}</span>{!room.isHost && <span className="lb-badge">Diatur oleh Host</span>}</div>
+            {editable && game?.RoomSettingsEditor
+              ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} />
+              : <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>}
+            <p className="lb-note">Setiap pemain menerima informasi rahasia sendiri. Jangan bagikan layar saat kartu dibuka.</p>
+          </section>
+          <section className="setup-card lb-card lb-people" aria-label="Kode room dan daftar pemain">
+            {showInvite ? <div className="lb-invite">
+              <button type="button" className="lb-qr" onClick={() => setQrOpen(true)} aria-label="Perbesar kode QR"><QrCode path={`/room/${room.room.code}`} label="Pindai untuk bergabung" /></button>
+              <div className="lb-invite-main"><span className="section-kicker">KODE ROOM</span><strong className="lb-code">{room.room.code}</strong>
+                <div className="lb-invite-actions"><button type="button" className="secondary-button" onClick={() => void copyText("code", room.room.code)}>{copied === "code" ? "Tersalin ✓" : "Salin Kode"}</button><button type="button" className="secondary-button" onClick={() => void copyText("link", `${window.location.origin}/room/${room.room.code}`)}>{copied === "link" ? "Tersalin ✓" : "Salin Tautan"}</button></div></div>
+            </div> : <div className="lb-invite-main"><span className="section-kicker">KODE ROOM</span><strong className="lb-code">{room.room.code}</strong></div>}
+            <p className="lb-count"><span>Pemain</span><b>{room.members.length}/{room.room.maxPlayers}</b></p>
+            <div className="lb-roster">{room.members.map((member) => <div className="lb-row" key={member.user_id}>
+              <span className="lb-avatar">{member.display_name.slice(0, 1).toUpperCase()}<i className={member.online ? "lb-online on" : "lb-online"} role="img" aria-label={member.online ? "Online" : "Offline"} /></span>
+              <span className="lb-name">{member.display_name}{member.user_id === room.currentUserId && <small className="lb-chip">Kamu</small>}{member.user_id === room.hostUserId && <small className="lb-chip host">♛ Host</small>}</span>
+              {room.scores && <span className="lb-score" aria-label={`Skor ${room.scores[member.user_id] ?? 0}`}>🏆 {room.scores[member.user_id] ?? 0}</span>}
+              <span className={member.is_ready ? "lb-pill ready" : "lb-pill"}>{member.is_ready ? "Siap ✓" : "Belum siap"}</span>
+            </div>)}
+            {room.members.length < minPlayers && Array.from({ length: Math.min(2, minPlayers - room.members.length) }, (_, index) => <div className="lb-row lb-empty" key={`empty-${index}`}>Menunggu pemain lain…</div>)}</div>
+            <div className="lb-actions">
+              {status === "lobby" && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "SUDAH SIAP ✓" : "TANDAI SIAP"}</button>}
+              {room.isHost && status === "lobby" && <button className="lb-btn lb-start" disabled={busy || Boolean(startBlocker)} onClick={() => void roomAction("start")}>{startBlocker || "MULAI PERMAINAN →"}</button>}
+              {room.isHost && status === "finished" && <button className="lb-btn lb-start" disabled={busy || room.members.length < minPlayers} onClick={() => void roomAction("rematch")}>{room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : "MAIN ULANG ↻"}</button>}
+              {room.isHost && game?.tvSetupHref && <div className="tv-pairing">
+                {room.tvConnected ? <p className="status-note">Layar TV terhubung ✓ · suara moderator diputar di TV</p> : <button className="secondary-wide" disabled={busy} onClick={() => void createTvCode()}>Hubungkan layar TV (opsional)</button>}
+                {tvCode && !room.tvConnected && <p className="status-note">Buka <strong>{typeof window === "undefined" ? game.tvSetupHref : `${window.location.origin}${game.tvSetupHref}`}</strong> di TV, masukkan kode room <strong>{room.room.code}</strong> dan kode TV <strong className="tv-code">{tvCode.code}</strong> (berlaku {tvCode.minutes} menit).</p>}
+              </div>}
+            </div>
+            <div className="lb-leave-zone"><button type="button" className="lb-exit" disabled={busy} onClick={() => setLeaveOpen(true)}><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>Keluar dari Room</button></div>
+            {error && <p className="error-message" role="alert">{error}</p>}
+          </section>
+        </div>}
+    </section>
+    {hostNotice && <div className="lb-modal" role="alertdialog" aria-modal="true" aria-labelledby="lb-host-title" onClick={() => setHostNotice(false)}><div className="lb-modal-card lb-confirm lb-host-notice" onClick={(event) => event.stopPropagation()}>
+      <span className="lb-host-icon" aria-hidden="true">♛</span>
+      <h2 id="lb-host-title">Kamu adalah Host sekarang</h2>
+      <p>Host sebelumnya keluar dari room. Kamu kini mengatur pengaturan ronde dan memulai permainan.</p>
+      <div className="lb-confirm-actions"><button type="button" className="lb-btn lb-start" autoFocus onClick={() => setHostNotice(false)}>Mengerti</button></div>
+    </div></div>}
+    {leaveOpen && room && <div className="lb-modal" role="alertdialog" aria-modal="true" aria-labelledby="lb-leave-title" onClick={() => setLeaveOpen(false)}><div className="lb-modal-card lb-confirm" onClick={(event) => event.stopPropagation()}>
+      <h2 id="lb-leave-title">Keluar dari room?</h2>
+      <p>{room.isHost ? (room.members.length > 1 ? "Kamu host. Jika keluar, peran host pindah ke pemain lain dan room tetap berjalan untuk mereka." : "Kamu pemain terakhir. Jika keluar, room ini ditutup.") : "Kamu akan keluar dari room ini dan kembali ke katalog."}</p>
+      <div className="lb-confirm-actions"><button type="button" className="secondary-button" onClick={() => setLeaveOpen(false)}>Tetap di room</button><button type="button" className="lb-btn lb-danger" disabled={busy} onClick={() => void confirmLeave()}>Ya, keluar</button></div>
+    </div></div>}
+    {qrOpen && room && <div className="lb-modal" role="dialog" aria-modal="true" aria-label="Kode QR room" onClick={() => setQrOpen(false)}><div className="lb-modal-card" onClick={(event) => event.stopPropagation()}><QrCode path={`/room/${room.room.code}`} label={`Room ${room.room.code}`} /><button type="button" className="secondary-button" onClick={() => setQrOpen(false)}>Tutup</button></div></div>}
+    {!room && <SiteFooter left="LOBI" right="Sesi guest tersimpan di browser ini" />}</main>;
 }
