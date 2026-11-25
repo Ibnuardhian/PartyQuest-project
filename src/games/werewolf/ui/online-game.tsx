@@ -87,6 +87,8 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
   const phase = view?.public.phase;
   const night = phase ? isNightPhase(phase) : false;
   const me = view?.public.players.find((player) => player.id === view.you.playerId);
+  /** How many tiles the real night picker shows (everyone alive but me); the Fake Tap grid copies it. */
+  const targetCount = view ? view.public.players.filter((player) => player.alive && player.id !== view.you.playerId).length : 0;
   const nameOf = (id: string | null | undefined) => view?.public.players.find((player) => player.id === id)?.name ?? "—";
 
   return <main className={`page-shell werewolf-theme${night && view?.you.alive ? " ww-is-night" : ""}`}>
@@ -117,7 +119,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
         {night && (!view.you.alive ? <DeadView view={view} nameOf={nameOf} /> : <div className="ww-night-stage">
           {view.you.isMyTurn
             ? <div key={`turn-${view.public.activeNightRole}`} className="ww-panel ww-fade"><span className="ww-your-turn">GILIRANMU</span><NightActionPanel view={view} busy={busy} perform={perform} /></div>
-            : <div key="fake" className="ww-fade"><FakeTap /></div>}
+            : <div key="fake" className="ww-fade"><FakeTap key={targetCount} size={targetCount} /></div>}
         </div>)}
 
         {!night && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <div className="ww-panel">

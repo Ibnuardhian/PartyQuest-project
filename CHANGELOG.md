@@ -64,6 +64,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diubah
 
+- **Fake Tap mengikuti grid pemilihan sungguhan**: pemain yang bukan gilirannya kini melihat kotak-kotak (jumlah sama dengan daftar target asli, gaya sama) yang isinya hanya angka, dengan tombol "Lewati giliran" seperti layar aksi asli; ketuk angka 1 sampai 3/4 berurutan. Sebelumnya berupa lingkaran acak yang jelas berbeda dari layar aksi, sehingga mudah dikenali dari samping.
 - **Diskusi siang Werewolf minimal 3 menit** (sebelumnya 1 menit): dengan 1 menit, peringatan "satu menit lagi" bertabrakan dengan suara pagi dan pembacaan korban. Slider dan validasi server memakai batas baru; room lama yang tersimpan dengan diskusi lebih pendek otomatis dinaikkan saat ronde dimulai.
 - Narator: pengumuman siang menyebut nama pemain, giliran malam hanya menyebut role.
 - Doctor tampil dan diucapkan sebagai **Guardian Angel** (ID internal tetap `DOCTOR`).

@@ -114,9 +114,6 @@ body:has(.ww-is-night) { background: #000; }
 .ww-your-turn { justify-self: start; color: #94a3b8; border: 1px solid var(--ww-accent); padding: 4px 10px; font-size: 11px; letter-spacing: .3em; }
 .ww-night-hint { margin: 0; color: #64748b; font-size: 12px; line-height: 1.6; }
 .ww-fake-tap { display: grid; gap: 10px; height: 100%; }
-.ww-tap-area { position: relative; min-height: 340px; border: 1px solid #1e293b; border-radius: 6px; }
-.ww-tap { position: absolute; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; border: 1px solid #0ea5e959; background: transparent; color: #64748b; font: 18px Georgia, serif; }
-.ww-tap.is-done { border-color: #1e293b; color: #1e293b; }
 .ww-targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .ww-target { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid #1e293b; border-radius: 3px; background: transparent; color: #94a3b8; padding: 12px; font-size: 13px; text-align: left; }
 .ww-target:hover:not(:disabled), .ww-target.is-selected { border-color: #0ea5e959; }

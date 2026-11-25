@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeTapSequence } from "@/games/werewolf/ui/fake-tap-layout";
+import { FAKE_TAP_MAX_TILES, FAKE_TAP_MIN_TILES, makeTapGrid } from "@/games/werewolf/ui/fake-tap-layout";
 
 function seeded(seed: number) {
   let value = seed;
@@ -9,19 +9,23 @@ function seeded(seed: number) {
   };
 }
 
-describe("Fake Tap layout", () => {
-  it("places 3–4 numbered circles inside the area without overlap", () => {
+describe("Fake Tap grid", () => {
+  it("has one numbered tile per target the real picker would show, in shuffled order", () => {
+    let shuffled = false;
     for (let seed = 1; seed <= 200; seed += 1) {
-      const targets = makeTapSequence(seeded(seed));
-      expect(targets.length === 3 || targets.length === 4).toBe(true);
-      expect(targets.map((target) => target.number)).toEqual(targets.map((_, index) => index + 1));
-      for (const target of targets) {
-        expect(target.x).toBeGreaterThanOrEqual(12);
-        expect(target.x).toBeLessThanOrEqual(88);
-        expect(target.y).toBeGreaterThanOrEqual(14);
-        expect(target.y).toBeLessThanOrEqual(86);
-      }
-      for (const a of targets) for (const b of targets) if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(24);
+      const size = 3 + (seed % 12);
+      const grid = makeTapGrid(size, seeded(seed));
+      expect(grid.tiles).toHaveLength(size);
+      expect([...grid.tiles].sort((a, b) => a - b)).toEqual(Array.from({ length: size }, (_, index) => index + 1));
+      expect(grid.goal === 3 || grid.goal === 4).toBe(true);
+      expect(grid.goal).toBeLessThanOrEqual(size);
+      if (grid.tiles.some((number, index) => number !== index + 1)) shuffled = true;
     }
+    expect(shuffled).toBe(true);
+  });
+
+  it("keeps the grid between 3 and 16 tiles", () => {
+    expect(makeTapGrid(0, seeded(1)).tiles).toHaveLength(FAKE_TAP_MIN_TILES);
+    expect(makeTapGrid(99, seeded(1)).tiles).toHaveLength(FAKE_TAP_MAX_TILES);
   });
 });
