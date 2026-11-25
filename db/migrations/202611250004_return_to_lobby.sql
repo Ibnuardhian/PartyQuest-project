@@ -3,8 +3,6 @@
 -- normal ready + start flow. Members track their return with lobby_at: a member is back once
 -- lobby_at is at or after the latest round's finished_at. Shared by every game.
 alter table public.room_members add column lobby_at timestamptz not null default now();
--- Members of rooms that are already finished when this runs have not "returned" yet, so they go through the same flow.
-update public.room_members set lobby_at = '-infinity'::timestamptz;
 
 -- Internal: flips a finished room to the lobby when nobody is still on a result screen (or when forced).
 create function public.open_lobby_if_ready(p_room_id uuid, p_force boolean)
@@ -39,10 +37,7 @@ begin
   select * into v_room from public.game_rooms r where r.id = p_room_id for update;
   if not found then raise exception 'room_not_found'; end if;
   if v_room.status = 'lobby' then return 'lobby'; end if;
-  if v_room.status = 'abandoned' then raise exception 'room_not_found'; end if;
   if v_room.status <> 'finished' then raise exception 'room_in_progress'; end if;
-  -- Someone coming back is activity: keep the finished room from being cleaned up while players are still arriving.
-  update public.game_rooms set status = status where id = p_room_id;
   if p_force and v_room.host_user_id <> p_user_id then raise exception 'host_required'; end if;
   update public.room_members m set lobby_at = now() where m.room_id = p_room_id and m.user_id = p_user_id and m.left_at is null;
   if not found then raise exception 'not_a_member'; end if;
