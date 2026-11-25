@@ -70,8 +70,7 @@ h1 em, h2 em { color: var(--green); font-weight: 500; }
 .qr-code figcaption { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .catalog-page .topbar, .catalog-page .footer { border-color: #1e293b; }
 .catalog-page .brand, .catalog-page .topbar-note { color: #e2e8f0; }
-.catalog-page .online-link { border-color: #334155; background: #1e293b; color: #f1f5f9; }
-.catalog-page .online-link:hover { background: #334155; }
+@media (max-width: 640px) { .catalog-page .topbar-note { display: none; } }
 .catalog-page .eyebrow { color: #94a3b8; }
 .catalog-page .catalog-heading h1 { color: #f8fafc; }
 .catalog-page .catalog-heading h1 em { color: #7dd3c0; }
@@ -81,3 +80,6 @@ h1 em, h2 em { color: var(--green); font-weight: 500; }
 /* Catalog home uses the dark level-0 canvas shared with the game screens. */
 body:has(.catalog-page) { background-color: #050914; color: #cbd5e1; }
 .catalog-coming-symbol { position: absolute; top: 18px; right: 24px; color: #334155; font: 44px/1 Georgia, serif; }
+
+/* In-game top lines: the lobby/setup link and the catalog link sit together on the left. */
+.topline-links { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; }

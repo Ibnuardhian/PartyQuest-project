@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { GameCatalogCard, GameCatalogGrid } from "@/components/catalog/game-catalog-card";
+import { QuickJoinRoom } from "@/components/catalog/quick-join-room";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
-import { defaultOnlineGame, gameModules } from "@/games/registry";
+import { gameModules } from "@/games/registry";
 
 const COMING_SOON = ["Game berikutnya", "Game baru lainnya"];
 
@@ -11,7 +11,7 @@ export default function GameCatalog() {
     <SiteHeader>
       <div className="topbar-actions">
         <span className="topbar-note"><span className="live-dot" /> Kumpulan game untuk dimainkan bersama</span>
-        {defaultOnlineGame?.onlineSetupHref && <Link className="online-link" href={defaultOnlineGame.onlineSetupHref}>Online Room ↗</Link>}
+        <QuickJoinRoom />
       </div>
     </SiteHeader>
     <section className="catalog-wrap" id="beranda">
