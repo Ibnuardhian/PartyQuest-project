@@ -29,5 +29,7 @@ export interface GameModule {
   /** Host-only lobby editor for room settings; saved through PATCH /api/rooms/[code]/settings. */
   RoomSettingsEditor?: ComponentType<RoomSettingsEditorProps>;
   /** Human-readable room settings for the lobby. */
+  /** Short format badge for the invite preview (e.g. a game variant); null when the game has a single format. */
+  roomModeLabel?(settings: unknown): string | null;
   describeRoomSettings?(settings: unknown): Array<{ label: string; value: string }>;
 }

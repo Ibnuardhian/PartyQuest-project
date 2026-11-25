@@ -151,3 +151,24 @@ body:has(.catalog-page) { background-color: #050914; color: #cbd5e1; }
 .lb-danger { background: #8b1111; }
 .lb-host-notice { text-align: center; justify-items: center; }.lb-host-notice .lb-confirm-actions { justify-content: center; width: 100%; }
 .lb-host-icon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-size: 28px; color: #fff; background: #8b1111; box-shadow: 0 0 0 6px rgba(139, 17, 17, .15); }
+
+/* Direct join screen (/room/[code]): centered card with a live room preview. Theme tokens per game below. */
+.lj-page { flex: 1; min-height: calc(100dvh - 64px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; }
+.lj-crumbs { width: 100%; max-width: 448px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; font-size: 11px; letter-spacing: .06em; }
+.lj-back { background: none; border: 0; padding: 0; cursor: pointer; font-size: 12px; letter-spacing: 0; text-decoration: none; }
+.lj-card { width: 100%; max-width: 448px; padding: 24px; display: flex; flex-direction: column; gap: 14px; border-radius: 4px; }
+.lj-title { margin: 0; font: 500 24px/1.2 Georgia, serif; letter-spacing: 0; }
+.lj-code { font-weight: 700; letter-spacing: .14em; margin-left: 6px; }
+.lj-sub { margin: 0; font-size: 14px; line-height: 1.5; }
+.lj-meta { border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.lj-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.lj-pill { font-size: 12px; font-weight: 650; }.lj-pill.ok { color: #0f9d63; }.lj-pill.warn { color: #c77700; }.lj-pill.full { color: #d92d20; }
+.lj-mode { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.lj-count { font-variant-numeric: tabular-nums; }
+.lj-form { display: flex; flex-direction: column; gap: 8px; }
+.lj-label { font-size: 12px; font-weight: 650; }
+.lj-input { height: 44px; padding: 0 12px; border-radius: 8px; font-size: 16px; outline: none; width: 100%; }
+.lj-cta { height: 44px; border: 0; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: background .15s; }
+.lj-cta:disabled { cursor: not-allowed; }
+.lj-cta-link { width: 100%; }
+@media (max-width: 520px) { .lj-card { padding: 18px; } }

@@ -212,3 +212,18 @@ body:has(.ww-is-night) { background: #000; }
 
 /* Catalog banner motif: midnight sky with a crescent moon (inside the unified card). */
 .ww-catalog-banner { background: radial-gradient(circle at 78% 28%, #0f2a44 0, transparent 42%), radial-gradient(circle at 75% 30%, #0f172a 0, #020617 64%); }
+
+/* Direct join screen: midnight OLED cyan. */
+.werewolf-theme .lj-crumbs { color: #94a3b8; }.werewolf-theme .lj-back { color: #94a3b8; }.werewolf-theme .lj-back:hover { color: #67e8f9; }
+.werewolf-theme .lj-card { background: #0b121e; border: 1px solid rgba(6, 182, 212, .25); box-shadow: 0 24px 60px rgba(0, 0, 0, .6); color: #f1f5f9; }
+.werewolf-theme .lj-title { color: #f1f5f9; }.werewolf-theme .lj-code { color: #22d3ee; }.werewolf-theme .lj-sub { color: #94a3b8; }
+.werewolf-theme .lj-meta { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .1); color: #94a3b8; }
+.werewolf-theme .lj-host b, .werewolf-theme .lj-count b { color: #f1f5f9; font-weight: 700; }
+.werewolf-theme .lj-mode { color: #22d3ee; }
+.werewolf-theme .lj-label { color: #f1f5f9; }
+.werewolf-theme .lj-input { background: #060a12; border: 1px solid rgba(255, 255, 255, .15); color: #f1f5f9; border-radius: 8px; }
+.werewolf-theme .lj-input::placeholder { color: #64748b; }
+.werewolf-theme .lj-input:focus { border-color: #22d3ee; box-shadow: 0 0 0 2px rgba(34, 211, 238, .2); }
+.werewolf-theme .lj-input:disabled { opacity: .6; }
+.werewolf-theme .lj-cta { background: #06b6d4; color: #020617; }.werewolf-theme .lj-cta:hover:not(:disabled) { background: #22d3ee; }
+.werewolf-theme .lj-cta:disabled { background: rgba(255, 255, 255, .1); color: #64748b; }

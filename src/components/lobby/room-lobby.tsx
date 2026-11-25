@@ -4,12 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatalogLink } from "@/components/site/catalog-link";
 import { QrCode } from "@/components/site/qr-code";
-import { ConnectionNote, SiteFooter, SiteHeader } from "@/components/site/site-chrome";
+import { ConnectionNote, SiteHeader } from "@/components/site/site-chrome";
 import { getGameModule } from "@/games/registry";
 import { ensureBrowserGuest } from "@/lib/auth/browser-guest";
 import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
 
 interface Member { user_id: string; display_name: string; seat_no: number; is_ready: boolean; is_alive: boolean; online: boolean; }
+interface RoomPreview { code: string; hostName: string; playerCount: number; maxPlayers: number; status: string; settings: unknown }
 interface RoomData {
   room: { id: string; code: string; gameKey: string; status: "lobby" | "in_progress" | "finished" | "abandoned"; settings: unknown; expiresAt: string; maxPlayers: number };
   members: Member[];
@@ -35,6 +36,9 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const [qrOpen, setQrOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [hostNotice, setHostNotice] = useState(false);
+  const [preview, setPreview] = useState<RoomPreview | null>(null);
+  const [roomGone, setRoomGone] = useState(false);
+  const nameInput = useRef<HTMLInputElement>(null);
   const guardOn = useRef(true);
   const wasHost = useRef<boolean | null>(null);
   const isMember = Boolean(room);
@@ -42,11 +46,13 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const load = useCallback(async (redirect = true) => {
     try {
       const response = await fetch(`/api/rooms/${code}`, { cache: "no-store" });
-      const payload = await response.json() as { data?: RoomData; error?: { message?: string; code?: string; gameKey?: string } };
+      const payload = await response.json() as { data?: RoomData; error?: { message?: string; code?: string; gameKey?: string; preview?: RoomPreview } };
       if (!response.ok || !payload.data) {
         setRoom(null);
         // The game key is public (anyone with the code can join), so the join form can wear the game's theme.
         if (payload.error?.gameKey) setGameKey(payload.error.gameKey);
+        setPreview(payload.error?.preview ?? null);
+        setRoomGone(payload.error?.code === "room_not_found" || payload.error?.code === "room_expired" || payload.error?.preview?.status === "abandoned");
         if (payload.error?.code === "not_a_member") setError("");
         else setError(payload.error?.message ?? "Room belum dapat dimuat.");
         setConnection("Belum terhubung");
@@ -164,6 +170,11 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   }, [isMember]);
 
   const game = gameKey ? getGameModule(gameKey) : null;
+  const showJoin = !room;
+  useEffect(() => {
+    // Desktop: ready to type straight away. Touch devices keep the keyboard closed until tapped.
+    if (showJoin && nameInput.current && window.matchMedia("(pointer: fine)").matches) nameInput.current.focus();
+  }, [showJoin, roomGone, preview?.code]);
   const me = room?.members.find((member) => member.user_id === room.currentUserId);
   const minPlayers = 3;
   const readyCount = room?.members.filter((member) => member.is_ready).length ?? 0;
@@ -173,11 +184,41 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const settingsItems = room ? (game?.describeRoomSettings?.(room.room.settings) ?? []) : [];
   const editable = Boolean(room?.isHost && status === "lobby" && game?.RoomSettingsEditor);
 
+  const themeClass = game?.themeClass ? ` ${game.themeClass}` : "";
+  if (!room) {
+    const joinable = preview ? preview.status !== "in_progress" && preview.playerCount < preview.maxPlayers : true;
+    const pill = !preview ? null : preview.status === "in_progress" ? { tone: "warn", text: "Sedang bermain" } : preview.playerCount >= preview.maxPlayers ? { tone: "full", text: "Room penuh" } : preview.status === "finished" ? { tone: "ok", text: "Ronde selesai · bisa bergabung" } : { tone: "ok", text: "Menunggu di lobi" };
+    const modeLabel = preview ? game?.roomModeLabel?.(preview.settings) ?? null : null;
+    return <main className={`page-shell${themeClass}`}><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
+      <section className="lj-page">
+        <div className="lj-crumbs"><CatalogLink className="lj-back">← Kembali ke katalog</CatalogLink><span>ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span></div>
+        <div className="lj-card">
+          {roomGone ? <>
+            <h1 className="lj-title">Room tidak ditemukan atau sudah berakhir</h1>
+            <p className="lj-sub">Periksa kembali kodenya, atau minta host membuat room baru.</p>
+            <CatalogLink className="lj-cta lj-cta-link">Kembali ke katalog</CatalogLink>
+          </> : <>
+            <h1 className="lj-title">Gabung Room <span className="lj-code">{code}</span></h1>
+            {preview && pill && <div className="lj-meta">
+              <div className="lj-meta-row"><span className={`lj-pill ${pill.tone}`}>● {pill.text}</span>{modeLabel && <span className="lj-mode">{modeLabel}</span>}</div>
+              <div className="lj-meta-row"><span className="lj-host">👑 Host: <b>{preview.hostName || "—"}</b></span><span className="lj-count">👥 <b>{preview.playerCount}/{preview.maxPlayers}</b> pemain</span></div>
+            </div>}
+            {error && <p className="error-message" role="alert">{error}</p>}
+            <form className="lj-form" onSubmit={joinRoom}>
+              <label className="lj-label" htmlFor="lobby-name">Nama tampilan</label>
+              <input id="lobby-name" ref={nameInput} className="lj-input" maxLength={24} autoComplete="nickname" value={displayName} disabled={!joinable} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" />
+              <button className="lj-cta" disabled={busy || !displayName.trim() || !joinable}>{joinable ? "Gabung →" : preview?.status === "in_progress" ? "Permainan sedang berjalan" : "Room penuh"}</button>
+            </form>
+          </>}
+        </div>
+      </section></main>;
+  }
+
   // The lobby wears the game's own theme so it matches its catalog card and in-game screens.
   return <main className={`page-shell${game?.themeClass ? ` ${game.themeClass}` : ""}`}><SiteHeader><ConnectionNote label={connection} /></SiteHeader>
     <section className="lb-wrap">
-      <div className="lb-bar">{!room && <CatalogLink className="text-button catalog-back">← Kembali ke katalog</CatalogLink>}<span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span>{room && <span className="lb-state">{status === "finished" ? "Ronde selesai" : status === "in_progress" ? "Permainan berjalan" : "Menunggu pemain"}</span>}</div>
-      {!room ? <section className="setup-card lobby-card lb-join"><div className="lb-bar-code">Room <em>{code}</em></div>{error && <p className="error-message" role="alert">{error}</p>}<h2>Gabung ke room</h2><form className="action-form" onSubmit={joinRoom}><label className="field-label" htmlFor="lobby-name">Nama tampilan</label><input id="lobby-name" maxLength={24} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Nama yang dilihat teman" /><button className="primary-button" disabled={busy || !displayName.trim()}>Gabung <span>→</span></button></form></section>
+      <div className="lb-bar"><span className="section-kicker">ONLINE ROOM{game ? ` · ${game.title.toUpperCase()}` : ""}</span>{room && <span className="lb-state">{status === "finished" ? "Ronde selesai" : status === "in_progress" ? "Permainan berjalan" : "Menunggu pemain"}</span>}</div>
+      {!room ? null
         : <div className="lb-grid">
           <section className="setup-card lb-card lb-settings" aria-label="Pengaturan ronde">
             <div className="lb-card-head"><span className="section-kicker">{editable ? "PENGATURAN RONDE" : "ATURAN RONDE AKTIF"}</span>{!room.isHost && <span className="lb-badge">Diatur oleh Host</span>}</div>
@@ -226,5 +267,5 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
       <div className="lb-confirm-actions"><button type="button" className="secondary-button" onClick={() => setLeaveOpen(false)}>Tetap di room</button><button type="button" className="lb-btn lb-danger" disabled={busy} onClick={() => void confirmLeave()}>Ya, keluar</button></div>
     </div></div>}
     {qrOpen && room && <div className="lb-modal" role="dialog" aria-modal="true" aria-label="Kode QR room" onClick={() => setQrOpen(false)}><div className="lb-modal-card" onClick={(event) => event.stopPropagation()}><QrCode path={`/room/${room.room.code}`} label={`Room ${room.room.code}`} /><button type="button" className="secondary-button" onClick={() => setQrOpen(false)}>Tutup</button></div></div>}
-    {!room && <SiteFooter left="LOBI" right="Sesi guest tersimpan di browser ini" />}</main>;
+    </main>;
 }

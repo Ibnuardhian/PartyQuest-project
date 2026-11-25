@@ -16,7 +16,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
     const room = await findRoomByCode(code);
     if (!room) return apiError(404, "room_not_found", "Room tidak ditemukan.");
     if (room.expires_at.getTime() <= Date.now()) return apiError(410, "room_expired", "Room ini sudah kedaluwarsa.");
-    if (!(await isActiveMember(room.id, guest.userId))) return apiError(403, "not_a_member", "Gabung ke room ini untuk melihat lobi.", { gameKey: room.game_key });
+    if (!(await isActiveMember(room.id, guest.userId))) {
+      // Invite preview for the join screen: public room facts only (no members' ids, no private state).
+      const roster = await listActiveMembers(room.id);
+      const host = roster.find((member) => member.user_id === room.host_user_id);
+      return apiError(403, "not_a_member", "Gabung ke room ini untuk melihat lobi.", {
+        gameKey: room.game_key,
+        preview: { code: room.code, hostName: host?.display_name ?? "", playerCount: roster.length, maxPlayers: room.max_players, status: room.status, settings: room.settings },
+      });
+    }
     await touchMember(room.id, guest.userId);
     const [members, session, tvConnected] = await Promise.all([listActiveMembers(room.id), findLatestSession(room.id), isTvConnected(room.id)]);
     const scores: Record<string, number> = {};

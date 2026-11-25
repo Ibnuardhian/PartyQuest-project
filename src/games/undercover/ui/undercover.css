@@ -188,6 +188,7 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
   .uc-hero .form-field select, .uc-hero .online-text-input, .uc-hero .primary-button, .uc-hero .secondary-button, .uc-hero .cs-trigger, .uc-hero .mode-option { min-height: 42px; }
   .uc-hero .form-field select, .uc-hero .online-text-input, .uc-hero .primary-button { height: 42px; }
 }
+
 /* Lobby cards sit on the light dossier surface, so text inside must use dark ink, never the theme's light page ink. */
 .undercover-theme .lb-card { --ink: #141923; --muted: #5c5449; --line: rgba(20, 25, 35, .15); --paper: #e5e0d8; color: #141923; }
 .undercover-theme .lb-card .lb-name { color: #141923; font-weight: 600; }
@@ -210,3 +211,18 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .lb-card .toggle-row small { color: #5c5449; }
 .undercover-theme .lb-card .lb-save:not(.dirty) { color: #5c5449; border-color: rgba(20, 25, 35, .3); }
 .undercover-theme .lb-card .lb-start:disabled { background: rgba(20, 25, 35, .12); color: rgba(20, 25, 35, .6); }
+
+/* Direct join screen: dossier light paper. */
+.undercover-theme .lj-crumbs { color: #aca69d; }.undercover-theme .lj-back { color: #c6c0b5; }.undercover-theme .lj-back:hover { color: #fff; }
+.undercover-theme .lj-card { background: #eae3d5; border: 1px solid rgba(20, 25, 35, .2); box-shadow: 0 24px 70px #000b; color: #141923; }
+.undercover-theme .lj-title { color: #141923; }.undercover-theme .lj-code { color: #8b1e1e; }.undercover-theme .lj-sub { color: #5c5449; }
+.undercover-theme .lj-meta { background: rgba(20, 25, 35, .05); border: 1px solid rgba(20, 25, 35, .15); color: #5c5449; }
+.undercover-theme .lj-host b, .undercover-theme .lj-count b { color: #141923; font-weight: 700; }
+.undercover-theme .lj-mode { color: #5c5449; }
+.undercover-theme .lj-label { color: #141923; }
+.undercover-theme .lj-input { background: rgba(255, 255, 255, .75); border: 1px solid rgba(20, 25, 35, .25); color: #141923; border-radius: 8px; }
+.undercover-theme .lj-input::placeholder { color: #7a7267; }
+.undercover-theme .lj-input:focus { border-color: #8b1e1e; box-shadow: 0 0 0 2px rgba(139, 30, 30, .2); }
+.undercover-theme .lj-input:disabled { opacity: .6; }
+.undercover-theme .lj-cta { background: #8b1e1e; color: #fff; }.undercover-theme .lj-cta:hover:not(:disabled) { background: #721616; }
+.undercover-theme .lj-cta:disabled { background: rgba(20, 25, 35, .15); color: rgba(20, 25, 35, .4); }
