@@ -70,7 +70,7 @@ export default function UndercoverSetup() {
     setError("");
     setOnlineMessage("");
     // In-place tab switch: keep the URL in sync without a navigation, a flash, or a scroll reset.
-    window.history.replaceState(window.history.state, "", mode === "online" ? UNDERCOVER_ONLINE_SETUP_PATH : UNDERCOVER_SETUP_PATH);
+    window.history.replaceState(null, "", mode === "online" ? UNDERCOVER_ONLINE_SETUP_PATH : UNDERCOVER_SETUP_PATH);
   }
 
   async function submitOnlineRoom(event: FormEvent<HTMLFormElement>, mode: "create" | "join") {
