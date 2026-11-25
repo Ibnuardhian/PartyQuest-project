@@ -42,6 +42,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const guardOn = useRef(true);
   const wasHost = useRef<boolean | null>(null);
   const returnSent = useRef<string | null>(null);
+  const [returnRetry, setReturnRetry] = useState(0);
   const isMember = Boolean(room);
 
   const load = useCallback(async (redirect = true) => {
@@ -146,8 +147,11 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   useEffect(() => {
     if (!needsReturn || returnSent.current === roundKey) return;
     returnSent.current = roundKey;
-    void fetch(`/api/rooms/${code}/return`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(() => load(false)).catch(() => { returnSent.current = null; });
-  }, [needsReturn, roundKey, code, load]);
+    const retryLater = () => { returnSent.current = null; window.setTimeout(() => setReturnRetry((count) => count + 1), 3000); };
+    void fetch(`/api/rooms/${code}/return`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then((response) => { if (response.ok) return load(false); retryLater(); })
+      .catch(retryLater);
+  }, [needsReturn, roundKey, code, load, returnRetry]);
 
   // The host role moves when the host leaves; tell the player who just received it.
   const isHostNow = room?.isHost;

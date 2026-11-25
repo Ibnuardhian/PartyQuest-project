@@ -241,6 +241,28 @@ suite("PostgreSQL room functions", () => {
       });
     });
 
+    it("moves the host and opens the lobby when the host is the last one not back and leaves", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[1]]);
+        await client.query("select return_to_lobby($1, $2)", [room.id, ids[2]]);
+        expect(await statusOf(room.id)).toBe("finished");
+        await client.query("select leave_room($1, $2)", [room.id, ids[0]]);
+        expect(await statusOf(room.id)).toBe("lobby");
+        const host = await client.query<{ host_user_id: string }>("select host_user_id from game_rooms where id = $1", [room.id]);
+        expect(host.rows[0]!.host_user_id).toBe(ids[1]);
+      });
+    });
+
+    it("treats a room everyone left as abandoned and refuses to return to it", async () => {
+      await inRollback(async () => {
+        const { room, ids } = await finishedRoom();
+        for (const id of ids) await client.query("select leave_room($1, $2)", [room.id, id]);
+        expect(await statusOf(room.id)).toBe("abandoned");
+        expect(await errorOf(client.query("select return_to_lobby($1, $2)", [room.id, ids[0]]))).toContain("room_not_found");
+      });
+    });
+
     it("opens the lobby when the last member still on the result screen leaves", async () => {
       await inRollback(async () => {
         const { room, ids } = await finishedRoom();
