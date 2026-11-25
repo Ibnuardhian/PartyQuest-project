@@ -9,6 +9,7 @@ import type { ClassicRole } from "@/games/werewolf/contract";
 import { FakeTap } from "@/games/werewolf/ui/fake-tap";
 import { FACTION_LABELS, isNightPhase, PHASE_LABELS, roleName, type WerewolfSnapshot } from "@/games/werewolf/ui/labels";
 import { NightActionPanel } from "@/games/werewolf/ui/night-actions";
+import { HunterShot } from "@/games/werewolf/ui/hunter-shot";
 import { RoleCard } from "@/games/werewolf/ui/role-card";
 import { formatSeconds, useCountdown } from "@/games/werewolf/ui/use-countdown";
 import { useNarration } from "@/games/werewolf/ui/use-narration";
@@ -118,7 +119,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
           {!view.you.alive && <DeadView view={view} nameOf={nameOf} />}
           <DayAnnouncement view={view} nameOf={nameOf} />
           {phase === "HUNTER_REVENGE" && (view.public.hunterId === view.you.playerId
-            ? <><h2>Tembakan terakhirmu</h2><p className="ww-muted">Pilih satu pemain untuk ikut gugur bersamamu.</p><div className="ww-targets">{view.public.players.filter((player) => player.alive && player.id !== view.you.playerId).map((player) => <button key={player.id} type="button" className="ww-target" disabled={busy} onClick={() => void perform({ type: "hunter-shot", targetId: player.id })}>{player.name}</button>)}</div></>
+            ? <HunterShot targets={view.public.players.filter((player) => player.alive && player.id !== view.you.playerId)} busy={busy} onShoot={(targetId) => perform({ type: "hunter-shot", targetId })} />
             : <h2>Sang Pemburu sedang membidik…</h2>)}
           {phase === "DAY_DISCUSSION" && <>
             <h2>Diskusikan secara langsung</h2>
