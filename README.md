@@ -158,3 +158,7 @@ Platform (katalog, lobi, API room, auth, database) tidak berisi aturan game. Unt
 ## Status pemeriksaan
 
 Diverifikasi di Docker: `npm test` (30 test, termasuk 6 test integrasi PostgreSQL), `typecheck`, `lint`, dan `npm run build`. Smoke test API end-to-end dengan tiga sesi tamu juga dijalankan pada Compose lokal: buat/gabung/siap/mulai, view privat per pemain, penolakan non-host, nama duplikat, konflik versi, aksi palsu, keluar saat ronde berjalan, cookie palsu, dan stream SSE. Uji UI dua perangkat di browser dan deployment Vercel belum diverifikasi.
+
+## Atribusi
+
+Ikon role Werewolf (`src/games/werewolf/ui/role-icons.ts`) berasal dari [Game-Icons.net](https://game-icons.net) oleh Lorc, Delapouite, Carl Olsen, dan DarkZaitzev, berlisensi [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Atribusi ditampilkan di bawah daftar role.
