@@ -101,17 +101,17 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
     <SiteHeader><ConnectionNote label={connection} /></SiteHeader>
     <section className="ww-game">
       <div className="ww-topline">
-        <span className="topline-links"><button type="button" className="text-button" onClick={() => router.push(`/room/${roomCode}`)}>← Lobi</button><CatalogLink /></span>
+        <span className="topline-links"><button type="button" className="text-button" onClick={() => router.push(`/room/${roomCode}`)}>← Lobi</button><span aria-hidden="true">{"\u00b7"}</span><CatalogLink /></span>
         <span>ROOM {roomCode}{view ? ` · ${view.public.dayNumber > 0 ? `HARI ${view.public.dayNumber}` : `MALAM ${Math.max(1, view.public.nightNumber)}`}` : ""}</span>
       </div>
 
       {!view || !phase ? <div className="ww-panel"><span className="section-kicker">MEMUAT</span><h2>Menyiapkan desa…</h2>{error && <p className="ww-alert" role="alert">{error}</p>}</div> : <>
-        <header className="ww-phase">
+        {phase !== "GAME_OVER" && <header className="ww-phase">
           <span className="section-kicker">{PHASE_LABELS[phase]}{view.public.activeNightRole && phase === "NIGHT_TURN" && (view.you.isMyTurn || !view.you.alive) ? ` · ${roleName(view.public.activeNightRole)}` : ""}</span>
           {secondsLeft !== null && (narratorSpeaking
             ? <span className="ww-timer ww-timer-wait" role="status">Narator berbicara…</span>
             : <time className="ww-timer" aria-label={`Sisa waktu ${secondsLeft} detik`}>{view.public.overtime ? "Waktu tambahan " : ""}{formatSeconds(secondsLeft)}</time>)}
-        </header>
+        </header>}
 
         {view.notices.map((notice) => <p key={notice} className="ww-notice" role="status">{notice}</p>)}
 
@@ -196,7 +196,7 @@ function DayAnnouncement({ view, nameOf }: ViewProps) {
 }
 
 function VoteMatrix({ reveal, nameOf }: { reveal: NonNullable<WerewolfSnapshot["public"]["lastVoteReveal"]>; nameOf: ViewProps["nameOf"] }) {
-  return <ul className="ww-matrix" aria-label="Hasil voting terbuka">{reveal.map((vote) => <li key={vote.voterId}><span>{nameOf(vote.voterId)}</span><span aria-hidden="true">→</span><strong>{vote.targetId ? nameOf(vote.targetId) : "Abstain"}</strong>{vote.weight > 1 && <small>×{vote.weight}</small>}</li>)}</ul>;
+  return <ul className="ww-matrix" aria-label="Hasil voting terbuka">{reveal.map((vote) => <li key={vote.voterId}><span>{nameOf(vote.voterId)}</span><span aria-hidden="true">→</span><strong>{vote.targetId ? nameOf(vote.targetId) : "tidak memilih"}</strong>{vote.weight > 1 && <small>×{vote.weight}</small>}</li>)}</ul>;
 }
 
 function Voting({ view, busy, perform, nameOf }: ViewProps & { busy: boolean; perform: (action: Record<string, unknown>) => Promise<void> }) {
@@ -209,8 +209,8 @@ function Voting({ view, busy, perform, nameOf }: ViewProps & { busy: boolean; pe
     <p className="ww-muted">Pilihan tersembunyi sampai semua memilih, lalu dibuka bersamaan.</p>
     {canVote && <div className="ww-targets">
       {candidates.map((player) => <button key={player.id} type="button" className={`ww-target${view.you.myVote === player.id ? " is-selected" : ""}`} aria-pressed={view.you.myVote === player.id} disabled={busy} onClick={() => void perform({ type: "vote", targetId: player.id })}>{player.name}</button>)}
-      <button type="button" className={`ww-target${view.you.myVote === null ? " is-selected" : ""}`} aria-pressed={view.you.myVote === null} disabled={busy} onClick={() => void perform({ type: "vote", targetId: null })}>Abstain</button>
     </div>}
+    {canVote && <button type="button" className={`ww-target ww-abstain${view.you.myVote === null ? " is-selected" : ""}`} aria-pressed={view.you.myVote === null} disabled={busy} onClick={() => void perform({ type: "vote", targetId: null })}>tidak memilih</button>}
     <ul className="ww-voted" aria-label="Status voting">{eligible.map((player) => <li key={player.id} className={view.public.votedPlayerIds.includes(player.id) ? "is-voted" : ""}>{view.public.votedPlayerIds.includes(player.id) ? "✓" : "…"} {nameOf(player.id)}</li>)}</ul>
   </>;
 }
@@ -218,23 +218,42 @@ function Voting({ view, busy, perform, nameOf }: ViewProps & { busy: boolean; pe
 function GameOver({ view, nameOf, onLobby }: ViewProps & { onLobby: () => void }) {
   const winner = view.public.winner;
   const roles = view.public.finalRoles ?? {};
-  return <div className="ww-panel">
-    <span className="section-kicker">PERMAINAN SELESAI</span>
-    <h2>{winner ? `${FACTION_LABELS[winner.faction]} menang!` : "Permainan selesai"}</h2>
-    <p className="ww-muted">{view.public.winReason}</p>
-    {view.public.lastVoteReveal && view.public.lastVoteReveal.length > 0 && <VoteMatrix reveal={view.public.lastVoteReveal} nameOf={nameOf} />}
-    <ul className="ww-role-list">{view.public.players.map((player) => {
-      const role = roles[player.id] as ClassicRole | undefined;
-      const original = view.public.originalRoles?.[player.id] as ClassicRole | undefined;
-      return <li key={player.id} className={winner?.playerIds.includes(player.id) ? "is-winner" : ""}><span>{player.name}{player.alive ? "" : " †"}</span><strong>{role ? roleName(role) : "—"}{original && original !== role ? ` (awalnya ${roleName(original)})` : ""}</strong></li>;
-    })}</ul>
-    {view.public.lovers && <p className="ww-muted">Sepasang kekasih: {view.public.lovers.map(nameOf).join(" & ")}</p>}
-    <ol className="ww-timeline" aria-label="Linimasa permainan">{view.public.log.map((entry, index) => <li key={index}>{
-      entry.type === "DAWN" ? `Malam ${entry.night}: ${entry.deadPlayerIds.length ? `${entry.deadPlayerIds.map(nameOf).join(", ")} tewas` : "tidak ada korban"}`
-        : entry.type === "EXECUTION" ? `Hari ${entry.day}: ${entry.playerId ? `${nameOf(entry.playerId)} dieksekusi` : "tidak ada eksekusi"}`
-          : entry.type === "HUNTER" ? `Pemburu ${nameOf(entry.hunterId)} ${entry.targetId ? `menembak ${nameOf(entry.targetId)}` : "tidak menembak"}`
-            : `${nameOf(entry.playerId)} tereliminasi karena AFK`
-    }</li>)}</ol>
+  const faction = winner?.faction;
+  const tone = faction === "VILLAGER" ? "village" : faction === "WEREWOLF" ? "werewolf" : "neutral";
+  return <div className="ww-game-over">
+    <section className={`ww-victory ww-victory-${tone}`}>
+      <span className="section-kicker">PERMAINAN SELESAI</span>
+      <h2>{winner ? `${FACTION_LABELS[winner.faction]} menang!` : "Permainan selesai"}</h2>
+      <p>{view.public.winReason}</p>
+      {winner && <div className="ww-winners"><span>Pemenang:</span>{view.public.players.filter((player) => winner.playerIds.includes(player.id)).map((player) => <span className="ww-winner-pill" key={player.id}>{"\uD83C\uDFC6"} {player.name}</span>)}</div>}
+    </section>
+    <div className="ww-summary-grid">
+      <section className="ww-summary-card ww-identity">
+        <header><span className="section-kicker">IDENTITAS SEMUA PEMAIN</span><span className="ww-count-badge">{view.public.players.length} pemain</span></header>
+        <ul className="ww-role-list">{view.public.players.map((player) => {
+          const role = roles[player.id] as ClassicRole | undefined;
+          const original = view.public.originalRoles?.[player.id] as ClassicRole | undefined;
+          const winning = winner?.playerIds.includes(player.id);
+          const roleTone = role && ["WEREWOLF", "ALPHA_WOLF", "DIRE_WOLF", "LONE_WOLF", "DREAM_WOLF"].includes(role) ? "is-wolf" : role && ["TANNER", "VAMPIRE"].includes(role) ? "is-neutral" : "is-village";
+          return <li key={player.id} className={`ww-player-card${player.alive ? "" : " is-eliminated"}`}>
+            <div className="ww-player-info"><span className="ww-avatar">{player.name.slice(0, 1).toLocaleUpperCase("id-ID")}</span><span className="ww-player-name">{player.name}<small className={player.alive ? "is-alive" : "is-dead"}>{player.alive ? "Bertahan hidup" : "Gugur \u2020"}</small></span></div>
+            <span className="ww-player-role"><strong className={`ww-role-badge ${roleTone}`}>{role ? roleName(role) : "\u2014"}{original && original !== role ? ` (awalnya ${roleName(original)})` : ""}</strong>{winning && <small className="ww-win-tag">MENANG</small>}</span>
+          </li>;
+        })}</ul>
+        {view.public.lovers && <p className="ww-muted">Sepasang kekasih: {view.public.lovers.map(nameOf).join(" & ")}</p>}
+      </section>
+      <div className="ww-summary-side">
+        <section className="ww-summary-card"><header><span className="section-kicker">HASIL VOTING TERAKHIR</span><span className="ww-count-badge">HARI {view.public.dayNumber}</span></header>{view.public.lastVoteReveal?.length ? <VoteMatrix reveal={view.public.lastVoteReveal} nameOf={nameOf} /> : <p className="ww-muted">Tidak ada voting.</p>}</section>
+        <section className="ww-summary-card"><header><span className="section-kicker">RIWAYAT PERMAINAN</span></header>
+          <ol className="ww-timeline" aria-label="Linimasa permainan">{view.public.log.map((entry, index) => <li key={index}>{
+            entry.type === "DAWN" ? `Malam ${entry.night}: ${entry.deadPlayerIds.length ? `${entry.deadPlayerIds.map(nameOf).join(", ")} tewas` : "tidak ada korban"}`
+              : entry.type === "EXECUTION" ? `Hari ${entry.day}: ${entry.playerId ? `${nameOf(entry.playerId)} dieksekusi` : "tidak ada eksekusi"}`
+                : entry.type === "HUNTER" ? `Pemburu ${nameOf(entry.hunterId)} ${entry.targetId ? `menembak ${nameOf(entry.targetId)}` : "tidak menembak"}`
+                  : `${nameOf(entry.playerId)} tereliminasi karena AFK`
+          }</li>)}</ol>
+        </section>
+      </div>
+    </div>
     <button type="button" className="ww-button ww-primary" onClick={onLobby}>Kembali ke lobi untuk main ulang</button>
   </div>;
 }

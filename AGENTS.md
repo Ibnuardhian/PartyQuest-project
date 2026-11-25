@@ -18,7 +18,7 @@ The MVP supports:
 - Tailwind CSS
 - Plain PostgreSQL through `pg` (server-only); no Supabase
 - Signed HttpOnly guest cookies for anonymous auth
-- Microsoft Edge Neural TTS (`node-edge-tts`) for the Werewolf voice moderator, cached on disk
+- ElevenLabs for the Werewolf voice moderator by default, with Microsoft Edge Neural TTS (`node-edge-tts`) as fallback, cached on disk
 - Postgres `LISTEN/NOTIFY` relayed to browsers with Server-Sent Events
 - Docker and Docker Compose
 - Built-in unit testing capabilities of the selected test runner
@@ -46,7 +46,7 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Platform code (`src/components/catalog`, `src/components/lobby`, `src/components/site`, `src/lib`, `src/app/api`) must not contain game rules or game-specific labels; it reaches games only through these contracts.
 - A new online game also needs its `game_key` allowed by a migration.
 - `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`.
-- Werewolf voice: Microsoft Edge Neural. Static lines are the committed voice pack in `public/audio/werewolf/` (regenerate with `npm run voice:generate`, then `npm run voice:measure` to refresh each line's measured `seconds`, which the server adds to phase deadlines so the narrator speaks before the clock runs); the four named daytime announcements are synthesized on demand through `node-edge-tts` (an unofficial service; keep the generic-clip and Web Speech fallbacks). The TTS routes must only voice those named templates (`isAllowedNarration`) and only for the session host; night turn lines name roles only.
+- Werewolf voice: ElevenLabs is the default voice pack generator and runtime provider; Microsoft Edge Neural is an explicit alternate and fallback. Static lines are the committed voice pack in `public/audio/werewolf/` (regenerate with `npm run voice:generate`, then `npm run voice:measure` to refresh each line's measured `seconds`, which the server adds to phase deadlines so the narrator speaks before the clock runs); named announcements are synthesized on demand. Keep the generic-clip and Web Speech fallbacks. The TTS routes must only voice those named templates (`isAllowedNarration`) and only for the session host; night turn lines name roles only.
 - Shared TV screen: host-issued single-use pairing code, TV token stored only as a SHA-256 hash, read-only public view (`OnlineGameServer.publicView`); while a TV is connected it is the only narrator device.
 - Optional ElevenLabs provider (`TTS_PROVIDER=elevenlabs` + `ELEVENLABS_API_KEY`): the key stays in runtime server env only (never `NEXT_PUBLIC_`, never a build arg, never committed); failures fall back to Microsoft. Voice presets, dramatic effects, and the bilingual role-name option live in `voice-pack.json`.
 - The catalog renders every game through `GameCatalogCard` (`src/components/catalog/`); a game's `CatalogCard` only passes metadata, accent, and banner artwork.

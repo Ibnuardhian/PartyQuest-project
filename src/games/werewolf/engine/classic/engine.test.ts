@@ -255,6 +255,7 @@ describe("day voting", () => {
     let state = expire(finishNight(readyAll(game(["WEREWOLF", "VILLAGER", "VILLAGER", "VILLAGER", "VILLAGER", "VILLAGER"]))));
     state = voteAll(state, { p1: "p2", p2: "p3", p3: "p2", p4: "p3", p5: null, p6: null });
     expect(state.public.phase).toBe("TIE_DEFENSE");
+    expect(Date.parse(state.public.phaseDeadlineAt!) - Date.parse(state.public.actionStartsAt!)).toBe(180_000);
     expect(state.public.tiedPlayerIds.sort()).toEqual(["p2", "p3"]);
     state = expire(state);
     expect(state.public.phase).toBe("TIE_REVOTE");

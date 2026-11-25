@@ -13,6 +13,11 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 - [ ] **Deploy ke VPS Hostinger** belum dilakukan (stack produksi sudah diuji lokal). **Deploy Vercel** belum diverifikasi: cache TTS di Vercel hanya `/tmp` (sementara), dan layanan Edge TTS dari Vercel belum dicoba. `LISTEN/NOTIFY` butuh koneksi Postgres langsung atau session pooling.
 - [ ] **Cache TTS di disk** belum punya kebijakan pembersihan otomatis. Rate limit route TTS sudah ada, tetapi per proses server (tiap instance serverless punya batasnya sendiri).
 
+### Diubah
+
+- **Generator voice pack Werewolf** kini memakai ElevenLabs secara default; Microsoft Edge Neural dipilih eksplisit dengan `--provider microsoft`.
+- **Werewolf: layar hasil akhir dirapikan.** Ringkasan kemenangan kini memakai banner sesuai kubu, daftar pemenang, identitas role per pemain, hasil voting terakhir, dan riwayat kronologis; label voting kosong menjadi “tidak memilih”. Pembelaan setelah hasil seri memakai hitung mundur 3 menit.
+
 ### Ditambahkan
 
 - **Werewolf online: narator bicara dulu, baru timer jalan** (seperti ONUW). Server menambah lama suara (diukur ke `voice-pack.json` lewat `npm run voice:measure`; kalimat bernama diperkirakan dari panjang teks) ke tenggat tiap fase: intro malam (sebelumnya 6 dtk padahal klipnya 10,2 dtk), giliran role, pagi, Hunter, voting, dan pembelaan. Waktu aksi giliran malam minimal 10 detik setelah panggilan selesai (`nightTurnSeconds` tetap berlaku bila lebih besar). `actionStartsAt` dikirim ke klien: layar menampilkan "Narator berbicara…" lalu hitung mundur.

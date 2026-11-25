@@ -58,7 +58,7 @@ export const CLASSIC_MAX_PLAYERS = 16;
 export const PHASE_SECONDS = {
   nightIntro: 6,
   voting: 60,
-  tieDefense: 30,
+  tieDefense: 180,
   tieRevote: 20,
   hunterRevenge: 15,
 } as const;

@@ -268,9 +268,9 @@
       "key": "CLASSIC_VOTING_TIE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/voting_tie.mp3",
-      "seconds": 8.5,
-      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai.",
-      "elevenlabsText": "[tense] Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."
+      "seconds": 8.4,
+      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga menit untuk membela diri... sebelum voting ulang dimulai.",
+      "elevenlabsText": "[tense] Hasil voting seri! Para kandidat yang seri memiliki waktu tiga menit untuk membela diri... sebelum voting ulang dimulai."
     },
     {
       "key": "CLASSIC_EXECUTION_RESULT",
