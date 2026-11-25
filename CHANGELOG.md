@@ -64,6 +64,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diubah
 
+- **GitHub Actions naik ke `actions/checkout@v7` dan `actions/setup-node@v7`** (keduanya berjalan di Node 24) untuk menghilangkan peringatan deprecasi Node 20 pada job `verify`. Opsi workflow tidak berubah.
 - **Kotak target muncul satu per satu** (jeda 80 md per kotak, maksimal sekitar 1 detik) di layar aksi malam asli dan di Fake Tap, dengan animasi yang sama agar keduanya tetap tidak bisa dibedakan. Mengikuti pengaturan "kurangi gerakan".
 - **Cooldown tombol Werewolf online**: tiap ketukan Fake Tap mengunci grid 0,5 detik, dan aksi nyata (target, voting, tembakan Hunter) mengunci tombol 0,5 detik setelah jawaban server, jadi tidak bisa ditekan beruntun.
 - **Kotak "Kamu telah tereliminasi" berwarna merah**, dan tanda pilihan kawanan Werewolf saat memilih mangsa memakai ikon werewolf (bukan garis miring).
