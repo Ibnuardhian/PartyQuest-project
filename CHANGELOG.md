@@ -72,6 +72,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diperbaiki
 
+- **Dropdown "Kartu role saya" (Werewolf online)** tidak lagi muncul mendadak di bawah layar: kini terbuka sedikit demi sedikit (tinggi dan transparansi bertransisi) sambil halaman otomatis digulir ke atas sampai kartu terlihat. Mengikuti pengaturan "kurangi gerakan" perangkat.
 - **Mengubah konfigurasi room tidak lagi membatalkan status siap** (Werewolf dan Undercover; migrasi `202611260003`): pemain yang sudah siap tetap siap saat host mengganti pengaturan. Validasi komposisi tetap dijalankan saat host memulai ronde.
 - **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.
 - Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).

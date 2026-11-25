@@ -89,7 +89,13 @@ body:has(.werewolf-theme) { background-color: #020617; color: #94a3b8; }
 .ww-host { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 1px dashed var(--ww-line); padding-top: 12px; }
 .ww-host .section-kicker { width: 100%; }
 .ww-mycard { border: 1px solid var(--ww-line); border-radius: 4px; padding: 12px; }
-.ww-mycard[open] { display: grid; gap: 10px; justify-items: center; }
+.ww-mycard-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; border: 0; background: transparent; color: var(--ww-text); font: inherit; font-size: 13px; cursor: pointer; padding: 0; }
+/* Opens a little at a time: the grid row grows from 0fr to 1fr while the card fades in. */
+.ww-mycard-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .45s ease, opacity .45s ease; }
+.ww-mycard-body.is-open { grid-template-rows: 1fr; opacity: 1; }
+.ww-mycard-inner { min-height: 0; overflow: hidden; display: grid; gap: 10px; justify-items: center; padding-top: 0; }
+.ww-mycard-body.is-open .ww-mycard-inner { padding-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .ww-mycard-body { transition: none; } }
 /* Role card (3D flip) */
 .ww-role-slot { display: block; width: min(300px, 100%); aspect-ratio: 3 / 4; justify-self: center; margin: 0 auto; }
 .ww-role-card { display: block; width: 100%; height: 100%; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }

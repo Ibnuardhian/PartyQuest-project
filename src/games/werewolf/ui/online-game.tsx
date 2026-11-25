@@ -1,7 +1,7 @@
 "use client";
 
 import "./werewolf.css";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CatalogLink } from "@/components/site/catalog-link";
 import { ConnectionNote, SiteFooter, SiteHeader } from "@/components/site/site-chrome";
@@ -139,7 +139,7 @@ export default function WerewolfOnlineGame({ roomCode, sessionId }: { roomCode: 
 
         {phase === "GAME_OVER" && <GameOver view={view} nameOf={nameOf} onLobby={() => router.push(`/room/${roomCode}`)} />}
 
-        {view.you.alive && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <details className="ww-mycard"><summary>Kartu role saya</summary><RoleCard role={view.you.role} initiallyOpen /><KnownTeam view={view} nameOf={nameOf} /></details>}
+        {view.you.alive && phase !== "ROLE_REVEAL" && phase !== "GAME_OVER" && <MyCardPanel><RoleCard role={view.you.role} initiallyOpen /><KnownTeam view={view} nameOf={nameOf} /></MyCardPanel>}
 
         {error && <p className="ww-alert" role="alert">{error}</p>}
 
@@ -231,4 +231,33 @@ function GameOver({ view, nameOf, onLobby }: ViewProps & { onLobby: () => void }
     }</li>)}</ol>
     <button type="button" className="ww-button ww-primary" onClick={onLobby}>Kembali ke lobi untuk main ulang</button>
   </div>;
+}
+
+
+/**
+ * "Kartu role saya" drop-down. It sits at the bottom of the screen, so opening it grows downwards: the page
+ * scrolls up to bring the card into view and the card eases open a little at a time instead of popping in.
+ * The content stays mounted once opened, so closing and reopening keeps the card where it was.
+ */
+function MyCardPanel({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const bringIntoView = () => panel.current?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "end" });
+
+  function toggle() {
+    if (open) { setOpen(false); return; }
+    setMounted(true);
+    // Start growing on the next frame (so the closed height is painted first), then follow it with the scroll.
+    window.requestAnimationFrame(() => setOpen(true));
+    window.setTimeout(bringIntoView, reduced() ? 0 : 120);
+  }
+
+  return <section ref={panel} className="ww-mycard">
+    <button type="button" className="ww-mycard-toggle" aria-expanded={open} onClick={toggle}>Kartu role saya<span aria-hidden="true">{open ? "▴" : "▾"}</span></button>
+    <div className={`ww-mycard-body${open ? " is-open" : ""}`} aria-hidden={!open} inert={!open} onTransitionEnd={() => { if (open) bringIntoView(); }}>
+      <div className="ww-mycard-inner">{mounted && children}</div>
+    </div>
+  </section>;
 }
