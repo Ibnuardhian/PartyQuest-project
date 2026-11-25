@@ -37,3 +37,5 @@ begin
   return v_room;
 end;
 $$;
+
+revoke all on function public.join_room(uuid, text, text) from public;

@@ -75,8 +75,11 @@ suite("PostgreSQL room functions", () => {
       await client.query("rollback to savepoint s2");
       // A finished room (waiting for a rematch) accepts new players again.
       await client.query("update game_rooms set status = 'finished' where id = $1", [room.id]);
-      const joined = await client.query("select join_room($1, $2, 'Baru')", [await guest(), room.code]);
+      const newcomer = await guest();
+      const joined = await client.query("select join_room($1, $2, 'Baru')", [newcomer, room.code]);
       expect(joined.rowCount).toBe(1);
+      // The newcomer can mark ready while the room waits for a rematch.
+      await client.query("select set_room_ready($1, $2, true)", [room.id, newcomer]);
     });
   });
 
