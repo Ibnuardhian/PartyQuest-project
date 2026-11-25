@@ -55,6 +55,18 @@ describe("Undercover engine", () => {
     expect(undercoverGame.getResult(game)).toBeNull();
   });
 
+  it("never sends a role to the player while the game runs, and Mr. White's card has no word", () => {
+    const game = start({ mrWhiteEnabled: true }, ["Alya", "Bima", "Citra", "Dewi"]);
+    for (const { playerId, role, word } of game.secret.assignments) {
+      const view = undercoverGame.getPlayerView(game, playerId)!;
+      // Neither the card nor anything else in the view names a role during play.
+      expect(Object.keys(view.private!).sort()).toEqual(["playerId", "word"]);
+      expect(JSON.stringify(view)).not.toMatch(/"role"|"civilian"|"undercover"|"mr-white"/);
+      expect(view.private!.word).toBe(word);
+      if (role === "mr-white") expect(view.private!.word).toBeNull();
+    }
+  });
+
   it("requires a private hand-off and enforces sequential clue turns", () => {
     let game = start();
     expect(() => run(game, { type: "confirm-reveal", playerId: "outsider" })).toThrow("tidak ditemukan");

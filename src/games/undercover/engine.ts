@@ -199,9 +199,14 @@ function getPlayerView(state: GameState, playerId: string): PlayerView | null {
     : state.public;
   return {
     public: publicState,
-    private: state.public.phase === "finished" ? null : state.secret.assignments.find((item) => item.playerId === playerId) ?? null,
+    private: state.public.phase === "finished" ? null : toCardView(state.secret.assignments.find((item) => item.playerId === playerId)),
     result,
   };
+}
+
+/** The role stays server-side (or in the local session); a player's card never carries it. */
+function toCardView(assignment: { playerId: string; word: string | null } | undefined) {
+  return assignment ? { playerId: assignment.playerId, word: assignment.word } : null;
 }
 
 function createInitialState(names: string[], input: GameSettings, pick = randomIndex, playerIds?: string[]): GameState {

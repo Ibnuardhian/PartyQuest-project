@@ -50,6 +50,12 @@ export interface PrivatePlayerState {
   word: string | null;
 }
 
+/** What a player may see of their own card while the game runs: the word only, never the role. */
+export interface PrivateCardView {
+  playerId: string;
+  word: string | null;
+}
+
 export interface SecretState {
   civilianWord: string;
   undercoverWord: string;
@@ -73,7 +79,7 @@ export type ValidationResult = { valid: true } | { valid: false; error: string }
 
 export interface PlayerView {
   public: PublicState;
-  private: PrivatePlayerState | null;
+  private: PrivateCardView | null;
   result: { winner: Winner; reason: string; civilianWord: string; undercoverWord: string; assignments: PrivatePlayerState[] } | null;
 }
 
