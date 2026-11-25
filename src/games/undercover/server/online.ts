@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { OnlineGameError, type OnlineGameServer, type StoredSession } from "@/games/online-game";
-import { CLUE_TURN_DURATION_MS, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
+import { currentCluePlayer, DEFAULT_CLUE_SECONDS, isClueSecondsOption, type GameAction, type GameSettings, type GameState, type PublicState, type SecretState } from "@/games/undercover/contract";
 import { undercoverGame } from "@/games/undercover/engine";
 
 /** Undercover adapter for Online Room. Pure functions: no database, no HTTP. */
@@ -9,6 +9,7 @@ export const undercoverRoomSettingsSchema = z.object({
   category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]),
   undercoverCount: z.number().int().min(1).max(4),
   mrWhiteEnabled: z.boolean(),
+  clueSeconds: z.number().refine(isClueSecondsOption).optional(),
 }).strict();
 
 export const undercoverActionSchema = z.discriminatedUnion("type", [
@@ -45,10 +46,10 @@ export function advanceClueDeadline(state: GameState, serverNow: number): GameSt
   if (state.public.phase !== "clue") return null;
   const deadlineMs = state.public.clueDeadlineAt ? Date.parse(state.public.clueDeadlineAt) : Number.NaN;
   if (!Number.isFinite(deadlineMs)) {
-    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + CLUE_TURN_DURATION_MS).toISOString() } };
+    return { ...state, public: { ...state.public, clueDeadlineAt: new Date(serverNow + (state.settings.clueSeconds ?? DEFAULT_CLUE_SECONDS) * 1000).toISOString() } };
   }
   if (deadlineMs > serverNow) return null;
-  const activePlayer = state.public.players.filter((player) => player.alive)[state.public.clueIndex];
+  const activePlayer = currentCluePlayer(state.public);
   return activePlayer ? undercoverGame.applyAction(state, { type: "submit-clue", playerId: activePlayer.id }, serverNow) : null;
 }
 

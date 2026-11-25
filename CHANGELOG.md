@@ -15,6 +15,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Ditambahkan
 
+- **Undercover online: waktu clue diatur host dan 2 putaran clue di ronde pertama.** Pilihan waktu per pemain: 30 detik, 1 menit, 1:30, 2 menit, 2:30, atau 3 menit (maksimal); host mengubahnya saat membuat room atau lewat editor pengaturan baru di lobi (kategori, jumlah Undercover, Mr. White, waktu clue). Sebelum voting pertama tiap pemain memberi clue 2 putaran, setelah voting tanpa pemenang 1 putaran per ronde. Layar menampilkan nomor putaran dan batas waktu yang dipilih; nilai di luar daftar ditolak server. Pass-and-Play tidak berubah (satu timer ronde).
 - **Undercover online: role tidak lagi tampil atau terkirim.** Kartu privat hanya menampilkan kata (label CIVILIAN/UNDERCOVER dihapus); Mr. White, yang tidak punya kata, melihat "Kamu Mr. White". `PlayerView.private` tidak lagi memuat role (hanya `playerId` dan `word`), jadi role tidak bisa dibaca dari respons jaringan; role baru terbuka di hasil akhir. Dijaga test.
 - **Pustaka kata Undercover**: `kamus_undercover.json` (300 pasangan) dileburkan ke `src/games/undercover/word-pairs.ts` bersama pasangan awal (307 pasangan unik, tiga duplikat Tempat/Campuran dibuang) dan file JSON dihapus. Kategori Campuran kini memakai seluruh pustaka. Kata Civilian dan Undercover diacak per game (`word_a`/`word_b` tidak selalu Civilian), dengan test pustaka dan penetapan kata.
 - **Katalog seragam**: satu komponen `GameCatalogCard` untuk Undercover, Werewolf, dan kartu "segera hadir" (sudut, tinggi, tipografi, tombol, dan footer sejajar; pill jumlah pemain berikon; hover mengangkat kartu dan mengisi tombol dengan aksen). Motif tiap game tetap dipertahankan di banner; Undercover memakai aksen mawar `#E11D48`, Werewolf `#38BDF8`.
@@ -51,6 +52,7 @@ Semua perubahan penting dicatat di sini. Format mengikuti [Keep a Changelog](htt
 
 ### Diperbaiki
 
+- **Kilatan tema hijau saat refresh lobi room**: HTML pertama `/room/<kode>` tidak membawa tema game (game baru diketahui setelah data room diambil), sehingga tema hijau platform tampil sesaat. Halaman lobi kini mencari game room di server sehingga langsung bertema `undercover-theme`/`werewolf-theme`.
 - Tema UI dalam game tidak cocok dengan kartu katalog: layar online Undercover kini bertema noir, lobi memakai tema game (`GameModule.themeClass`), dan latar siang/lobi Werewolf memakai navy `#020617` seperti kartu katalog (malam tetap hitam pekat).
 - Form gabung room kini memakai tema game sebelum pemain bergabung (`gameKey` publik ikut dalam error `not_a_member`).
 - Membuat room tanpa field `settings` ditolak; sekarang memakai pengaturan default game.

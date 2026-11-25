@@ -4,7 +4,7 @@ import "./undercover.css";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { GamePhase, PlayerView } from "@/games/undercover/contract";
+import { cluePassesForRound, cluePassOfTurn, currentCluePlayer, DEFAULT_CLUE_SECONDS, formatClueSeconds, type GamePhase, type PlayerView } from "@/games/undercover/contract";
 import { useRoomEvents, type RoomEventStatus } from "@/lib/realtime/use-room-events";
 import { SpokenClueTimer } from "@/games/undercover/ui/spoken-clue-timer";
 import { ROLE_LABELS as roleNames } from "@/games/undercover/ui/labels";
@@ -81,14 +81,17 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
   const state = snapshot?.view;
   const phase: GamePhase | undefined = state?.public.phase;
   const viewerId = state?.private?.playerId;
-  const activePlayer = phase === "clue" ? state?.public.players.filter((player) => player.alive)[state.public.clueIndex] : undefined;
+  const activePlayer = phase === "clue" && state ? currentCluePlayer(state.public) : undefined;
+  const livingCount = state?.public.players.filter((player) => player.alive).length ?? 0;
+  const cluePasses = state ? cluePassesForRound(state.public.round) : 1;
+  const clueSeconds = state?.public.clueSeconds ?? DEFAULT_CLUE_SECONDS;
   const eligibleVotes = state?.public.players.filter((player) => player.alive && player.id !== viewerId && (phase !== "revote" || state.public.tiedPlayerIds.includes(player.id))) ?? [];
   const whiteTurn = phase === "mr-white-guess" && viewerId === state?.public.eliminatedPlayerId;
 
   return <main className="page-shell undercover-theme"><header className="topbar"><Link className="brand" href="/"><span className="brand-mark">P</span>partyquest</Link><span className="topbar-note"><span className="live-dot" />{connection}</span></header><section className="game-wrap"><div className="game-topline"><button className="text-button" onClick={() => router.push(`/room/${roomCode}`)}>← Kembali ke lobi</button><span>ROOM {roomCode} · RONDE {snapshot?.round ?? "—"}</span></div><div className="game-card">
     {!snapshot ? <><span className="section-kicker">MEMUAT PERMAINAN</span><h2>Menyiapkan <em>meja…</em></h2><p className="muted-copy">{connection}</p></> : <>
       {phase === "reveal" && state?.private && <><span className="section-kicker">KARTU PRIVAT</span><h2>Kata rahasiamu</h2><div className="secret-card"><p>KATA RAHASIA</p><strong>{state.private.word ?? "Kamu Mr. White"}</strong><small>Jangan perlihatkan layar ini. Setelah mengingat kartu, tandai siap agar fase petunjuk dimulai.</small><button className="primary-button" disabled={busy || state.public.revealedPlayerIds.includes(viewerId ?? "")} onClick={() => void perform({ type: "confirm-reveal" })}>{state.public.revealedPlayerIds.includes(viewerId ?? "") ? "Sudah siap · menunggu pemain lain" : "Saya sudah mengingat kata"}<span>✓</span></button></div></>}
-      {phase === "clue" && <><span className="section-kicker">RONDE PETUNJUK · {snapshot.round}</span><h2>{activePlayer?.id === viewerId ? <>Giliranmu <em>memberi petunjuk.</em></> : <>Petunjuk dari <em>{activePlayer?.name ?? "pemain"}</em></>}</h2>{activePlayer?.id === viewerId ? <SpokenClueTimer key={`${snapshot.round}-${state?.public.clueIndex}`} deadlineAt={state?.public.clueDeadlineAt ?? null} serverNow={snapshot.serverNow} disabled={busy} onExpire={() => void perform({ type: "submit-clue" })} onFinish={() => void perform({ type: "submit-clue" })} /> : <p className="muted-copy">Tunggu pemain ini menyampaikan petunjuknya. Waktu maksimal: 3 menit.</p>}<Clues snapshot={snapshot} /></>}
+      {phase === "clue" && <><span className="section-kicker">RONDE PETUNJUK · {snapshot.round}{cluePasses > 1 ? ` · PUTARAN ${cluePassOfTurn(state?.public.clueIndex ?? 0, livingCount)}/${cluePasses}` : ""}</span><h2>{activePlayer?.id === viewerId ? <>Giliranmu <em>memberi petunjuk.</em></> : <>Petunjuk dari <em>{activePlayer?.name ?? "pemain"}</em></>}</h2>{activePlayer?.id === viewerId ? <SpokenClueTimer key={`${snapshot.round}-${state?.public.clueIndex}`} deadlineAt={state?.public.clueDeadlineAt ?? null} serverNow={snapshot.serverNow} disabled={busy} onExpire={() => void perform({ type: "submit-clue" })} onFinish={() => void perform({ type: "submit-clue" })} maxSeconds={clueSeconds} /> : <p className="muted-copy">Tunggu pemain ini menyampaikan petunjuknya. Waktu maksimal: {formatClueSeconds(clueSeconds)}.</p>}<Clues snapshot={snapshot} /></>}
       {phase === "discussion" && <><span className="section-kicker">DISKUSI TERBUKA</span><h2>Siapa yang <em>terlihat berbeda?</em></h2><Clues snapshot={snapshot} /><p className="muted-copy">Diskusikan petunjuk bersama. Semua pemain dapat membuka fase voting setelah siap.</p><button className="primary-button wide-button" disabled={busy} onClick={() => void perform({ type: "finish-discussion" })}>Lanjut ke voting <span>→</span></button></>}
       {(phase === "voting" || phase === "revote") && <><span className="section-kicker">{phase === "revote" ? "VOTING ULANG · SUARA SERI" : "PEMILIHAN PEMAIN"}</span><h2>{snapshot.hasVoted ? <>Pilihanmu <em>tersimpan.</em></> : <>Pilih pemain yang <em>dicurigai.</em></>}</h2>{snapshot.hasVoted ? <p className="muted-copy">Menunggu suara pemain lain · {snapshot.votesSubmitted}/{state?.public.players.filter((player) => player.alive).length}</p> : <><p className="muted-copy">Pilih satu pemain. Pilihanmu tersembunyi hingga semua pemain memilih.</p><div className="vote-list">{eligibleVotes.map((player) => <button className="vote-choice" key={player.id} disabled={busy} onClick={() => void perform({ type: "cast-vote", targetPlayerId: player.id })}><span className="avatar-dot">{player.name.slice(0, 1).toUpperCase()}</span>{player.name}<span className="vote-arrow">→</span></button>)}</div></>}</>}
       {phase === "mr-white-guess" && <><span className="section-kicker">KESEMPATAN TERAKHIR</span>{whiteTurn ? <><h2>Tebak kata <em>Civilian.</em></h2><p className="white-callout">Kamu Mr. White dan sudah tereliminasi. Tebakan yang benar memenangkan permainan.</p><form className="action-form" onSubmit={(event: FormEvent) => { event.preventDefault(); void perform({ type: "guess-civilian-word", guess }); }}><label className="field-label" htmlFor="mr-white-guess">Kata Civilian</label><input id="mr-white-guess" value={guess} onChange={(event) => setGuess(event.target.value)} maxLength={60} placeholder="Masukkan tebakan" /><button className="primary-button" disabled={busy || !guess.trim()}>Kunci tebakan <span>→</span></button></form></> : <><h2>Mr. White sedang <em>menebak…</em></h2><p className="muted-copy">Berikan perangkat kepada pemain yang tereliminasi. Pemain lain tidak dapat melihat tebakan privatnya.</p></>}</>}
@@ -98,5 +101,11 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
 }
 
 function Clues({ snapshot }: { snapshot: ViewResponse }) {
-  return <div className="clue-list" aria-label="Pemain yang sudah memberi petunjuk">{snapshot.view.public.clues.map((clue, index) => { const player = snapshot.view.public.players.find((item) => item.id === clue.playerId); return <div className="clue-item" key={`${clue.playerId}-${index}`}><span className="avatar-dot">{player?.name.slice(0, 1).toUpperCase()}</span><span>{player?.name}</span><strong>Petunjuk disampaikan</strong></div>; })}</div>;
+  const { players, clues, round } = snapshot.view.public;
+  const livingCount = players.filter((player) => player.alive).length;
+  const multiplePasses = cluePassesForRound(round) > 1;
+  return <div className="clue-list" aria-label="Pemain yang sudah memberi petunjuk">{clues.map((clue, index) => {
+    const player = players.find((item) => item.id === clue.playerId);
+    return <div className="clue-item" key={`${clue.playerId}-${index}`}><span className="avatar-dot">{player?.name.slice(0, 1).toUpperCase()}</span><span>{player?.name}</span><strong>{multiplePasses ? `Petunjuk ke-${cluePassOfTurn(index, livingCount)} disampaikan` : "Petunjuk disampaikan"}</strong></div>;
+  })}</div>;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GameAction, GameSettings, GameState } from "@/games/undercover/contract";
+import { cluePassesForRound, currentCluePlayer, type GameAction, type GameSettings, type GameState } from "@/games/undercover/contract";
 import { confirmOfflineElimination, finishOfflineClueRound, undercoverGame } from "@/games/undercover/engine";
 import { parseLocalGameState } from "@/games/undercover/local-session";
 
@@ -19,8 +19,7 @@ function revealAll(state: GameState): GameState {
 function cluesAndVoting(state: GameState): GameState {
   state = revealAll(state);
   while (state.public.phase === "clue") {
-    const player = state.public.players.filter((item) => item.alive)[state.public.clueIndex]!;
-    state = run(state, { type: "submit-clue", playerId: player.id });
+    state = run(state, { type: "submit-clue", playerId: currentCluePlayer(state.public)!.id });
   }
   return run(state, { type: "finish-discussion" });
 }
@@ -81,9 +80,41 @@ describe("Undercover engine", () => {
   it("moves to discussion after all living clues and then opens voting", () => {
     const game = cluesAndVoting(start());
     expect(game.public.phase).toBe("voting");
-    expect(game.public.clues).toHaveLength(3);
+    // Before the first vote every living player gives two clues.
+    expect(game.public.clues).toHaveLength(6);
     expect(game.public.clues.every((clue) => Object.keys(clue).join(",") === "playerId")).toBe(true);
     expect(() => run(game, { type: "finish-discussion" })).toThrow("Diskusi belum");
+  });
+
+  it("gives two clue passes before the first vote and one pass in every later round", () => {
+    let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
+    expect(cluePassesForRound(game.public.round)).toBe(2);
+    for (let turn = 0; turn < 5; turn += 1) game = run(game, { type: "submit-clue", playerId: currentCluePlayer(game.public)!.id });
+    // After one pass the first round is still collecting clues.
+    expect(game.public.phase).toBe("clue");
+    for (let turn = 0; turn < 5; turn += 1) game = run(game, { type: "submit-clue", playerId: currentCluePlayer(game.public)!.id });
+    expect(game.public.phase).toBe("discussion");
+    game = run(game, { type: "finish-discussion" });
+    // Vote out a civilian: nobody has won yet, so the next round has a single clue pass for the four players left.
+    const civilianId = game.secret.assignments.find((item) => item.role === "civilian")!.playerId;
+    game = voteFor(game, civilianId);
+    expect(game.public.phase).toBe("clue");
+    expect(game.public.round).toBe(2);
+    expect(cluePassesForRound(game.public.round)).toBe(1);
+    for (let turn = 0; turn < 3; turn += 1) game = run(game, { type: "submit-clue", playerId: currentCluePlayer(game.public)!.id });
+    expect(game.public.phase).toBe("clue");
+    game = run(game, { type: "submit-clue", playerId: currentCluePlayer(game.public)!.id });
+    expect(game.public.phase).toBe("discussion");
+  });
+
+  it("uses the configured clue time for deadlines and accepts only the 30-second steps up to 3 minutes", () => {
+    let game = start({ clueSeconds: 90 });
+    expect(game.public.clueSeconds).toBe(90);
+    for (const player of game.public.players) game = run(game, { type: "confirm-reveal", playerId: player.id }, 1_000);
+    expect(game.public.clueDeadlineAt).toBe(new Date(91_000).toISOString());
+    for (const seconds of [30, 60, 90, 120, 150, 180]) expect(start({ clueSeconds: seconds }).settings.clueSeconds).toBe(seconds);
+    for (const seconds of [15, 45, 181, 210, 300]) expect(() => start({ clueSeconds: seconds }), String(seconds)).toThrow("tidak valid");
+    expect(start({}).settings.clueSeconds).toBe(180);
   });
 
   it("persists a server supplied deadline for each spoken clue turn", () => {
@@ -91,7 +122,7 @@ describe("Undercover engine", () => {
     for (const player of game.public.players) game = run(game, { type: "confirm-reveal", playerId: player.id }, 1_000);
     expect(game.public.phase).toBe("clue");
     expect(game.public.clueDeadlineAt).toBe(new Date(181_000).toISOString());
-    game = run(game, { type: "submit-clue", playerId: game.public.players[game.public.clueIndex]!.id }, 20_000);
+    game = run(game, { type: "submit-clue", playerId: currentCluePlayer(game.public)!.id }, 20_000);
     expect(game.public.clueDeadlineAt).toBe(new Date(200_000).toISOString());
   });
 

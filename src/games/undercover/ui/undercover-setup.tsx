@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteFooter, SiteHeader } from "@/components/site/site-chrome";
-import type { Category } from "@/games/undercover/contract";
+import { CLUE_SECONDS_OPTIONS, formatClueSeconds, SUGGESTED_CLUE_SECONDS, type Category } from "@/games/undercover/contract";
 import { undercoverGame } from "@/games/undercover/engine";
 import { createLocalGameSession, LOCAL_GAME_PATH, writeLocalGameSession } from "@/games/undercover/local-session";
 import { UNDERCOVER_ONLINE_SETUP_PATH, UNDERCOVER_SETUP_PATH } from "@/games/undercover/paths";
@@ -22,6 +22,7 @@ export default function UndercoverSetup() {
   const [category, setCategory] = useState<Category>("campuran");
   const [undercoverCount, setUndercoverCount] = useState(1);
   const [mrWhiteEnabled, setMrWhiteEnabled] = useState(false);
+  const [clueSeconds, setClueSeconds] = useState<number>(SUGGESTED_CLUE_SECONDS);
   const [error, setError] = useState("");
   const [onlineName, setOnlineName] = useState("");
   const [onlineRoomCode, setOnlineRoomCode] = useState("");
@@ -82,7 +83,7 @@ export default function UndercoverSetup() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "create"
-          ? { gameKey: "undercover", displayName: onlineName, settings: { category, undercoverCount, mrWhiteEnabled } }
+          ? { gameKey: "undercover", displayName: onlineName, settings: { category, undercoverCount, mrWhiteEnabled, clueSeconds } }
           : { displayName: onlineName, code: onlineRoomCode }),
       });
       const payload = await response.json() as { data?: { code?: string }; error?: { message?: string } };
@@ -129,7 +130,7 @@ export default function UndercoverSetup() {
           <p className="privacy-note"><span aria-hidden="true">◉</span> Kata akan dibuka bergiliran di perangkat ini. Pastikan pemain lain tidak mengintip.</p>
         </> : <div className="uc-online-stack">
           <div className="uc-field"><label className="field-label" htmlFor="online-player-name">Nama tampilan</label><input className="text-input online-text-input" id="online-player-name" maxLength={24} value={onlineName} onChange={(event) => setOnlineName(event.target.value)} placeholder="Nama yang dilihat teman" /></div>
-          <form className="uc-online-stack" onSubmit={(event) => void submitOnlineRoom(event, "create")}><h3 className="subheading">Buat room baru</h3><div className="form-row"><div className="form-field"><label className="field-label" htmlFor="online-category">Kategori</label><select id="online-category" value={category} onChange={(event) => setCategory(event.target.value as Category)}>{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><div className="form-field"><label className="field-label" htmlFor="online-undercover-count">Undercover</label><select id="online-undercover-count" value={undercoverCount} onChange={(event) => setUndercoverCount(Number(event.target.value))}>{[1, 2, 3].map((count) => <option key={count} value={count}>{count} orang</option>)}</select></div></div>{mrWhiteToggle}<button className="primary-button" disabled={!onlineReady || onlineWorking || !onlineName.trim()}>Buat room <span>→</span></button></form>
+          <form className="uc-online-stack" onSubmit={(event) => void submitOnlineRoom(event, "create")}><h3 className="subheading">Buat room baru</h3><div className="form-row"><div className="form-field"><label className="field-label" htmlFor="online-category">Kategori</label><select id="online-category" value={category} onChange={(event) => setCategory(event.target.value as Category)}>{Object.entries(CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><div className="form-field"><label className="field-label" htmlFor="online-undercover-count">Undercover</label><select id="online-undercover-count" value={undercoverCount} onChange={(event) => setUndercoverCount(Number(event.target.value))}>{[1, 2, 3].map((count) => <option key={count} value={count}>{count} orang</option>)}</select></div></div><div className="form-field"><label className="field-label" htmlFor="online-clue-seconds">Waktu clue per pemain</label><select id="online-clue-seconds" value={clueSeconds} onChange={(event) => setClueSeconds(Number(event.target.value))}>{CLUE_SECONDS_OPTIONS.map((seconds) => <option key={seconds} value={seconds}>{formatClueSeconds(seconds)}</option>)}</select></div>{mrWhiteToggle}<button className="primary-button" disabled={!onlineReady || onlineWorking || !onlineName.trim()}>Buat room <span>→</span></button></form>
           <div className="divider-label"><span />ATAU<span /></div>
           <form className="uc-field" onSubmit={(event) => void submitOnlineRoom(event, "join")}><label className="field-label" htmlFor="online-join-code">Kode room</label><div className="join-row"><input className="text-input online-text-input code-input" id="online-join-code" maxLength={6} autoCapitalize="characters" autoComplete="off" value={onlineRoomCode} onChange={(event) => setOnlineRoomCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, ""))} placeholder="ABC234" /><button className={`secondary-button${onlineRoomCode.length === 6 ? " is-ready" : ""}`} disabled={!onlineReady || onlineWorking || onlineRoomCode.length !== 6 || !onlineName.trim()}>Gabung</button></div></form>
           {!onlineReady && !onlineMessage && <p className="status-note">Menghubungkan sesi tamu…</p>}{onlineMessage && <p className="error-message" role="alert">{onlineMessage}</p>}
