@@ -40,6 +40,13 @@
 
 Exact texts: `src/games/werewolf/voice/voice-pack.json` (static) and `NAME_LINES` in `src/games/werewolf/voice/templates.ts` (named).
 
+### 1.2b Adding a voiced role (checklist)
+Only roles that **wake at night** (`NIGHT_ORDER`) or end the game need a voice line; Hunter has its revenge line, and Tanner, Lycan, Cursed, Minion, Mayor, and Disease need none because nothing is spoken for them. Today the voiced night roles are Cupid, Mason, Werewolf, Guardian Angel, Seer, and Witch, and every winning faction (Villager, Werewolf, Tanner, Lovers) has a win line. To add another one:
+1. Add the role in `contract.ts` (`CLASSIC_ROLES` plus `BASE_ROLES` or `TWIST_ROLES`) and `roles.ts`; for a night role also `NIGHT_ORDER` and the engine turn.
+2. Add `CLASSIC_TURN_<ROLE>` (or `CLASSIC_WIN_<FACTION>`) to `voice/voice-pack.json` with `text` and an emotional `elevenlabsText`, and map it in `TURN_KEYS` / `WIN_KEYS` in `voice/templates.ts`.
+3. Generate both voices and commit the MP3s: `docker compose run --rm --no-deps web npm run voice:generate -- --only CLASSIC_TURN_<ROLE>` (Microsoft) and the same with `--provider elevenlabs` (Adam).
+4. `voice/voice-coverage.test.ts` fails until the role has its own turn line (not the end-of-turn fallback) and every pack line exists as an MP3 for both voices.
+
 ### 1.3 Mode 2: ONUW voice-only night (`/audio/werewolf/onuw/`, split open/close clips)
 The phone in the center plays `*_open.mp3`, shows the countdown ring (10–14 s), then plays `*_close.mp3`:
 - Intro: `onuw_intro.mp3`
