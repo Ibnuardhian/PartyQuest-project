@@ -226,3 +226,13 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .lj-input:disabled { opacity: .6; }
 .undercover-theme .lj-cta { background: #8b1e1e; color: #fff; }.undercover-theme .lj-cta:hover:not(:disabled) { background: #721616; }
 .undercover-theme .lj-cta:disabled { background: rgba(20, 25, 35, .15); color: rgba(20, 25, 35, .4); }
+
+/* Online game: early-vote requests, host veto, and the always-available "my word" card. */
+.uc-vote-request { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.uc-vote-request small { font-size: 12px; color: #5c5449; line-height: 1.45; }
+.uc-vote-request .secondary-button.is-on { background: #1b263b; color: #fff; border-color: #1b263b; }
+.uc-myword { margin-top: 14px; border: 1px solid rgba(20, 25, 35, .25); background: rgba(255, 255, 255, .55); padding: 10px 14px; color: #141923; }
+.uc-myword summary { cursor: pointer; font-size: 13px; font-weight: 650; letter-spacing: .04em; color: #141923; }
+.uc-myword[open] summary { margin-bottom: 8px; }
+.uc-myword strong { display: block; font: 26px Georgia, serif; color: #8b0000; }
+.uc-myword small { display: block; margin-top: 4px; font-size: 11px; color: #5c5449; }

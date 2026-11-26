@@ -23,6 +23,7 @@ const localStateSchema = z.object({
     winner: z.enum(["civilian", "undercover", "mr-white"]).nullable(),
     resultReason: z.string().nullable(),
     lastRoundTied: z.boolean(),
+    voteRequests: z.array(z.string()).default([]),
   }),
   secret: z.object({
     civilianWord: z.string(),

@@ -61,6 +61,8 @@ export interface PublicState {
   winner: Winner | null;
   resultReason: string | null;
   lastRoundTied: boolean;
+  /** Living players who asked to start voting early during the clue window; a majority opens voting at once. */
+  voteRequests: string[];
 }
 
 export interface PrivatePlayerState {
@@ -90,6 +92,7 @@ export interface GameState {
 export type GameAction =
   | { type: "confirm-reveal"; playerId: string }
   | { type: "finish-discussion" }
+  | { type: "request-vote"; playerId: string }
   | { type: "cast-vote"; playerId: string; targetPlayerId: string }
   | { type: "guess-civilian-word"; playerId: string; guess: string };
 

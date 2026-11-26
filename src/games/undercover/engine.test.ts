@@ -85,6 +85,44 @@ describe("Undercover engine", () => {
     expect(() => run(game, { type: "finish-discussion" })).toThrow("Diskusi belum");
   });
 
+  it("opens voting once a majority of the living players ask for it, and lets them take the request back", () => {
+    let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
+    const ids = game.public.players.map((player) => player.id);
+    game = run(game, { type: "request-vote", playerId: ids[0]! });
+    game = run(game, { type: "request-vote", playerId: ids[1]! });
+    expect(game.public.phase).toBe("clue");
+    expect(game.public.voteRequests).toEqual([ids[0], ids[1]]);
+    // Asking again withdraws the request.
+    game = run(game, { type: "request-vote", playerId: ids[1]! });
+    expect(game.public.voteRequests).toEqual([ids[0]]);
+    game = run(game, { type: "request-vote", playerId: ids[1]! });
+    expect(game.public.phase).toBe("clue");
+    // 3 of 5 is a strict majority: voting opens at once with a clean slate.
+    game = run(game, { type: "request-vote", playerId: ids[2]! });
+    expect(game.public.phase).toBe("voting");
+    expect(game.public.voteRequests).toEqual([]);
+    expect(game.public.clueDeadlineAt).toBeNull();
+    expect(game.public.votes).toEqual({});
+  });
+
+  it("needs more than half: 2 of 4 is not enough", () => {
+    let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara"]));
+    const ids = game.public.players.map((player) => player.id);
+    game = run(game, { type: "request-vote", playerId: ids[0]! });
+    game = run(game, { type: "request-vote", playerId: ids[1]! });
+    expect(game.public.phase).toBe("clue");
+    game = run(game, { type: "request-vote", playerId: ids[2]! });
+    expect(game.public.phase).toBe("voting");
+  });
+
+  it("only accepts vote requests during the clue phase", () => {
+    const voting = endClueWindow(revealAll(start()), 0);
+    expect(voting.public.phase).toBe("voting");
+    expect(() => run(voting, { type: "request-vote", playerId: voting.public.players[0]!.id })).toThrow("ronde petunjuk");
+    const reveal = start();
+    expect(() => run(reveal, { type: "request-vote", playerId: reveal.public.players[0]!.id })).toThrow("ronde petunjuk");
+  });
+
   it("runs one clue window per round and votes right after it", () => {
     let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
     expect(cluePassesForRound(game.public.round)).toBe(1);
