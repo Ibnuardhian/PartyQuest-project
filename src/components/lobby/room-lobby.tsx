@@ -116,8 +116,9 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
     const response = await fetch(`/api/rooms/${code}/settings`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settings }) });
     const payload = await response.json() as { error?: { message?: string } };
     if (!response.ok) {
-      setError(payload.error?.message ?? "Pengaturan belum tersimpan.");
-      return;
+      const message = payload.error?.message ?? "Pengaturan belum tersimpan.";
+      setError(message);
+      throw new Error(message);
     }
     await load(false);
   }

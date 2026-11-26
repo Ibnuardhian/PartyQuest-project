@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RoomSettingsEditorProps } from "@/games/types";
 import { CLUE_MINUTES_OPTIONS, DEFAULT_CLUE_MINUTES, formatClueMinutes, type Category } from "@/games/undercover/contract";
 import { CategorySelect } from "@/games/undercover/ui/category-select";
@@ -15,21 +15,35 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
   const [mrWhiteEnabled, setMrWhiteEnabled] = useState(initial.mrWhiteEnabled);
   const [clueMinutes, setClueMinutes] = useState(initial.clueMinutes);
   const [saving, setSaving] = useState(false);
-  const [justSaved, setJustSaved] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
+  const [failedKey, setFailedKey] = useState("");
+  const saveRef = useRef(onSave);
+  useEffect(() => { saveRef.current = onSave; }, [onSave]);
   const opposing = undercoverCount + Number(mrWhiteEnabled);
   const fitsPlayers = playerCount < 3 || playerCount - opposing >= 2;
   const dirty = category !== initial.category || undercoverCount !== initial.undercoverCount || mrWhiteEnabled !== initial.mrWhiteEnabled || clueMinutes !== initial.clueMinutes;
 
-  async function save() {
-    setSaving(true);
-    try {
-      await onSave({ category, undercoverCount, mrWhiteEnabled, clueMinutes } satisfies RoomSettings);
-      setJustSaved(true);
-      window.setTimeout(() => setJustSaved(false), 2200);
-    } finally {
-      setSaving(false);
-    }
-  }
+  // Every change is saved on its own after a short pause; there is no save button to remember.
+  // After a refused save it waits for the host to change something instead of retrying in a loop.
+  const key = `${category}|${undercoverCount}|${mrWhiteEnabled}|${clueMinutes}`;
+  useEffect(() => {
+    if (!dirty || !fitsPlayers || disabled || saving || failedKey === key) return;
+    const timer = window.setTimeout(async () => {
+      setSaving(true);
+      try {
+        await saveRef.current({ category, undercoverCount, mrWhiteEnabled, clueMinutes } satisfies RoomSettings);
+        setStatus("saved");
+      } catch {
+        setStatus("failed");
+        setFailedKey(key);
+      } finally {
+        setSaving(false);
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [category, undercoverCount, mrWhiteEnabled, clueMinutes, dirty, fitsPlayers, disabled, saving, failedKey, key]);
+
+  const label = saving ? "Menyimpan…" : dirty && fitsPlayers ? "Menyimpan perubahan…" : status === "failed" && dirty && failedKey === key ? "Gagal menyimpan, coba ubah lagi" : status === "saved" ? "Tersimpan ✓" : "Perubahan tersimpan otomatis";
 
   return <div className="lb-editor">
     <div className="lb-set-grid">
@@ -39,9 +53,6 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
       <label className="toggle-row lb-toggle"><span><strong>Tambahkan Mr. White</strong><small>Tak punya kata, menang dengan menebak</small></span><input type="checkbox" checked={mrWhiteEnabled} disabled={disabled} onChange={(event) => setMrWhiteEnabled(event.target.checked)} /><span className="toggle-ui" aria-hidden="true" /></label>
     </div>
     {!fitsPlayers && <p className="error-message" role="alert">Sisakan minimal dua pemain Civilian: dengan {playerCount} pemain, pilih lebih sedikit Undercover atau matikan Mr. White.</p>}
-    <div className="lb-save-row">
-      <span className={justSaved ? "lb-saved on" : "lb-saved"} role="status">{justSaved ? "Tersimpan ✓" : dirty ? "Ada perubahan belum disimpan" : "Pengaturan tersimpan"}</span>
-      <button type="button" className={dirty ? "lb-btn lb-save dirty" : "lb-btn lb-save"} disabled={disabled || saving || !dirty || !fitsPlayers} onClick={() => void save()}>{saving ? "MENYIMPAN…" : "SIMPAN PENGATURAN"}</button>
-    </div>
+    <p className={status === "saved" && !dirty && !saving ? "lb-saved on" : "lb-saved"} role="status">{label}</p>
   </div>;
 }

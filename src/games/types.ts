@@ -8,6 +8,7 @@ export interface RoomSettingsEditorProps {
   settings: unknown;
   playerCount: number;
   disabled: boolean;
+  /** Resolves once saved; rejects when the server refuses (the lobby already shows the message). */
   onSave(settings: unknown): Promise<void>;
 }
 

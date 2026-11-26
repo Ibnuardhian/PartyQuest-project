@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameButton, GameField, StepperGrid, StepperTile, ThemedSlider, ValidationBanner, type TileTone } from "@/components/ui/game-ui";
 import type { RoomSettingsEditorProps } from "@/games/types";
 import { CLASSIC_MAX_PLAYERS, CLASSIC_MIN_PLAYERS, CLASSIC_ROLES, TWIST_ROLES, type ClassicRole } from "@/games/werewolf/contract";
@@ -11,6 +11,12 @@ type Roles = Partial<Record<ClassicRole, number>>;
 
 const ALIGNMENT_TONE: Record<string, TileTone> = { WEREWOLF: "danger", VILLAGER: "ally", INDEPENDENT: "neutral" };
 const ALIGNMENT_LABEL: Record<string, string> = { WEREWOLF: "Kubu Werewolf", VILLAGER: "Kubu warga", INDEPENDENT: "Independen" };
+
+/** Stable shape of the settings we send, so "changed" and "already saved" can be compared as text. */
+function toPayload(settings: { roles: "AUTO" | Roles; deadRevealMode: string; nightTurnSeconds: number; dayDiscussionSeconds: number; advanced?: boolean }) {
+  const roles = settings.roles === "AUTO" ? "AUTO" : Object.fromEntries(CLASSIC_ROLES.filter((role) => ((settings.roles as Roles)[role] ?? 0) > 0).map((role) => [role, (settings.roles as Roles)[role]]));
+  return { roles, deadRevealMode: settings.deadRevealMode, nightTurnSeconds: settings.nightTurnSeconds, dayDiscussionSeconds: settings.dayDiscussionSeconds, advanced: Boolean(settings.advanced) };
+}
 
 function recommended(playerCount: number, advanced: boolean): Roles {
   const count = Math.min(CLASSIC_MAX_PLAYERS, Math.max(CLASSIC_MIN_PLAYERS, playerCount));
@@ -27,6 +33,10 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
   const [nightTurnSeconds, setNightTurnSeconds] = useState(initial.nightTurnSeconds);
   const [dayDiscussionSeconds, setDayDiscussionSeconds] = useState(initial.dayDiscussionSeconds);
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
+  const [failedKey, setFailedKey] = useState("");
+  const saveRef = useRef(onSave);
+  useEffect(() => { saveRef.current = onSave; }, [onSave]);
   const total = CLASSIC_ROLES.reduce((sum, role) => sum + (roles[role] ?? 0), 0);
   const preview = auto ? recommended(playerCount, advanced) : roles;
 
@@ -48,14 +58,30 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
     });
   }
 
-  async function save() {
-    setSaving(true);
-    try {
-      await onSave({ roles: auto ? "AUTO" : Object.fromEntries(Object.entries(roles).filter(([, count]) => (count ?? 0) > 0)), deadRevealMode, nightTurnSeconds, dayDiscussionSeconds, advanced } satisfies WerewolfRoomSettings);
-    } finally {
-      setSaving(false);
-    }
-  }
+  // Every change is saved on its own after a short pause; there is no save button to remember.
+  // After a refused save it waits for the host to change something instead of retrying in a loop.
+  const payload = toPayload({ roles: auto ? "AUTO" : roles, deadRevealMode, nightTurnSeconds, dayDiscussionSeconds, advanced });
+  const key = JSON.stringify(payload);
+  const dirty = key !== JSON.stringify(toPayload(initial));
+  useEffect(() => {
+    if (!dirty || disabled || saving || failedKey === key) return;
+    const timer = window.setTimeout(async () => {
+      setSaving(true);
+      try {
+        await saveRef.current(JSON.parse(key) as WerewolfRoomSettings);
+        setStatus("saved");
+      } catch {
+        // The lobby already shows why the save was refused.
+        setStatus("failed");
+        setFailedKey(key);
+      } finally {
+        setSaving(false);
+      }
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [key, dirty, disabled, saving, failedKey]);
+
+  const label = saving ? "Menyimpan…" : dirty && failedKey !== key ? "Menyimpan perubahan…" : dirty ? "Gagal menyimpan, coba ubah lagi" : status === "saved" ? "Tersimpan ✓" : "Perubahan tersimpan otomatis";
 
   return <div className="ww-editor gx-stack">
     <label className="ww-check"><input type="checkbox" checked={advanced} disabled={disabled} onChange={(event) => toggleAdvanced(event.target.checked)} /> Mode lanjutan (role penuh twist)</label>
@@ -78,6 +104,6 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
     </GameField>
     <ThemedSlider id="ww-night" label="Giliran malam per role" value={nightTurnSeconds} min={10} max={30} unit="detik" onChange={setNightTurnSeconds} />
     <ThemedSlider id="ww-day" label="Diskusi siang" value={Math.round(dayDiscussionSeconds / 60)} min={3} max={10} unit="menit" onChange={(minutes) => setDayDiscussionSeconds(minutes * 60)} />
-    <GameButton variant="primary" wide type="button" disabled={disabled || saving} onClick={() => void save()}>{saving ? "Menyimpan…" : "Simpan pengaturan"}</GameButton>
+    <p className="ww-muted" role="status">{label}</p>
   </div>;
 }
