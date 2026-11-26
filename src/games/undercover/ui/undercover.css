@@ -236,3 +236,5 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .uc-myword[open] summary { margin-bottom: 8px; }
 .uc-myword strong { display: block; font: 26px Georgia, serif; color: #8b0000; }
 .uc-myword small { display: block; margin-top: 4px; font-size: 11px; color: #5c5449; }
+.undercover-theme .lb-card .lb-ready.on { background: transparent; color: #141923; border: 1px solid rgba(20, 25, 35, .4); }
+.undercover-theme .lb-card .lb-ready.on:hover:not(:disabled) { background: rgba(20, 25, 35, .08); }

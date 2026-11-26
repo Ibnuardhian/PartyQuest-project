@@ -299,7 +299,7 @@ body:has(.ww-is-night) { background: #000; }
 .werewolf-theme .lb-card .lb-code { color: #22d3ee; }
 .werewolf-theme .lb-card .lb-pill { background: rgba(255, 255, 255, .1); color: #cbd5e1; }
 .werewolf-theme .lb-card .lb-pill.ready { background: #0f7a4f; color: #fff; }
-.werewolf-theme .lb-card .lb-start:not(:disabled), .werewolf-theme .lb-card .lb-ready.on { background: #0ea5e9; color: #020617; }
+.werewolf-theme .lb-card .lb-start:not(:disabled) { background: #0ea5e9; color: #020617; }
 .werewolf-theme .lb-card .lb-start:disabled { background: rgba(255, 255, 255, .08); color: #64748b; }
 .werewolf-theme .lb-card .lb-exit { color: #fca5a5; background: rgba(239, 68, 68, .08); border-color: rgba(239, 68, 68, .4); }
 .werewolf-theme .lb-card .lb-exit:hover:not(:disabled) { background: #b91c1c; color: #fff; }
@@ -374,3 +374,4 @@ body:has(.ww-is-night) { background: #000; }
 .ww-timeline { gap: 9px; }
 .ww-timeline li { padding-left: 4px; line-height: 1.5; }
 @media (max-width: 760px) { .ww-summary-grid { grid-template-columns: 1fr; } .ww-victory, .ww-summary-card { padding: 18px; } }
+.werewolf-theme .lb-card .lb-ready.on { background: transparent; color: #e2e8f0; border: 1px solid rgba(255, 255, 255, .3); }
