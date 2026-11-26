@@ -33,7 +33,11 @@ function valueAllowed(name: string, value: string, isPlayerName: PlayerNameCheck
   switch (name) {
     case "victimName":
     case "hunterName":
-    case "executedName": return isPlayerName(value);
+    case "executedName":
+    case "princeName":
+    case "troublemakerName":
+    case "silencedName":
+    case "doomedName": return isPlayerName(value);
     case "victimList": return value.split(/, dan |, /).every((part) => isPlayerName(part));
     default: return false;
   }

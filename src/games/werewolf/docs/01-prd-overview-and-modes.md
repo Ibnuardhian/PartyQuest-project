@@ -75,6 +75,7 @@ Mode 2 acts as an **anti-cheat deck validator and AI audio moderator** for playe
    - AI announces morning. Players debate for the configured timer (e.g., `3–5 minutes`).
    - At the final `3-2-1` countdown, AI commands *"Tunjuk target kalian sekarang!"* and players physically point at the person they vote to eliminate.
    - Optional Post-Game Reveal button on the phone lets players log who was eliminated and verify final card positions.
+   - Result (2026-11-25): only the dead players' cards are turned over. The phone asks for those final cards (and each dead Hunter's target), then at most two yes/no questions ("is a Werewolf / Minion among the living players' cards?"), asked only when the dealt deck cannot answer them (without a Drunk the hands equal the dealt cards, so nothing is asked). It names the winning team, not the winning players; a Tanner who died is named. Logic: `engine/onuw/verdict.ts`.
 
 ---
 

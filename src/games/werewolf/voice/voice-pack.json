@@ -49,8 +49,18 @@
       "Robber",
       "Troublemaker",
       "Drunk",
-      "Insomniac"
-    ],
+      "Insomniac",
+        "Apprentice Seer",
+        "Prince",
+        "Spellcaster",
+        "Lone Wolf",
+        "Vampire",
+        "Alpha Wolf",
+        "Sorcerer",
+        "Wolf Cub",
+        "Dire Wolf",
+        "Dream Wolf"
+      ],
     "sampleKeys": [
       "CLASSIC_TURN_SEER",
       "CLASSIC_TURN_WEREWOLF",
@@ -73,6 +83,7 @@
       "key": "CLASSIC_NIGHT_INTRO",
       "mode": "classic",
       "file": "/audio/werewolf/classic/night_intro.mp3",
+      "seconds": 10.2,
       "text": "Malam telah tiba... Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. Tetap tenang... dan jangan bersuara.",
       "elevenlabsText": "[whispers] Malam telah tiba... [ominous] Seluruh warga desa, tundukkan kepala dan perhatikan layar masing-masing. [whispers] Tetap tenang... dan jangan bersuara."
     },
@@ -80,18 +91,21 @@
       "key": "CLASSIC_TURN_CUPID",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_cupid.mp3",
+      "seconds": 6.3,
       "text": "Giliran Cupid beraksi... Silakan panah dua pemain pilihanmu di layar sekarang."
     },
     {
       "key": "CLASSIC_TURN_MASON",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_mason.mp3",
+      "seconds": 6.2,
       "text": "Giliran Mason... Kenali siapa rekan sesama perkumpulanmu di layar sekarang."
     },
     {
       "key": "CLASSIC_TURN_WEREWOLF",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_werewolf.mp3",
+      "seconds": 8.1,
       "text": "Giliran para Werewolf beraksi... Pilih satu warga yang akan menjadi mangsa malam ini.",
       "elevenlabsText": "[sinister] Giliran para Werewolf beraksi... [evil laugh] Pilih satu warga yang akan menjadi mangsa malam ini."
     },
@@ -99,12 +113,14 @@
       "key": "CLASSIC_TURN_DOCTOR",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_doctor.mp3",
+      "seconds": 6.5,
       "text": "Giliran Guardian Angel beraksi... Pilih satu pemain yang ingin kamu lindungi malam ini."
     },
     {
       "key": "CLASSIC_TURN_SEER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_seer.mp3",
+      "seconds": 6.3,
       "text": "Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya.",
       "elevenlabsText": "[mysterious] Giliran Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya."
     },
@@ -112,19 +128,94 @@
       "key": "CLASSIC_TURN_WITCH",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_witch.mp3",
+      "seconds": 6.4,
       "text": "Giliran Witch beraksi... Tentukan apakah kamu ingin menggunakan ramuanmu malam ini.",
       "elevenlabsText": "[mysterious] Giliran Witch beraksi... Tentukan apakah kamu ingin menggunakan ramuanmu malam ini."
+    },
+    {
+      "key": "CLASSIC_TURN_SPELLCASTER",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/turn_spellcaster.mp3",
+      "seconds": 5.9,
+      "text": "Giliran Spellcaster beraksi... Pilih satu pemain untuk dibungkam besok.",
+      "elevenlabsText": "[mysterious] Giliran Spellcaster beraksi... Pilih satu pemain untuk dibungkam besok."
+    },
+    {
+      "key": "CLASSIC_TURN_VAMPIRE",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/turn_vampire.mp3",
+      "seconds": 6,
+      "text": "Giliran Vampire beraksi... Pilih satu pemain untuk kamu gigit malam ini.",
+      "elevenlabsText": "[ominous] Giliran Vampire beraksi... Pilih satu pemain untuk kamu gigit malam ini."
+    },
+    {
+      "key": "CLASSIC_TURN_APPRENTICE_SEER",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/turn_apprentice_seer.mp3",
+      "seconds": 6.9,
+      "text": "Giliran Apprentice Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya.",
+      "elevenlabsText": "[mysterious] Giliran Apprentice Seer beraksi... Pilih satu pemain untuk menerawang identitas aslinya."
+    },
+    {
+      "key": "CLASSIC_TURN_SORCERER",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/turn_sorcerer.mp3",
+      "seconds": 6.5,
+      "text": "Giliran Sorcerer beraksi... Pilih satu pemain untuk mencari tahu apakah dia Seer.",
+      "elevenlabsText": "[whispers] Giliran Sorcerer beraksi... Pilih satu pemain untuk mencari tahu apakah dia Seer."
+    },
+    {
+      "key": "CLASSIC_TURN_DIRE_WOLF",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/turn_dire_wolf.mp3",
+      "seconds": 6.3,
+      "text": "Giliran Dire Wolf beraksi... Pilih satu pemain sebagai pasangan rahasiamu.",
+      "elevenlabsText": "[ominous] Giliran Dire Wolf beraksi... Pilih satu pemain sebagai pasangan rahasiamu."
     },
     {
       "key": "CLASSIC_TURN_END",
       "mode": "classic",
       "file": "/audio/werewolf/classic/turn_end.mp3",
+      "seconds": 2.9,
       "text": "Waktu giliranmu telah selesai."
+    },
+    {
+      "key": "CLASSIC_PRINCE_REVEAL",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/prince_reveal.mp3",
+      "seconds": 6.5,
+      "text": "Tunggu! Warga yang akan dieksekusi ternyata seorang Pangeran... eksekusi dibatalkan!",
+      "elevenlabsText": "[gasps] Tunggu! Warga yang akan dieksekusi ternyata seorang Pangeran... eksekusi dibatalkan!"
+    },
+    {
+      "key": "CLASSIC_TROUBLEMAKER_DOUBLE",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/troublemaker_double.mp3",
+      "seconds": 5.7,
+      "text": "Sang Troublemaker memakai suara gandanya... satu suara tambahan dihitung hari ini!",
+      "elevenlabsText": "[dramatic] Sang Troublemaker memakai suara gandanya... satu suara tambahan dihitung hari ini!"
+    },
+    {
+      "key": "CLASSIC_SPELL_SILENCE",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/spell_silence.mp3",
+      "seconds": 6.4,
+      "text": "Sebuah mantra jatuh semalam... satu pemain dibungkam dan tidak boleh bicara hari ini.",
+      "elevenlabsText": "[ominous] Sebuah mantra jatuh semalam... satu pemain dibungkam dan tidak boleh bicara hari ini."
+    },
+    {
+      "key": "CLASSIC_VAMPIRE_DOOM",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/vampire_doom.mp3",
+      "seconds": 6.5,
+      "text": "Gigitan vampir meninggalkan tanda semalam... satu pemain akan binasa pada voting berikutnya.",
+      "elevenlabsText": "[ominous] Gigitan vampir meninggalkan tanda semalam... satu pemain akan binasa pada voting berikutnya."
     },
     {
       "key": "CLASSIC_DAWN_SINGLE_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_single_kill.mp3",
+      "seconds": 11.4,
       "text": "Pagi telah tiba! Warga desa terbangun dengan kabar duka... Satu warga ditemukan tewas semalam. Lihat layar untuk melihat siapa korbannya.",
       "elevenlabsText": "[sad] Pagi telah tiba... [sighs] Warga desa terbangun dengan kabar duka... Satu warga ditemukan tewas semalam. Lihat layar untuk melihat siapa korbannya."
     },
@@ -132,6 +223,7 @@
       "key": "CLASSIC_DAWN_MULTI_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_multi_kill.mp3",
+      "seconds": 10.4,
       "text": "Pagi telah tiba! Tragedi berdarah terjadi semalam... Lebih dari satu warga ditemukan tewas! Periksa layar sekarang.",
       "elevenlabsText": "[sad] Pagi telah tiba... [crying] Tragedi berdarah terjadi semalam... Lebih dari satu warga ditemukan tewas! Periksa layar sekarang."
     },
@@ -139,6 +231,7 @@
       "key": "CLASSIC_DAWN_NO_KILL",
       "mode": "classic",
       "file": "/audio/werewolf/classic/dawn_no_kill.mp3",
+      "seconds": 8.2,
       "text": "Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!",
       "elevenlabsText": "[relieved] Pagi telah tiba! Keajaiban terjadi semalam... Tidak ada satu pun warga desa yang menjadi korban!"
     },
@@ -146,6 +239,7 @@
       "key": "CLASSIC_HUNTER_REVENGE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/hunter_revenge.mp3",
+      "seconds": 8.2,
       "text": "Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Hunter... pilih satu targetmu di layar sekarang!",
       "elevenlabsText": "[dramatic] Sang Pemburu gugur, namun ia sempat menarik pelatuk senjatanya! Hunter... pilih satu targetmu di layar sekarang!"
     },
@@ -153,31 +247,36 @@
       "key": "CLASSIC_DAY_DISCUSSION_START",
       "mode": "classic",
       "file": "/audio/werewolf/classic/day_discussion_start.mp3",
+      "seconds": 7.2,
       "text": "Fase diskusi dimulai! Kalian punya waktu untuk berdebat dan mencari siapa pelaku di antara kalian."
     },
     {
       "key": "CLASSIC_DAY_ONE_MINUTE_LEFT",
       "mode": "classic",
       "file": "/audio/werewolf/classic/day_one_minute_left.mp3",
+      "seconds": 5.2,
       "text": "Perhatian... Waktu diskusi tersisa satu menit lagi."
     },
     {
       "key": "CLASSIC_VOTING_START",
       "mode": "classic",
       "file": "/audio/werewolf/classic/voting_start.mp3",
+      "seconds": 7,
       "text": "Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi sekarang."
     },
     {
       "key": "CLASSIC_VOTING_TIE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/voting_tie.mp3",
-      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai.",
-      "elevenlabsText": "[tense] Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."
+      "seconds": 8.4,
+      "text": "Hasil voting seri! Para kandidat yang seri memiliki waktu tiga menit untuk membela diri... sebelum voting ulang dimulai.",
+      "elevenlabsText": "[tense] Hasil voting seri! Para kandidat yang seri memiliki waktu tiga menit untuk membela diri... sebelum voting ulang dimulai."
     },
     {
       "key": "CLASSIC_EXECUTION_RESULT",
       "mode": "classic",
       "file": "/audio/werewolf/classic/execution_result.mp3",
+      "seconds": 6.6,
       "text": "Warga desa telah memutuskan... Lihat layar untuk melihat siapa yang dieksekusi hari ini!",
       "elevenlabsText": "[solemn] Warga desa telah memutuskan... Lihat layar untuk melihat siapa yang dieksekusi hari ini!"
     },
@@ -185,6 +284,7 @@
       "key": "CLASSIC_EXECUTION_NONE",
       "mode": "classic",
       "file": "/audio/werewolf/classic/execution_none.mp3",
+      "seconds": 5.5,
       "text": "Voting kembali seri... Tidak ada warga yang dieksekusi hari ini.",
       "elevenlabsText": "[sighs] Voting kembali seri... Tidak ada warga yang dieksekusi hari ini."
     },
@@ -192,6 +292,7 @@
       "key": "CLASSIC_WIN_VILLAGER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_villager.mp3",
+      "seconds": 8.3,
       "text": "Permainan berakhir! Seluruh Werewolf telah dimusnahkan... Kemenangan mutlak diraih oleh Warga Desa!",
       "elevenlabsText": "[cheerful] Permainan berakhir! Seluruh Werewolf telah dimusnahkan... Kemenangan mutlak diraih oleh Warga Desa!"
     },
@@ -199,6 +300,7 @@
       "key": "CLASSIC_WIN_WEREWOLF",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_werewolf.mp3",
+      "seconds": 9.8,
       "text": "Permainan berakhir! Desa telah dikuasai kegelapan... Kemenangan diraih oleh para Werewolf!",
       "elevenlabsText": "[evil laugh] Permainan berakhir! Desa telah dikuasai kegelapan... [laughs] Kemenangan diraih oleh para Werewolf!"
     },
@@ -206,6 +308,7 @@
       "key": "CLASSIC_WIN_TANNER",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_tanner.mp3",
+      "seconds": 9.2,
       "text": "Kalian masuk perangkap! Orang yang baru saja kalian eksekusi adalah Tanner... Kemenangan tunggal diraih oleh Tanner!",
       "elevenlabsText": "[laughs] Kalian masuk perangkap! Orang yang baru saja kalian eksekusi adalah Tanner... Kemenangan tunggal diraih oleh Tanner!"
     },
@@ -213,13 +316,31 @@
       "key": "CLASSIC_WIN_LOVERS",
       "mode": "classic",
       "file": "/audio/werewolf/classic/win_lovers.mp3",
+      "seconds": 8.7,
       "text": "Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!",
       "elevenlabsText": "[warmly] Permainan berakhir! Cinta mengalahkan segalanya... Pasangan Lovers bertahan hidup dan memenangkan permainan!"
+    },
+    {
+      "key": "CLASSIC_WIN_LONE_WOLF",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/win_lone_wolf.mp3",
+      "seconds": 11.2,
+      "text": "Permainan berakhir! Satu serigala bertahan sendirian di tengah reruntuhan desa... Kemenangan tunggal diraih oleh Lone Wolf!",
+      "elevenlabsText": "[evil laugh] Permainan berakhir! Satu serigala bertahan sendirian di tengah reruntuhan desa... [laughs] Kemenangan tunggal diraih oleh Lone Wolf!"
+    },
+    {
+      "key": "CLASSIC_WIN_VAMPIRE",
+      "mode": "classic",
+      "file": "/audio/werewolf/classic/win_vampire.mp3",
+      "seconds": 9.6,
+      "text": "Permainan berakhir! Malam tidak pernah benar-benar usai bagi sang pengisap darah... Kemenangan tunggal diraih oleh Vampire!",
+      "elevenlabsText": "[ominous] Permainan berakhir! Malam tidak pernah benar-benar usai bagi sang pengisap darah... [laughs] Kemenangan tunggal diraih oleh Vampire!"
     },
     {
       "key": "ONUW_ONUW_INTRO",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_intro.mp3",
+      "seconds": 7.7,
       "text": "Semua pemain, tutup mata sekarang... Pastikan HP berada di tengah meja dan jangan menyentuh layar.",
       "elevenlabsText": "[whispers] Semua pemain, tutup mata sekarang... Pastikan HP berada di tengah meja dan jangan menyentuh layar."
     },
@@ -227,102 +348,119 @@
       "key": "ONUW_WEREWOLF_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/werewolf_open.mp3",
+      "seconds": 8.5,
       "text": "Werewolf... buka mata dan kenali sesama Werewolf. Jika kamu sendirian, lihat satu kartu tertutup di tengah meja."
     },
     {
       "key": "ONUW_WEREWOLF_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/werewolf_close.mp3",
+      "seconds": 2.6,
       "text": "Werewolf... tutup mata."
     },
     {
       "key": "ONUW_MINION_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/minion_open.mp3",
+      "seconds": 7.2,
       "text": "Minion... buka mata. Para Werewolf, acungkan jempol kalian agar Minion mengenali kalian."
     },
     {
       "key": "ONUW_MINION_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/minion_close.mp3",
+      "seconds": 6.1,
       "text": "Werewolf, turunkan jempol kalian... Minion, tutup mata."
     },
     {
       "key": "ONUW_MASON_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/mason_open.mp3",
+      "seconds": 4.4,
       "text": "Mason... buka mata dan kenali sesama rekan Mason kalian."
     },
     {
       "key": "ONUW_MASON_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/mason_close.mp3",
+      "seconds": 2.6,
       "text": "Mason... tutup mata."
     },
     {
       "key": "ONUW_SEER_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/seer_open.mp3",
+      "seconds": 7.2,
       "text": "Seer... buka mata. Lihat kartu milik satu pemain lain... atau dua kartu tertutup di tengah meja."
     },
     {
       "key": "ONUW_SEER_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/seer_close.mp3",
+      "seconds": 2.4,
       "text": "Seer... tutup mata."
     },
     {
       "key": "ONUW_ROBBER_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/robber_open.mp3",
+      "seconds": 7.5,
       "text": "Robber... buka mata. Tukar kartumu dengan kartu milik satu pemain lain, lalu lihat kartu barumu."
     },
     {
       "key": "ONUW_ROBBER_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/robber_close.mp3",
+      "seconds": 2.5,
       "text": "Robber... tutup mata."
     },
     {
       "key": "ONUW_TROUBLEMAKER_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/troublemaker_open.mp3",
+      "seconds": 7.1,
       "text": "Troublemaker... buka mata. Tukar posisi kartu milik dua pemain lain... tanpa melihat isinya."
     },
     {
       "key": "ONUW_TROUBLEMAKER_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/troublemaker_close.mp3",
+      "seconds": 2.9,
       "text": "Troublemaker... tutup mata."
     },
     {
       "key": "ONUW_DRUNK_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/drunk_open.mp3",
+      "seconds": 7.1,
       "text": "Drunk... buka mata. Tukar kartumu dengan satu kartu tertutup di tengah meja tanpa melihatnya."
     },
     {
       "key": "ONUW_DRUNK_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/drunk_close.mp3",
+      "seconds": 2.6,
       "text": "Drunk... tutup mata."
     },
     {
       "key": "ONUW_INSOMNIAC_OPEN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/insomniac_open.mp3",
+      "seconds": 4.5,
       "text": "Insomniac... buka mata dan periksa kartumu sendiri sekarang."
     },
     {
       "key": "ONUW_INSOMNIAC_CLOSE",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/insomniac_close.mp3",
+      "seconds": 2.9,
       "text": "Insomniac... tutup mata."
     },
     {
       "key": "ONUW_ONUW_DAY_START",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_day_start.mp3",
+      "seconds": 14.7,
       "text": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... Buka mata sambil tetap menggesekkan kartu di depan kalian... Cukup! Berhenti menggesek kartu. Pagi telah tiba!",
       "edgeText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang. <break time=\"1000ms\"/> Buka mata sambil tetap menggesekkan kartu di depan kalian. <break time=\"1500ms\"/> Cukup! Berhenti menggesek kartu. <break time=\"500ms\"/> Pagi telah tiba!",
       "elevenlabsText": "Semua pemain, tetap tutup mata dan mulai gesek-gesek kartu di depan kalian sekarang... — ... Buka mata sambil tetap menggesekkan kartu di depan kalian... — ... [firmly] Cukup! Berhenti menggesek kartu. Pagi telah tiba!"
@@ -331,6 +469,7 @@
       "key": "ONUW_ONUW_VOTE_COUNTDOWN",
       "mode": "onuw",
       "file": "/audio/werewolf/onuw/onuw_vote_countdown.mp3",
+      "seconds": 12.1,
       "text": "Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!",
       "elevenlabsText": "[excited] Waktu habis! Hitungan mundur dimulai... Tiga... Dua... Satu... Tunjuk target kalian sekarang!"
     }

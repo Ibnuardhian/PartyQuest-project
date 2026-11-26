@@ -18,7 +18,7 @@ The MVP supports:
 - Tailwind CSS
 - Plain PostgreSQL through `pg` (server-only); no Supabase
 - Signed HttpOnly guest cookies for anonymous auth
-- Microsoft Edge Neural TTS (`node-edge-tts`) for the Werewolf voice moderator, cached on disk
+- ElevenLabs for the Werewolf voice moderator by default, with Microsoft Edge Neural TTS (`node-edge-tts`) as fallback, cached on disk
 - Postgres `LISTEN/NOTIFY` relayed to browsers with Server-Sent Events
 - Docker and Docker Compose
 - Built-in unit testing capabilities of the selected test runner
@@ -46,12 +46,14 @@ PartyQuest is a multi-game platform. Keep each game self-contained in `src/games
 - Platform code (`src/components/catalog`, `src/components/lobby`, `src/components/site`, `src/lib`, `src/app/api`) must not contain game rules or game-specific labels; it reaches games only through these contracts.
 - A new online game also needs its `game_key` allowed by a migration.
 - `OnlineGameServer.applyIntent` receives `{ userId, isHost, now, onlineUserIds }` and may return secret state; commutative intents opt into `retryOnConflict`.
-- Werewolf voice: Microsoft Edge Neural. Static lines are the committed voice pack in `public/audio/werewolf/` (regenerate with `npm run voice:generate`); the four named daytime announcements are synthesized on demand through `node-edge-tts` (an unofficial service; keep the generic-clip and Web Speech fallbacks). The TTS routes must only voice those named templates (`isAllowedNarration`) and only for the session host; night turn lines name roles only.
+- Werewolf voice: ElevenLabs is the default voice pack generator and runtime provider; Microsoft Edge Neural is an explicit alternate and fallback. Static lines are the committed voice pack in `public/audio/werewolf/` (regenerate with `npm run voice:generate`, then `npm run voice:measure` to refresh each line's measured `seconds`, which the server adds to phase deadlines so the narrator speaks before the clock runs); named announcements are synthesized on demand. Keep the generic-clip and Web Speech fallbacks. The TTS routes must only voice those named templates (`isAllowedNarration`) and only for the session host; night turn lines name roles only.
 - Shared TV screen: host-issued single-use pairing code, TV token stored only as a SHA-256 hash, read-only public view (`OnlineGameServer.publicView`); while a TV is connected it is the only narrator device.
 - Optional ElevenLabs provider (`TTS_PROVIDER=elevenlabs` + `ELEVENLABS_API_KEY`): the key stays in runtime server env only (never `NEXT_PUBLIC_`, never a build arg, never committed); failures fall back to Microsoft. Voice presets, dramatic effects, and the bilingual role-name option live in `voice-pack.json`.
 - The catalog renders every game through `GameCatalogCard` (`src/components/catalog/`); a game's `CatalogCard` only passes metadata, accent, and banner artwork.
 - Every game screen links back to the catalog (`CatalogLink`), except inside an active Online Room lobby, whose only exit is the confirmed "Keluar dari Room" flow (with a Back-button guard); the catalog header offers a universal room-code quick-join instead of a per-game Online Room button.
 - Game landing/setup screens use the platform UI kit `src/components/ui/game-ui.tsx` (cards, filled inputs, buttons, stepper tiles, sliders, validation banner); a game theme only sets `--game-accent`/`--game-accent-ink`.
+- Werewolf Classic has an `advanced` room setting (default off): twist roles (`TWIST_ROLES`) are rejected by the server and excluded from AUTO until it is on (`recommendedAdvancedComposition`). Roles that wake at night or end the game need voice lines for both voices; `voice-coverage.test.ts` enforces it (checklist in `docs/03` §1.2b).
+- Werewolf lets the host rename lobby members (`OnlineGameServer.hostCanRenameMembers`, `PATCH /api/rooms/<code>/members/<id>` → `rename_room_member`): host-only, lobby/finished phase only, unique per room ignoring case and extra spaces, room-scoped (guest profile untouched).
 - Werewolf specs live in `src/games/werewolf/docs/` (start with its `README.md`). They are adapted to this platform's stack; where they conflict with this file, this file wins.
 
 ## Game Rules
@@ -140,7 +142,7 @@ Never claim tests passed unless they were actually executed.
 - Provide `.env.example` containing variable names and safe placeholders only.
 - Document local Docker setup and PostgreSQL configuration.
 - Pass `DATABASE_URL` and `GUEST_SESSION_SECRET` as runtime environment values only, never as Docker build arguments.
-- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()` (extended by `202611250003` to also drop finished/abandoned rooms idle for 1 hour; `compose.prod.yaml` runs it every 10 minutes in the `cleanup` service); `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. Guest row retention is an operator policy.
+- Migrations live in `db/migrations/` and are applied by `scripts/migrate.mjs` (one transaction per file, tracked in `schema_migrations`). `202611220001_initial_undercover.sql` defines 12-hour room expiry and `cleanup_expired_rooms()` (extended by `202611250003` to also drop finished/abandoned rooms idle for 1 hour; `compose.prod.yaml` runs it every 10 minutes in the `cleanup` service); `202611230001_multi_game_rooms.sql` adds multi-game rooms (up to 16 players), lobby settings, presence, and secret-state persistence. `202611260002` extends it to delete guests with their rooms (never a member or host of a surviving room, never one seen in the last 5 minutes; idle guests with no room go after 1 hour); a deleted guest with a valid cookie gets the same id back from `POST /api/guest/session`.
 - `LISTEN/NOTIFY` needs a direct or session-pooled connection; with transaction pooling, clients fall back to polling.
 - Ensure the application can also be deployed to Vercel.
 - Production on a VPS (Hostinger) uses `compose.prod.yaml` (Postgres, one-shot `migrate` from the `runner` image, `web` on `127.0.0.1:3005`; HTTPS terminates in the host Nginx) with secrets in `.env.production` only; see `deploy/HOSTINGER.md`. `.github/workflows/deploy.yml` verifies every push to `main` and, when `DEPLOY_ENABLED=true`, deploys that exact commit over SSH (pinned host key; app secrets never leave the VPS).

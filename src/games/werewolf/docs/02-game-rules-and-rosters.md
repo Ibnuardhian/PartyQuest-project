@@ -15,7 +15,7 @@ LOBBY
                           └─> WIN_CHECK ──(Win Met)──> GAME_OVER
                                 └─(Continue)─> DAY_DISCUSSION (Countdown timer)
                                                   └─> OPEN_VOTING (Hidden picks -> Simultaneous reveal)
-                                                        ├─(Tie on 1st vote)──> TIE_DEFENSE (30s) -> TIE_REVOTE
+                                                        ├─(Tie on 1st vote)──> TIE_DEFENSE (180s) -> TIE_REVOTE
                                                         └─> EXECUTION_RESOLUTION
                                                               ├─> HUNTER_REVENGE (If Hunter executed)
                                                               └─> WIN_CHECK ──(Win Met)──> GAME_OVER
@@ -53,7 +53,7 @@ Triggered when the Host presses **`Paksa Lanjut`** during a stalled Night Turn o
 - Once all eligible players vote or timer expires, UI reveals the **Open Vote Matrix** simultaneously (e.g., `Andi -> Budi`, `Citra -> Budi`, `Budi -> Andi`).
 - **Mayor Passive:** Votes cast by `MAYOR` count as `2` votes.
 - **Tie-Breaker:**
-  - If 2+ players tie for highest votes (`> 0`), enter `TIE_DEFENSE` (`30s` timer) where only tied candidates speak to defend themselves.
+  - If 2+ players tie for highest votes (`> 0`), enter `TIE_DEFENSE` (`180s` timer) where only tied candidates speak to defend themselves.
   - Enter `TIE_REVOTE` (`20s` timer) where all alive voters vote **only among the tied candidates**.
   - If `TIE_REVOTE` results in a tie again, **no execution occurs** and the game proceeds directly to `NIGHT_INTRO`.
 
@@ -103,7 +103,8 @@ Triggered when the Host presses **`Paksa Lanjut`** during a stalled Night Turn o
    - **Description (ID):** *"Tubuhmu membawa wabah misterius yang mematikan bagi para monster. Jika Werewolf memangsamu di malam hari, mereka akan tertular penyakitmu sehingga tidak mampu berburu atau membunuh siapa pun pada malam berikutnya."*
    - **Card Art Prompt:** `Dark gothic tarot card illustration of a cracked dark glass flask releasing bioluminescent violet spores into the night air, fine line art on obsidian background.`
 
-#### Optional Twist Roles (Toggleable by Host)
+#### Optional Twist Roles (Advanced mode only)
+> **PartyQuest decision (2026-11-25):** the twist roles below (`TWIST_ROLES`) appear only when the host switches on **Advanced mode** (`advanced` room setting, off by default). With it off, a custom composition containing a twist role is rejected and AUTO uses only base roles. With it on, AUTO adds twist roles by priority (Witch, Mayor, Cupid, Lycan, Tanner, Cursed, Minion), at most `ceil(players / 4)` of them and always keeping at least one Villager (`recommendedAdvancedComposition`). These are the roles that change hidden information or win conditions: Tanner (own win), Cupid (Lovers win), Cursed (switches team), Witch (one-shot heal/poison), Minion (ally with false information), Lycan (misleads the Seer), Mayor (double vote). Disease stays base because the recommended matrix above uses it.
 8. **Tanner** (`INDEPENDENT` Team)
    - **Description (ID):** *"Kamu membenci hidupmu di desa ini dan hanya menginginkan akhir di tiang gantungan. Kamu tidak berpihak pada warga maupun Werewolf—jika warga mengeksekusimu lewat voting siang hari, kamulah pemenang tunggalnya."*
    - **Card Art Prompt:** `Dark gothic tarot card illustration of a melancholic jester holding a broken wooden mask beside a hangman's knot, muted ochre and crimson line art on obsidian background.`
@@ -160,3 +161,24 @@ Only roles included in the Host's $N + 3$ deck are spoken by the AI Moderator:
 - **Tanner:** *"Kamu menang sendirian jika berhasil memancing pemain lain menunjukmu saat voting siang hari."*
 - **Hunter:** *"Jika kamu mendapat suara terbanyak saat voting siang hari, orang yang kamu tunjuk juga ikut tereliminasi bersamamu."*
 - **Villager:** *"Tidak bangun di malam hari; andalkan analisis percakapan di siang hari untuk menemukan siapa pemegang kartu Werewolf."*
+
+
+## Phase 8 role rules (implemented in the Classic engine, 2026-11-25)
+
+Eleven roles were added to `CLASSIC_ROLES`. `APPRENTICE_SEER` is a base role; the other ten are twist roles, so they exist only when the room's Advanced mode is on. "Pack" means the Werewolf, Alpha Wolf, Wolf Cub, Dire Wolf, Dream Wolf, and Lone Wolf: pack members count as Werewolves for the win check and read as Werewolf to the Seer (the Lycan does too; the Minion and Sorcerer read as villagers). A composition needs at least one pack member who wakes and hunts (every pack role except the Dream Wolf), and the whole pack must be fewer than the other players.
+
+| Role | Side | Rule |
+|---|---|---|
+| Apprentice Seer | Warga | Own night turn, always paced. Reads like the Seer, but only while no Seer is alive. |
+| Prince | Warga | The first time he would die by execution (vote or Vampire doom) he survives and is revealed to everyone. The next one kills him. |
+| Troublemaker | Warga | Once per game, during the first vote of a day (`second-vote`), he queues a second vote: after the first execution resolves, a fresh vote runs the same day. Independent of the ONUW Troublemaker. |
+| Spellcaster | Warga | Night turn: silences one player. The name is public at dawn and the player may not speak that day (voting stays allowed). Cleared when the next night starts. |
+| Vampire | Netral | Night turn: bites one player (Guardian Angel protection blocks it). The bitten player is public ("doomed") and is executed right after the next vote. The Werewolf attack cannot kill him. He wins when two players are alive, himself included (checked before the pack's parity win). Villagers win only when the pack and the Vampire are gone. |
+| Lone Wolf | Jahat | Wakes with the pack. Wins alone when he is the only living pack member and the pack's count equals the other players; if other pack members live at that point, the pack wins and he loses. |
+| Alpha Wolf | Jahat | In the Werewolf turn a switch converts the victim into a Werewolf (once per game). A protected or saved victim does not use it up. Never announced. |
+| Sorcerer | Jahat | Own night turn every night: learns only whether a player is a Seer or Apprentice Seer. Not part of the pack. |
+| Wolf Cub | Jahat | If he dies at any time, the pack picks two different victims on the following night (the Witch's potion saves the first). |
+| Dire Wolf | Jahat | Night-1 turn: picks a secret partner. When the partner dies by any cause, the Dire Wolf dies at once (an ordinary death in public). |
+| Dream Wolf | Jahat | Never wakes and has no turn; listed to the other pack members. Counts as a Werewolf. |
+
+Night order: Cupid, Mason, Dire Wolf (night 1), Werewolves, Sorcerer, Guardian Angel, Seer, Apprentice Seer, Spellcaster, Vampire, Witch. Winner factions added: `LONE_WOLF`, `VAMPIRE`. Not yet built: the day UI for the Troublemaker's button and the silence/doom banners (tasks 8.7 and 8.9).

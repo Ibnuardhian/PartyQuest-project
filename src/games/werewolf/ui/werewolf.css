@@ -89,12 +89,19 @@ body:has(.werewolf-theme) { background-color: #020617; color: #94a3b8; }
 .ww-host { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-top: 1px dashed var(--ww-line); padding-top: 12px; }
 .ww-host .section-kicker { width: 100%; }
 .ww-mycard { border: 1px solid var(--ww-line); border-radius: 4px; padding: 12px; }
-.ww-mycard[open] { display: grid; gap: 10px; justify-items: center; }
+.ww-mycard-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; border: 0; background: transparent; color: var(--ww-text); font: inherit; font-size: 13px; cursor: pointer; padding: 0; }
+/* Opens a little at a time: the grid row grows from 0fr to 1fr while the card fades in. */
+.ww-mycard-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .45s ease, opacity .45s ease; }
+.ww-mycard-body.is-open { grid-template-rows: 1fr; opacity: 1; }
+.ww-mycard-inner { min-height: 0; overflow: hidden; display: grid; gap: 10px; justify-items: center; padding-top: 0; }
+.ww-mycard-body.is-open .ww-mycard-inner { padding-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .ww-mycard-body { transition: none; } }
 /* Role card (3D flip) */
-.ww-role-card { width: min(300px, 100%); aspect-ratio: 3 / 4; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }
+.ww-role-slot { display: block; width: min(300px, 100%); aspect-ratio: 3 / 4; justify-self: center; margin: 0 auto; }
+.ww-role-card { display: block; width: 100%; height: 100%; border: 0; padding: 0; background: transparent; perspective: 900px; cursor: pointer; color: inherit; }
 .ww-role-inner { position: relative; display: block; width: 100%; height: 100%; transition: transform .5s ease; transform-style: preserve-3d; }
 .ww-role-card.is-open .ww-role-inner { transform: rotateY(180deg); }
-.ww-role-face { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 12px; padding: 22px; border: 1px solid var(--ww-accent); border-radius: 6px; backface-visibility: hidden; background: radial-gradient(circle at 50% 30%, #0f172a, #000 70%); }
+.ww-role-face { position: absolute; inset: 0; display: flex; overflow-y: auto; overscroll-behavior: contain; padding: 22px; border: 1px solid var(--ww-accent); border-radius: 6px; backface-visibility: hidden; background: radial-gradient(circle at 50% 30%, #0f172a, #000 70%); }
 .ww-role-front { transform: rotateY(180deg); }
 .ww-role-face strong { font: 30px Georgia, serif; color: var(--ww-text); letter-spacing: .06em; }
 .ww-role-face small { color: var(--ww-muted); font-size: 12px; line-height: 1.6; }
@@ -113,15 +120,17 @@ body:has(.ww-is-night) { background: #000; }
 .ww-your-turn { justify-self: start; color: #94a3b8; border: 1px solid var(--ww-accent); padding: 4px 10px; font-size: 11px; letter-spacing: .3em; }
 .ww-night-hint { margin: 0; color: #64748b; font-size: 12px; line-height: 1.6; }
 .ww-fake-tap { display: grid; gap: 10px; height: 100%; }
-.ww-tap-area { position: relative; min-height: 340px; border: 1px solid #1e293b; border-radius: 6px; }
-.ww-tap { position: absolute; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 50%; border: 1px solid #0ea5e959; background: transparent; color: #64748b; font: 18px Georgia, serif; }
-.ww-tap.is-done { border-color: #1e293b; color: #1e293b; }
 .ww-targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .ww-target { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid #1e293b; border-radius: 3px; background: transparent; color: #94a3b8; padding: 12px; font-size: 13px; text-align: left; }
 .ww-target:hover:not(:disabled), .ww-target.is-selected { border-color: #0ea5e959; }
 .ww-target.is-selected { box-shadow: inset 0 0 0 1px #0ea5e959; }
 .ww-target:disabled { opacity: .4; }
-.ww-claw { color: #b91c1c; letter-spacing: -2px; }
+/* Tiles appear one after another, a little at a time (the delay is capped so a long list is ready within ~1 s). */
+.ww-targets.is-staggered .ww-target { animation: ww-tile-in .35s ease-out both; animation-delay: calc(min(var(--i, 0), 12) * 80ms); }
+@keyframes ww-tile-in { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ww-targets.is-staggered .ww-target { animation: none; } }
+.ww-claw { display: inline-flex; gap: 2px; color: #dc2626; }
+.ww-claw svg { width: 18px; height: 18px; }
 /* Day */
 .ww-matrix, .ww-voted, .ww-role-list, .ww-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .ww-matrix li { display: flex; gap: 8px; align-items: baseline; font-size: 13px; border-top: 1px solid var(--ww-line); padding-top: 6px; }
@@ -131,7 +140,8 @@ body:has(.ww-is-night) { background: #000; }
 .ww-role-list li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--ww-line); padding-top: 6px; font-size: 13px; }
 .ww-role-list .is-winner strong { color: #fcd34d; }
 .ww-timeline { color: var(--ww-muted); font-size: 12px; list-style: decimal inside; }
-.ww-dead { border-color: #334155; }
+.ww-dead { border-color: #b91c1c; background: rgba(185, 28, 28, .14); }
+.ww-dead .section-kicker { color: #f87171; }
 /* Lobby editor (rendered inside the light platform lobby) */
 .ww-editor { display: grid; gap: 10px; }
 .ww-editor .ww-check { color: inherit; }
@@ -213,6 +223,60 @@ body:has(.ww-is-night) { background: #000; }
 /* Catalog banner motif: midnight sky with a crescent moon (inside the unified card). */
 .ww-catalog-banner { background: radial-gradient(circle at 78% 28%, #0f2a44 0, transparent 42%), radial-gradient(circle at 75% 30%, #0f172a 0, #020617 64%); }
 
+/* Role list: trigger + modal with 3D flip cards (Midnight OLED). Faction colour comes from --rg. */
+.ww-rg-trigger { width: 100%; text-align: left; background: transparent; border: 1px solid var(--ww-line); color: var(--ww-text); border-radius: 10px; padding: 10px 14px; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.ww-rg-trigger:hover { border-color: #22d3ee66; color: #e2e8f0; }
+.ww-rg-dialog { margin: auto; inset: 0; width: min(1000px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid rgba(34, 211, 238, .25); border-radius: 16px; background: #060a12; color: #e2e8f0; overflow: hidden; }
+.ww-rg-dialog::backdrop { background: rgba(0, 0, 0, .78); }
+.ww-rg-panel { padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100dvh - 26px); overflow-y: auto; }
+.ww-rg-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ww-rg-bar h2 { margin: 0; font-size: 18px; color: #f1f5f9; }.ww-rg-bar p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; }
+.ww-rg-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .15); background: transparent; color: #cbd5e1; cursor: pointer; }
+.ww-rg-close:hover { background: rgba(255, 255, 255, .08); }
+.ww-rg-grid { --n: 2; --g: 12px; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--g); }
+@media (min-width: 480px) { .ww-rg-grid { --n: 3; --g: 14px; } }
+@media (min-width: 768px) { .ww-rg-grid { --n: 4; --g: 16px; } }
+@media (min-width: 1024px) { .ww-rg-grid { --n: 5; --g: 18px; } }
+.ww-rg-slot { display: block; flex: 0 0 calc((100% - (var(--n) - 1) * var(--g)) / var(--n)); min-width: 0; aspect-ratio: 3 / 4; }
+.ww-rg-card { --rg: #22d3ee; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; perspective: 1000px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; text-align: center; font: inherit; color: inherit; }
+.ww-rg-card.tone-evil { --rg: #fb7185; }.ww-rg-card.tone-neutral { --rg: #fbbf24; }
+.ww-rg-card:focus-visible { outline: 2px solid var(--rg); outline-offset: 3px; border-radius: 14px; }
+.ww-rg-inner { position: relative; display: block; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+.ww-rg-card.is-flipped .ww-rg-inner { transform: rotateY(180deg); }
+.ww-rg-face { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 12px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; overflow: hidden; }
+.ww-rg-front { background: radial-gradient(ellipse at 50% 0, color-mix(in srgb, var(--rg) 18%, transparent), transparent 62%), #0b121e; border: 1px solid color-mix(in srgb, var(--rg) 35%, transparent); padding: 10px; align-items: center; justify-content: space-between; }
+.ww-rg-top { width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 18px; }
+.ww-rg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rg); box-shadow: 0 0 8px var(--rg); }
+.ww-rg-twist { margin-left: auto; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, .1); color: #cbd5e1; }
+.ww-rg-medal { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--rg); background: color-mix(in srgb, var(--rg) 12%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--rg) 25%, transparent); }
+.ww-rg-medal svg { width: 36px; height: 36px; }
+@media (min-width: 640px) { .ww-rg-medal { width: 72px; height: 72px; }.ww-rg-medal svg { width: 42px; height: 42px; } }
+.ww-rg-name { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+@media (min-width: 640px) { .ww-rg-name { font-size: 17px; } }
+.ww-rg-hint { align-self: flex-end; font-size: 14px; color: #64748b; line-height: 1; }
+.ww-rg-back { background: #070c14; border: 1px solid rgba(255, 255, 255, .15); padding: 12px; justify-content: space-between; transform: rotateY(180deg); }
+.ww-rg-head { display: flex; flex-direction: column; align-items: center; gap: 4px; }.ww-rg-head strong { font-size: 15px; color: #f1f5f9; }
+.ww-rg-pill { font-style: normal; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: var(--rg); background: color-mix(in srgb, var(--rg) 14%, transparent); border: 1px solid color-mix(in srgb, var(--rg) 35%, transparent); }
+.ww-rg-text { margin: auto 0; font-size: 13px; line-height: 1.55; color: #e2e8f0; }
+@media (min-width: 640px) { .ww-rg-text { font-size: 14px; } }
+@media (max-width: 479px) { .ww-rg-text { font-size: 12px; } }
+.ww-rg-foot { font-size: 10px; color: #64748b; }
+.ww-rg-credit { margin: 0; font-size: 11px; color: #64748b; text-align: center; }.ww-rg-credit a { color: #94a3b8; }
+@media (prefers-reduced-motion: reduce) { .ww-rg-inner { transition: none; } }
+.ww-rg-tags { margin-left: auto; display: flex; gap: 4px; }.ww-rg-tags .ww-rg-twist { margin-left: 0; }
+.ww-rg-soon { background: rgba(34, 211, 238, .14); color: #67e8f9; }
+.ww-rg-side { --rg: #22d3ee; display: block; }.ww-rg-side.tone-evil { --rg: #fb7185; }.ww-rg-side.tone-neutral { --rg: #fbbf24; }
+.ww-rg-side + .ww-rg-side { padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.ww-rg-side-title { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 15px; color: var(--rg); }
+.ww-rg-side-title span { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--rg) 14%, transparent); }
+.ww-rg-side-title small { font-size: 12px; font-weight: 400; color: #94a3b8; }
+.ww-rg-side > summary { list-style: none; cursor: pointer; user-select: none; }.ww-rg-side > summary::-webkit-details-marker { display: none; }
+.ww-rg-side[open] > .ww-rg-grid { margin-top: 10px; }
+.ww-rg-chevron { margin-left: auto; font-size: 16px; line-height: 1; color: #94a3b8; transition: transform .2s; }.ww-rg-side:not([open]) .ww-rg-chevron { transform: rotate(-90deg); }
+.ww-rg-side > summary:focus-visible { outline: 2px solid var(--rg); outline-offset: 4px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { .ww-rg-chevron { transition: none; } }
+.ww-rg-card.is-soon { opacity: .5; transition: opacity .2s; }.ww-rg-card.is-soon:hover, .ww-rg-card.is-soon:focus-visible, .ww-rg-card.is-soon.is-flipped { opacity: .85; }
+.ww-rg-card.is-soon .ww-rg-medal { filter: saturate(.5); }
 /* Direct join screen: midnight OLED cyan. */
 .werewolf-theme .lj-crumbs { color: #94a3b8; }.werewolf-theme .lj-back { color: #94a3b8; }.werewolf-theme .lj-back:hover { color: #67e8f9; }
 .werewolf-theme .lj-card { background: #0b121e; border: 1px solid rgba(6, 182, 212, .25); box-shadow: 0 24px 60px rgba(0, 0, 0, .6); color: #f1f5f9; }
@@ -240,3 +304,73 @@ body:has(.ww-is-night) { background: #000; }
 .werewolf-theme .lb-card .lb-exit { color: #fca5a5; background: rgba(239, 68, 68, .08); border-color: rgba(239, 68, 68, .4); }
 .werewolf-theme .lb-card .lb-exit:hover:not(:disabled) { background: #b91c1c; color: #fff; }
 .werewolf-theme .lb-card .lb-chip { color: #cbd5e1; }.werewolf-theme .lb-card .lb-chip.host { color: #22d3ee; border-color: #22d3ee; }
+
+/* Role card content: auto margins center it, and let it scroll from the top when it is taller than the card. */
+.ww-role-content { display: grid; justify-items: center; gap: 12px; width: 100%; margin: auto; text-align: center; }
+.ww-role-hint, .ww-role-backdrop { display: none; }
+
+/* Phones: an open card fills the screen with a margin so the description is large and never cut off. */
+@media (max-width: 640px) {
+  .ww-role-backdrop { position: fixed; inset: 0; z-index: 79; display: block; background: #000000e6; }
+  .ww-role-card.is-expanded { position: fixed; z-index: 80; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 16px; width: auto; height: auto; }
+  .ww-role-card.is-expanded .ww-role-face { padding: 28px 22px; border-radius: 10px; }
+  .ww-role-card.is-expanded .ww-role-content { gap: 16px; }
+  .ww-role-card.is-expanded .ww-role-face strong { font-size: 40px; }
+  .ww-role-card.is-expanded .ww-role-front small { font-size: 17px; line-height: 1.7; color: #cbd5e1; }
+  .ww-role-card.is-expanded .ww-badge { padding: 5px 12px; font-size: 13px; }
+  .ww-role-card.is-expanded .ww-role-sigil { font-size: 72px; }
+  .ww-role-card.is-expanded .ww-role-hint { display: block; margin-top: 8px; color: var(--ww-muted); font-size: 12px; font-style: normal; letter-spacing: .12em; text-transform: uppercase; }
+}
+
+/* Phones: a flipped role card fills the screen with a margin, with large text that scrolls if it is still too long. */
+.ww-rg-backdrop { display: none; }
+@media (max-width: 640px) {
+  .ww-rg-backdrop { position: fixed; inset: 0; z-index: 30; display: block; background: rgba(0, 0, 0, .88); }
+  .ww-rg-card.is-expanded { position: fixed; z-index: 31; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 16px; width: auto; height: auto; }
+  .ww-rg-card.is-expanded, .ww-rg-card.is-soon.is-expanded { opacity: 1; }
+  .ww-rg-card.is-expanded .ww-rg-back { padding: 28px 22px; justify-content: flex-start; gap: 20px; overflow-y: auto; overscroll-behavior: contain; }
+  .ww-rg-card.is-expanded .ww-rg-head strong { font-size: 30px; }
+  .ww-rg-card.is-expanded .ww-rg-pill { padding: 4px 12px; font-size: 13px; }
+  .ww-rg-card.is-expanded .ww-rg-text { margin: auto 0; font-size: 18px; line-height: 1.7; color: #f1f5f9; }
+  .ww-rg-card.is-expanded .ww-rg-foot { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+}
+
+
+/* Werewolf end screen: victory banner and readable three-card summary. */
+.ww-game-over { display: grid; gap: 16px; }
+.ww-victory { position: relative; overflow: hidden; isolation: isolate; border: 1px solid; border-radius: 16px; padding: 24px; display: grid; gap: 8px; background: radial-gradient(ellipse at 50% -20%, var(--ww-glow), transparent 65%), #0b1422; }
+.ww-victory-village { --ww-glow: #10b98155; border-color: #06b6d459; }
+.ww-victory-werewolf { --ww-glow: #e11d4855; border-color: #f43f5e66; background-color: #170d17; }
+.ww-victory-neutral { --ww-glow: #f59e0b55; border-color: #f59e0b66; background-color: #17140d; }
+.ww-victory .section-kicker { color: #cbd5e1; }
+.ww-victory h2 { margin: 0; color: #f8fafc; font: 700 clamp(25px, 4vw, 36px)/1.15 Georgia, serif; }
+.ww-victory > p { margin: 0; color: #cbd5e1; font-size: 14px; }
+.ww-winners { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; color: #e2e8f0; font-size: 12px; }
+.ww-winner-pill { border: 1px solid #fbbf2466; border-radius: 999px; background: #fbbf241a; color: #fde68a; padding: 6px 10px; }
+.ww-summary-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; }
+.ww-summary-side { display: flex; flex-direction: column; gap: 16px; }
+.ww-summary-card { min-width: 0; border: 1px solid #ffffff1a; border-radius: 16px; background: #0b121e; padding: 20px; display: grid; align-content: start; gap: 14px; }
+.ww-summary-card > header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ww-count-badge { border: 1px solid #ffffff1a; border-radius: 999px; padding: 4px 9px; color: #cbd5e1; font-size: 11px; white-space: nowrap; }
+.ww-role-list { gap: 8px; }
+.ww-player-card { min-width: 0; border: 1px solid #ffffff14; border-radius: 12px; background: #101929; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ww-player-card.is-eliminated { opacity: .8; }
+.ww-player-info, .ww-player-role { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.ww-avatar { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #1e293b; color: #e2e8f0; font-weight: 700; }
+.ww-player-name { display: grid; gap: 3px; color: #e2e8f0; font-size: 13px; }
+.ww-player-name small { font-size: 10px; }
+.ww-player-name .is-alive { color: #6ee7b7; }
+.ww-player-name .is-dead { color: #94a3b8; }
+.ww-role-badge { border: 1px solid; border-radius: 999px; padding: 5px 8px; font-size: 11px; font-weight: 600; text-align: right; }
+.ww-role-badge.is-village { color: #67e8f9; border-color: #06b6d455; background: #06b6d411; }
+.ww-role-badge.is-wolf { color: #fda4af; border-color: #f43f5e55; background: #f43f5e11; }
+.ww-role-badge.is-neutral { color: #fcd34d; border-color: #f59e0b55; background: #f59e0b11; }
+.ww-win-tag { color: #fde68a; font-size: 9px; letter-spacing: .12em; white-space: nowrap; }
+.ww-player-role { justify-content: flex-end; flex-wrap: wrap; }
+.ww-abstain { width: 100%; margin-top: 8px; justify-content: center; color: #fcd34d; border-color: #f59e0b66; }
+.ww-abstain:hover:not(:disabled), .ww-abstain.is-selected { border-color: #fbbf24; box-shadow: inset 0 0 0 1px #fbbf2488; color: #fde68a; }
+.ww-matrix li { justify-content: space-between; border: 1px solid #ffffff12; border-radius: 9px; background: #101929; padding: 9px 10px; color: #cbd5e1; }
+.ww-matrix li strong { color: #f8fafc; text-align: right; }
+.ww-timeline { gap: 9px; }
+.ww-timeline li { padding-left: 4px; line-height: 1.5; }
+@media (max-width: 760px) { .ww-summary-grid { grid-template-columns: 1fr; } .ww-victory, .ww-summary-card { padding: 18px; } }

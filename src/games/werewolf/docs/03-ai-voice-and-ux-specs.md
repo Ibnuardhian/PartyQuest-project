@@ -2,15 +2,15 @@
 
 > **PartyQuest adaptation:** This file keeps the original Werewolf Hybrid spec wording. Stack references were mapped to the PartyQuest platform (guest cookie, PostgreSQL, SSE). See `04-architecture-and-platform-integration.md` for how each item is implemented.
 
-## 1. AI Voice Moderator (Microsoft Edge Neural: static voice pack + named announcements)
+## 1. AI Voice Moderator (ElevenLabs default, Microsoft Edge Neural fallback)
 
 > **PartyQuest decision (2026-11-23):** merged from `werewolf-tts-voice-pack.zip` (the static MP3 pack and its spec update). The original template table is in git history (`a08d009`). Player names are spoken in daytime announcements; night turns name roles only.
 
 ### 1.1 Architecture & Audio Routing Rules
-- **Static voice pack (zero runtime TTS):** 41 lines (22 Classic, 19 ONUW) are pre-generated MP3 files in `public/audio/werewolf/classic/` and `public/audio/werewolf/onuw/`, created once with **Microsoft Edge Neural TTS** (`id-ID-ArdiNeural`, rate `-6%`, pitch `-4Hz`; alternative `id-ID-GadisNeural`) by `npm run voice:generate` (`scripts/generate-werewolf-voice.mjs`, reads `src/games/werewolf/voice/voice-pack.json`). The files are committed, so play time needs no API.
-- **Named announcements (on demand):** four daytime lines name the players involved. The host's device asks `POST /api/games/werewolf/tts` (Microsoft Edge Neural via `node-edge-tts`, same voice and prosody, cached per line on the server). The route only voices these four templates with names of players in that session.
+- **Static voice pack (zero runtime TTS):** 41 lines (22 Classic, 19 ONUW) are pre-generated MP3 files in `public/audio/werewolf/classic/` and `public/audio/werewolf/onuw/`, created with **ElevenLabs by default** (or Microsoft Edge Neural TTS with `--provider microsoft`) (`id-ID-ArdiNeural`, rate `-6%`, pitch `-4Hz`; alternative `id-ID-GadisNeural`) by `npm run voice:generate` (`scripts/generate-werewolf-voice.mjs`, reads `src/games/werewolf/voice/voice-pack.json`). The files are committed, so play time needs no API.
+- **Named announcements (on demand):** four daytime lines name the players involved. The host's device asks `POST /api/games/werewolf/tts`; the configured provider voices the named template and caches it per line. Only the four approved templates and names from that session are allowed.
 - **Fallback chain:** named line from Microsoft → the pack's generic MP3 for that event (no name) → browser Web Speech (`id-ID`).
-- **Optional ElevenLabs:** with `TTS_PROVIDER=elevenlabs` and `ELEVENLABS_API_KEY`, named lines and (once generated) a separate static pack in `/audio/werewolf/elevenlabs/` use ElevenLabs (`eleven_multilingual_v2`); ElevenLabs failures fall back to Microsoft.
+- **ElevenLabs default:** `TTS_PROVIDER=elevenlabs` and `ELEVENLABS_API_KEY` select ElevenLabs Adam for named lines and the static pack in `/audio/werewolf/elevenlabs/`; failures fall back to Microsoft.
 - **Character:** prosody presets (`standar` … `gelap`) and optional dramatic effects (reverb, bass, compressor in the browser). Edge offers no emotional styles for Indonesian voices.
 - **English role names (optional):** `segments` joins Ardi (Indonesian) with an English voice for role names into one MP3; `multilingual` uses one multilingual voice for the whole line. Compare on the pilot page before regenerating the pack.
 - **Strict Single-Device Audio Output:**
@@ -33,12 +33,19 @@
 | `DAY_START` | `day_discussion_start.mp3` | *"Fase diskusi dimulai! Kalian punya waktu untuk berdebat dan mencari siapa pelaku di antara kalian."* |
 | `DAY_1MIN_WARN` | `day_one_minute_left.mp3` | *"Perhatian... Waktu diskusi tersisa satu menit lagi."* |
 | `VOTING_START` | `voting_start.mp3` | *"Waktu diskusi habis! Silakan pilih satu nama di layar HP kalian untuk dieksekusi sekarang."* |
-| `VOTE_TIE` | `voting_tie.mp3` | *"Hasil voting seri! Para kandidat yang seri memiliki waktu tiga puluh detik untuk membela diri... sebelum voting ulang dimulai."* |
+| `VOTE_TIE` | `voting_tie.mp3` | *"Hasil voting seri! Para kandidat yang seri memiliki waktu tiga menit untuk membela diri... sebelum voting ulang dimulai."* |
 | `EXECUTION_RESULT` | **Microsoft on demand** (fallback `execution_result.mp3`) | *"Warga desa telah memutuskan... {executedName} dieksekusi hari ini!"* |
 | `NO_EXECUTION` | `execution_none.mp3` | *"Voting kembali seri... Tidak ada warga yang dieksekusi hari ini."* |
 | `WIN_*` | `win_villager/werewolf/tanner/lovers.mp3` | One line per winning side. |
 
 Exact texts: `src/games/werewolf/voice/voice-pack.json` (static) and `NAME_LINES` in `src/games/werewolf/voice/templates.ts` (named).
+
+### 1.2b Adding a voiced role (checklist)
+Only roles that **wake at night** (`NIGHT_ORDER`) or end the game need a voice line; Hunter has its revenge line, and Tanner, Lycan, Cursed, Minion, Mayor, and Disease need none because nothing is spoken for them. Today the voiced night roles are Cupid, Mason, Werewolf, Guardian Angel, Seer, and Witch, and every winning faction (Villager, Werewolf, Tanner, Lovers) has a win line. To add another one:
+1. Add the role in `contract.ts` (`CLASSIC_ROLES` plus `BASE_ROLES` or `TWIST_ROLES`) and `roles.ts`; for a night role also `NIGHT_ORDER` and the engine turn.
+2. Add `CLASSIC_TURN_<ROLE>` (or `CLASSIC_WIN_<FACTION>`) to `voice/voice-pack.json` with `text` and an emotional `elevenlabsText`, and map it in `TURN_KEYS` / `WIN_KEYS` in `voice/templates.ts`.
+3. Generate the ElevenLabs MP3 with `docker compose run --rm --no-deps web npm run voice:generate -- --only CLASSIC_TURN_<ROLE>` (default), then generate the Microsoft MP3 with the same command plus `--provider microsoft`; commit both files.
+4. `voice/voice-coverage.test.ts` fails until the role has its own turn line (not the end-of-turn fallback) and every pack line exists as an MP3 for both voices.
 
 ### 1.3 Mode 2: ONUW voice-only night (`/audio/werewolf/onuw/`, split open/close clips)
 The phone in the center plays `*_open.mp3`, shows the countdown ring (10–14 s), then plays `*_close.mp3`:

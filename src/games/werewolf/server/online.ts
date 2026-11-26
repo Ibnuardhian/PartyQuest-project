@@ -5,8 +5,8 @@ import {
   type ClassicAction, type ClassicGameState, type ClassicPublicState, type ClassicRole, type ClassicSecretState, type ClassicSettings,
 } from "@/games/werewolf/contract";
 import { advanceClassic, applyClassicAction, ClassicRuleError, createClassicGame } from "@/games/werewolf/engine/classic/engine";
-import { classicSettingsSchema, countRoles, validateClassicSettings } from "@/games/werewolf/engine/classic/settings";
-import { CLASSIC_ROLE_INFO, recommendedComposition } from "@/games/werewolf/roles";
+import { classicSettingsSchema, countRoles, twistRolesIn, twistRolesMessage, validateClassicSettings } from "@/games/werewolf/engine/classic/settings";
+import { CLASSIC_ROLE_INFO, recommendedAdvancedComposition, recommendedComposition } from "@/games/werewolf/roles";
 import { buildPlayerView, buildPublicView } from "@/games/werewolf/server/view";
 
 /** Werewolf Classic adapter for Online Room (docs/04). Pure: no database, no HTTP. */
@@ -20,21 +20,25 @@ export const werewolfRoomSettingsSchema = classicSettingsSchema.extend({
 }).strict();
 export type WerewolfRoomSettings = z.infer<typeof werewolfRoomSettingsSchema>;
 
-export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180 };
+/** The shortest discussion: the "one minute left" warning would otherwise collide with the dawn narration. */
+const MIN_DISCUSSION_SECONDS = 180;
+
+export const DEFAULT_ROOM_SETTINGS: WerewolfRoomSettings = { roles: "AUTO", deadRevealMode: "KEEP_HIDDEN", nightTurnSeconds: 15, dayDiscussionSeconds: 180, advanced: false };
 
 const playerId = z.string().uuid();
 export const werewolfIntentSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }).strict(),
-  z.object({ type: z.literal("wolf-target"), targetId: playerId.nullable() }).strict(),
+  z.object({ type: z.literal("wolf-target"), targetId: playerId.nullable(), secondTargetId: playerId.nullable().optional(), convert: z.boolean().optional() }).strict(),
   z.object({
     type: z.literal("night-action"),
-    actionType: z.enum(["DOCTOR_PROTECT", "SEER_INSPECT", "WITCH_HEAL", "WITCH_POISON", "CUPID_LINK", "SKIP"]),
+    actionType: z.enum(["DOCTOR_PROTECT", "SEER_INSPECT", "WITCH_HEAL", "WITCH_POISON", "CUPID_LINK", "SORCERER_INSPECT", "SPELLCASTER_SILENCE", "VAMPIRE_BITE", "DIRE_PARTNER", "SKIP"]),
     targetId: playerId.optional(),
     secondaryTargetId: playerId.optional(),
   }).strict(),
   z.object({ type: z.literal("skip-discussion") }).strict(),
   z.object({ type: z.literal("vote"), targetId: playerId.nullable() }).strict(),
   z.object({ type: z.literal("hunter-shot"), targetId: playerId }).strict(),
+  z.object({ type: z.literal("second-vote") }).strict(),
   z.object({ type: z.literal("force-advance") }).strict(),
 ]);
 
@@ -58,7 +62,7 @@ function invalidSettings(message: string): never {
 }
 
 export function resolveClassicSettings(room: WerewolfRoomSettings, playerCount: number): ClassicSettings {
-  const roles = room.roles === "AUTO" ? recommendedComposition(playerCount) : room.roles;
+  const roles = room.roles === "AUTO" ? (room.advanced ? recommendedAdvancedComposition(playerCount) : recommendedComposition(playerCount)) : room.roles;
   return validateClassicSettings({ ...room, roles }, playerCount);
 }
 
@@ -67,6 +71,7 @@ export const werewolfOnline: OnlineGameServer = {
   minPlayers: CLASSIC_MIN_PLAYERS,
   maxPlayers: CLASSIC_MAX_PLAYERS,
   defaultSettings: () => DEFAULT_ROOM_SETTINGS,
+  hostCanRenameMembers: true,
   parseSettings(input) {
     const parsed = werewolfRoomSettingsSchema.safeParse(input);
     if (!parsed.success) invalidSettings("Pengaturan Werewolf tidak valid.");
@@ -77,6 +82,7 @@ export const werewolfOnline: OnlineGameServer = {
       const total = countRoles(roles);
       if (total < CLASSIC_MIN_PLAYERS || total > CLASSIC_MAX_PLAYERS) invalidSettings(`Komposisi harus berisi ${CLASSIC_MIN_PLAYERS}–${CLASSIC_MAX_PLAYERS} role.`);
       if ((roles.WEREWOLF ?? 0) < 1) invalidSettings("Minimal ada satu Werewolf.");
+      if (!settings.advanced && twistRolesIn(roles).length > 0) invalidSettings(twistRolesMessage(roles));
       for (const role of CLASSIC_ROLES) {
         const count = roles[role as ClassicRole] ?? 0;
         if (count > CLASSIC_ROLE_INFO[role].max) invalidSettings(`${CLASSIC_ROLE_INFO[role].name} maksimal ${CLASSIC_ROLE_INFO[role].max}.`);
@@ -85,7 +91,9 @@ export const werewolfOnline: OnlineGameServer = {
     return settings;
   },
   createRound(members, rawSettings) {
-    const room = werewolfRoomSettingsSchema.safeParse(rawSettings);
+    // Rooms saved before the 3-minute minimum may still hold a shorter discussion: raise it instead of refusing to start.
+    const stored = rawSettings && typeof rawSettings === "object" ? rawSettings as Record<string, unknown> : {};
+    const room = werewolfRoomSettingsSchema.safeParse(typeof stored.dayDiscussionSeconds === "number" && stored.dayDiscussionSeconds < MIN_DISCUSSION_SECONDS ? { ...stored, dayDiscussionSeconds: MIN_DISCUSSION_SECONDS } : rawSettings);
     if (!room.success) throw new OnlineGameError(409, "invalid_settings", "Pengaturan Werewolf tidak valid.");
     let state: ClassicGameState;
     try {

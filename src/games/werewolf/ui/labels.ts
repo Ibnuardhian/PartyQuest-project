@@ -30,7 +30,7 @@ export const PHASE_LABELS: Record<ClassicPhase, string> = {
 
 export const ALIGNMENT_LABELS: Record<Alignment, string> = { VILLAGER: "Kubu Warga", WEREWOLF: "Kubu Werewolf", INDEPENDENT: "Independen" };
 
-export const FACTION_LABELS: Record<WinnerFaction, string> = { VILLAGER: "Warga Desa", WEREWOLF: "Werewolf", TANNER: "Tanner", LOVERS: "Sepasang Kekasih" };
+export const FACTION_LABELS: Record<WinnerFaction, string> = { VILLAGER: "Warga Desa", WEREWOLF: "Werewolf", TANNER: "Tanner", LOVERS: "Sepasang Kekasih", LONE_WOLF: "Lone Wolf", VAMPIRE: "Vampire" };
 
 export const roleName = (role: ClassicRole) => CLASSIC_ROLE_INFO[role].name;
 

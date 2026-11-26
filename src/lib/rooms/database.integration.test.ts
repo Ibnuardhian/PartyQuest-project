@@ -143,7 +143,7 @@ suite("PostgreSQL room functions", () => {
     });
   });
 
-  it("lets only the host change settings, only in the lobby, and resets other players' ready state", async () => {
+  it("lets only the host change settings, only in the lobby, and keeps everyone ready", async () => {
     await inRollback(async () => {
       const { room, ids } = await roomWithPlayers(3);
       for (const id of ids) await client.query("select set_room_ready($1, $2, true)", [room.id, id]);
@@ -154,7 +154,7 @@ suite("PostgreSQL room functions", () => {
       const settings = await client.query<{ settings: unknown }>("select settings from game_rooms where id = $1", [room.id]);
       expect(settings.rows[0]!.settings).toEqual({ x: 1 });
       const ready = await client.query<{ user_id: string; is_ready: boolean }>("select user_id, is_ready from room_members where room_id = $1 order by seat_no", [room.id]);
-      expect(ready.rows.map((row) => row.is_ready)).toEqual([true, false, false]);
+      expect(ready.rows.map((row) => row.is_ready)).toEqual([true, true, true]);
       await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
       expect(await errorOf(client.query("select update_room_settings($1, $2, '{}'::jsonb)", [room.id, ids[0]]))).toContain("room_not_in_lobby");
     });
@@ -185,6 +185,41 @@ suite("PostgreSQL room functions", () => {
       await client.query("select touch_member($1, $2)", [room.id, ids[2]]);
       const online = await client.query<{ user_id: string }>("select user_id from room_members where room_id = $1 and last_seen_at > now() - interval '30 seconds'", [room.id]);
       expect(online.rows.map((row) => row.user_id)).toEqual([ids[2]]);
+    });
+  });
+
+  it("lets only the host rename an active member, before the round, to a name no one else has", async () => {
+    await inRollback(async () => {
+      const { room, ids } = await roomWithPlayers(3, "werewolf", 16);
+      const rename = (host: string, target: string, name: string) => client.query<{ n: string }>("select rename_room_member($1, $2, $3, $4) as n", [room.id, host, target, name]);
+      const nameOf = async (id: string) => (await client.query<{ display_name: string }>("select display_name from room_members where room_id = $1 and user_id = $2", [room.id, id])).rows[0]!.display_name;
+      const fails = async (fn: () => Promise<unknown>) => {
+        await client.query("savepoint rename_try");
+        const message = await errorOf(fn());
+        await client.query("rollback to savepoint rename_try");
+        return message;
+      };
+      // Spaces are trimmed and collapsed; the guest's own profile and other rooms are untouched.
+      const profileBefore = (await client.query<{ display_name: string }>("select display_name from guest_profiles where user_id = $1", [ids[1]])).rows[0]?.display_name;
+      expect((await rename(ids[0]!, ids[1]!, "  Budi   Santoso ")).rows[0]!.n).toBe("Budi Santoso");
+      expect(await nameOf(ids[1]!)).toBe("Budi Santoso");
+      expect((await client.query<{ display_name: string }>("select display_name from guest_profiles where user_id = $1", [ids[1]])).rows[0]?.display_name).toBe(profileBefore);
+      // Only the host may rename; a lookalike of another member's name (any case, any spacing) is refused.
+      expect(await fails(() => rename(ids[2]!, ids[1]!, "Orang Lain"))).toContain("host_required");
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "budi  SANTOSO"))).toContain("duplicate_name");
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "Host"))).toContain("duplicate_name");
+      // Keeping a member's own name is fine, and the host can rename themselves.
+      expect((await rename(ids[0]!, ids[1]!, "budi santoso")).rows[0]!.n).toBe("budi santoso");
+      expect((await rename(ids[0]!, ids[0]!, "Ketua")).rows[0]!.n).toBe("Ketua");
+      // Invalid names, strangers, and a running round.
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "   "))).toContain("invalid_name");
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "x".repeat(25)))).toContain("invalid_name");
+      const stranger = await guest();
+      expect(await fails(() => rename(ids[0]!, stranger, "Orang Asing"))).toContain("member_not_found");
+      await client.query("select leave_room($1, $2)", [room.id, ids[2]]);
+      expect(await fails(() => rename(ids[0]!, ids[2]!, "Sudah Keluar"))).toContain("member_not_found");
+      await client.query("update game_rooms set status = 'in_progress' where id = $1", [room.id]);
+      expect(await fails(() => rename(ids[0]!, ids[1]!, "Terlambat"))).toContain("room_not_in_lobby");
     });
   });
 
@@ -315,6 +350,52 @@ suite("PostgreSQL room functions", () => {
       expect(deleted).toBeGreaterThanOrEqual(3);
       const left = new Set((await client.query<{ id: string }>("select id from game_rooms where id = any($1)", [[finishedOld, abandonedOld, finishedFresh, lobbyOld, inProgressOld, expired]])).rows.map((row) => row.id));
       expect(left).toEqual(new Set([finishedFresh, lobbyOld, inProgressOld]));
+    });
+  });
+
+  it("removes guests together with their rooms, but never a guest who still belongs to a surviving room", async () => {
+    await inRollback(async () => {
+      await client.query("alter table game_rooms disable trigger game_rooms_touch_updated_at");
+      const seen = (id: string, ago: string) => client.query(`update guest_users set last_seen_at = now() - interval '${ago}' where id = $1`, [id]);
+      const exists = async (id: string) => ((await client.query("select 1 from guest_users where id = $1", [id])).rowCount ?? 0) > 0;
+      const profileRows = async (id: string) => (await client.query("select 1 from guest_profiles where user_id = $1", [id])).rowCount ?? 0;
+      const expire = (roomId: string) => client.query("update game_rooms set expires_at = now() - interval '1 minute' where id = $1", [roomId]);
+
+      // An expired room with a host and two players: all three guests go with it, profiles included.
+      const gone = await roomWithPlayers(3);
+      for (const id of gone.ids) await seen(id, "30 minutes");
+      expect(await profileRows(gone.ids[1]!)).toBe(1);
+      // A player who belongs to the expired room AND to a surviving room is kept.
+      const survivor = await roomWithPlayers(1);
+      await seen(survivor.ids[0]!, "30 minutes");
+      const shared = await guest();
+      await client.query("select join_room($1, $2, 'Dua Room')", [shared, gone.room.code]);
+      await client.query("select join_room($1, $2, 'Dua Room')", [shared, survivor.room.code]);
+      await seen(shared, "30 minutes");
+      // A player of the expired room who was seen a minute ago keeps the row for now (the guest may be mid-request).
+      const recent = await guest();
+      await client.query("select join_room($1, $2, 'Baru Saja')", [recent, gone.room.code]);
+      await seen(recent, "1 minute");
+      // Guests who never joined a room: swept after an hour, kept when fresh.
+      const staleOrphan = await guest(); await seen(staleOrphan, "2 hours");
+      const freshOrphan = await guest(); await seen(freshOrphan, "10 minutes");
+      // A host of a surviving room is never removed, however idle.
+      await seen(survivor.ids[0]!, "5 hours");
+      await expire(gone.room.id);
+
+      expect((await client.query<{ n: number }>("select cleanup_expired_rooms() as n")).rows[0]!.n).toBeGreaterThanOrEqual(1);
+      for (const id of gone.ids) expect(await exists(id), "member of the deleted room").toBe(false);
+      expect(await profileRows(gone.ids[1]!)).toBe(0);
+      expect(await exists(shared), "also in a surviving room").toBe(true);
+      expect(await exists(recent), "seen a minute ago").toBe(true);
+      expect(await exists(staleOrphan), "idle orphan").toBe(false);
+      expect(await exists(freshOrphan), "fresh orphan").toBe(true);
+      expect(await exists(survivor.ids[0]!), "host of a surviving room").toBe(true);
+      expect((await client.query("select 1 from game_rooms where id = $1", [survivor.room.id])).rowCount).toBe(1);
+
+      // A browser that still holds the cookie of a removed guest gets the same row back.
+      const comeback = await client.query<{ id: string }>("insert into guest_users(id) values ($1) on conflict (id) do update set last_seen_at = now() returning id", [gone.ids[1]]);
+      expect(comeback.rows[0]!.id).toBe(gone.ids[1]);
     });
   });
 

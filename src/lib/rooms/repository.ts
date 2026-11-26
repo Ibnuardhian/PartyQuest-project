@@ -120,6 +120,11 @@ export function setRoomReady(roomId: string, userId: string, ready: boolean) {
   return query("select set_room_ready($1, $2, $3)", [roomId, userId, ready]);
 }
 
+/** Host renames an active member (SQL checks host, lobby phase, and unique name). */
+export function renameRoomMember(roomId: string, hostUserId: string, targetUserId: string, displayName: string) {
+  return queryOne<{ display_name: string }>("select rename_room_member($1, $2, $3, $4) as display_name", [roomId, hostUserId, targetUserId, displayName]);
+}
+
 /** A member is back in the lobby after a round; `force` lets the host open it without waiting. Returns the room status. */
 export async function returnToLobby(roomId: string, userId: string, force: boolean) {
   const row = await queryOne<{ status: string }>("select return_to_lobby($1, $2, $3) as status", [roomId, userId, force]);

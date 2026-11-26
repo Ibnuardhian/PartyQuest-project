@@ -15,6 +15,7 @@ const KNOWN_ERRORS: Record<string, { status: number; message: string }> = {
   room_not_joinable: { status: 409, message: "Room ini tidak menerima pemain baru." },
   room_not_in_lobby: { status: 409, message: "Room tidak sedang berada di lobi." },
   room_full: { status: 409, message: "Room sudah penuh." },
+  member_not_found: { status: 404, message: "Pemain tidak ditemukan di room ini." },
   not_a_member: { status: 403, message: "Kamu bukan anggota room ini." },
   host_required: { status: 403, message: "Hanya host yang dapat melakukan aksi ini." },
   room_not_startable: { status: 409, message: "Room belum dapat dimulai." },

@@ -19,7 +19,8 @@ function session(roleList: ClassicRole[], deadRevealMode: "KEEP_HIDDEN" | "SPECT
   const members = roleList.map((_, index) => ({ userId: uuid(index + 1), displayName: `Pemain ${index + 1}` }));
   const roles: Partial<Record<ClassicRole, number>> = {};
   for (const role of roleList) roles[role] = (roles[role] ?? 0) + 1;
-  const settings = { ...DEFAULT_ROOM_SETTINGS, roles, deadRevealMode };
+  // These tests use twist roles (Witch, Minion, Tanner), which need Advanced mode.
+  const settings = { ...DEFAULT_ROOM_SETTINGS, roles, deadRevealMode, advanced: true };
   const round = werewolfOnline.createRound(members, settings);
   const stored = { publicState: round.publicState, secretState: round.secretState, settings };
   const state = restoreClassic(stored);

@@ -11,19 +11,26 @@ import type { WerewolfView } from "@/games/werewolf/ui/labels";
  * Voice moderator for the single audio device (docs/03 §1.1): the paired TV when one is connected,
  * otherwise the host's phone. Every other device stays silent.
  */
-export function useNarration(publicView: WerewolfView["public"] | null, sessionId: string | null, isAudioDevice: boolean, secondsLeft: number | null = null) {
+export function useNarration(publicView: WerewolfView["public"] | null, sessionId: string | null, isAudioDevice: boolean, secondsLeft: number | null = null, autoEnable = false) {
   const narrator = useMemo(() => new Narrator({ rate: 1 }), []);
-  const [enabled, setEnabled] = useState(false);
+  // A paired TV is always the narrator, so its voice starts on by itself (a TV remote makes extra buttons awkward).
+  const [enabled, setEnabled] = useState(autoEnable);
   const [subtitle, setSubtitle] = useState("");
   const previous = useRef<NarrationKey | null>(null);
   const warnedDay = useRef<number | null>(null);
 
+  const playId = useRef(0);
+
+  /** One voice at a time: a new run stops whatever is still playing (clip or browser speech) before it starts. */
   async function play(lines: VoiceLine[]) {
+    const id = ++playId.current;
+    narrator.cancel();
     for (const line of lines) {
+      if (id !== playId.current) return;
       setSubtitle(line.text);
-      if (!(await narrator.speak(line))) return;
+      if (!(await narrator.speak(line)) || id !== playId.current) return;
     }
-    setSubtitle("");
+    if (id === playId.current) setSubtitle("");
   }
 
   useEffect(() => {
@@ -60,6 +67,18 @@ export function useNarration(publicView: WerewolfView["public"] | null, sessionI
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, secondsLeft, enabled, isAudioDevice]);
+
+  // Auto-start for the TV: pairing was a tap/Enter in this same page, which already allows sound. If the browser
+  // still blocks it (e.g. the stage was opened directly), the first remote key or tap unlocks it - no button needed.
+  useEffect(() => {
+    if (!autoEnable) return;
+    narrator.unlock();
+    void requestWakeLock();
+    const unlock = () => narrator.unlock();
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => { window.removeEventListener("keydown", unlock); window.removeEventListener("pointerdown", unlock); };
+  }, [autoEnable, narrator]);
 
   // Hand the voice over cleanly when a TV connects or disconnects.
   useEffect(() => { if (!isAudioDevice) narrator.cancel(); }, [isAudioDevice, narrator]);

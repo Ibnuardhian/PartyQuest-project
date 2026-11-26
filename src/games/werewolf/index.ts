@@ -20,10 +20,11 @@ export const werewolfModule: GameModule = {
     return "Hybrid Classic";
   },
   describeRoomSettings(raw) {
-    const settings = (raw ?? {}) as { roles?: "AUTO" | Partial<Record<ClassicRole, number>>; deadRevealMode?: string; nightTurnSeconds?: number; dayDiscussionSeconds?: number };
+    const settings = (raw ?? {}) as { roles?: "AUTO" | Partial<Record<ClassicRole, number>>; deadRevealMode?: string; nightTurnSeconds?: number; dayDiscussionSeconds?: number; advanced?: boolean };
     const roles = settings.roles;
     const composition = !roles || roles === "AUTO" ? "Otomatis" : CLASSIC_ROLES.filter((role) => (roles[role] ?? 0) > 0).map((role) => `${CLASSIC_ROLE_INFO[role].name} ${roles[role]}`).join(", ");
     return [
+      { label: "Mode", value: settings.advanced ? "Lanjutan (role bertwist aktif)" : "Dasar" },
       { label: "Komposisi", value: composition },
       { label: "Tereliminasi", value: settings.deadRevealMode === "SPECTATOR_REVEAL" ? "Lihat semua role" : "Role rahasia" },
       { label: "Giliran malam", value: `${settings.nightTurnSeconds ?? 15} detik` },

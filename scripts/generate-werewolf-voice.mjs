@@ -1,7 +1,7 @@
-// Generates the static Werewolf voice pack (41 MP3 lines) from src/games/werewolf/voice/voice-pack.json.
+// Generates the static Werewolf voice pack (52 MP3 lines) from src/games/werewolf/voice/voice-pack.json.
 //
-//   docker compose run --rm --no-deps web npm run voice:generate                         # Microsoft Edge Neural
-//   docker compose run --rm --no-deps web npm run voice:generate -- --provider elevenlabs # ElevenLabs (needs ELEVENLABS_API_KEY)
+//   docker compose run --rm --no-deps web npm run voice:generate                         # ElevenLabs (default)
+//   docker compose run --rm --no-deps web npm run voice:generate -- --provider microsoft # Microsoft Edge Neural
 //
 // Options:
 //   --force                 overwrite existing files
@@ -26,7 +26,7 @@ const pack = JSON.parse(await readFile(path.join(root, "src/games/werewolf/voice
 const args = process.argv.slice(2);
 const option = (name) => { const index = args.indexOf(name); return index >= 0 ? args[index + 1] : undefined; };
 const force = args.includes("--force");
-const provider = option("--provider") ?? "microsoft";
+const provider = option("--provider") ?? "elevenlabs";
 const samples = args.includes("--samples");
 // Optional overrides for comparison samples: another multilingual voice and its own sample folder.
 const multilingualVoice = option("--multilingual-voice") ?? pack.bilingual.multilingualVoice;

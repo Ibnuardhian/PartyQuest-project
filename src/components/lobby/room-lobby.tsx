@@ -20,6 +20,7 @@ interface RoomData {
   hostUserId: string;
   isHost: boolean;
   tvConnected: boolean;
+  hostCanRenameMembers?: boolean;
 }
 
 /** Platform lobby shared by every Online Room game. Game-specific labels come from the game module. */
@@ -38,6 +39,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const [hostNotice, setHostNotice] = useState(false);
   const [preview, setPreview] = useState<RoomPreview | null>(null);
   const [roomGone, setRoomGone] = useState(false);
+  const [renaming, setRenaming] = useState<{ userId: string; value: string } | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const guardOn = useRef(true);
   const wasHost = useRef<boolean | null>(null);
@@ -118,6 +120,20 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
       return;
     }
     await load(false);
+  }
+
+  /** Host renames a member (Werewolf): stops a guest from passing as another player. */
+  async function renameMember(userId: string, displayName: string) {
+    setBusy(true); setError("");
+    try {
+      const response = await fetch(`/api/rooms/${code}/members/${userId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ displayName }) });
+      const payload = await response.json() as { error?: { message?: string } };
+      if (!response.ok) throw new Error(payload.error?.message ?? "Nama belum dapat diganti.");
+      setRenaming(null);
+      await load(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Nama belum dapat diganti.");
+    } finally { setBusy(false); }
   }
 
   async function createTvCode() {
@@ -257,7 +273,14 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
             <p className="lb-count"><span>Pemain</span><b>{room.members.length}/{room.room.maxPlayers}</b></p>
             <div className="lb-roster">{room.members.map((member) => <div className="lb-row" key={member.user_id}>
               <span className="lb-avatar">{member.display_name.slice(0, 1).toUpperCase()}<i className={member.online ? "lb-online on" : "lb-online"} role="img" aria-label={member.online ? "Online" : "Offline"} /></span>
-              <span className="lb-name">{member.display_name}{member.user_id === room.currentUserId && <small className="lb-chip">Kamu</small>}{member.user_id === room.hostUserId && <small className="lb-chip host">♛ Host</small>}</span>
+              {renaming?.userId === member.user_id
+                ? <form className="lb-rename" onSubmit={(event) => { event.preventDefault(); void renameMember(member.user_id, renaming.value); }}>
+                  <input className="lb-rename-input" value={renaming.value} maxLength={24} autoFocus aria-label={`Nama baru untuk ${member.display_name}`} onChange={(event) => setRenaming({ userId: member.user_id, value: event.target.value })} onKeyDown={(event) => { if (event.key === "Escape") setRenaming(null); }} />
+                  <button type="submit" className="lb-rename-save" disabled={busy || !renaming.value.trim() || renaming.value.trim() === member.display_name}>Simpan</button>
+                  <button type="button" className="lb-rename-cancel" disabled={busy} onClick={() => setRenaming(null)} aria-label="Batal ganti nama">✕</button>
+                </form>
+                : <span className="lb-name">{member.display_name}{member.user_id === room.currentUserId && <small className="lb-chip">Kamu</small>}{member.user_id === room.hostUserId && <small className="lb-chip host">♛ Host</small>}</span>}
+              {room.isHost && room.hostCanRenameMembers && (status === "lobby" || status === "finished") && renaming?.userId !== member.user_id && <button type="button" className="lb-edit" disabled={busy} aria-label={`Ganti nama ${member.display_name}`} title="Ganti nama" onClick={() => setRenaming({ userId: member.user_id, value: member.display_name })}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg></button>}
               {room.scores && <span className="lb-score" aria-label={`Skor ${room.scores[member.user_id] ?? 0}`}>🏆 {room.scores[member.user_id] ?? 0}</span>}
               {status === "finished"
                 ? <span className={member.returned ? "lb-pill ready" : "lb-pill"}>{member.returned ? "Di lobi ✓" : member.online ? "Belum kembali" : "Offline"}</span>
