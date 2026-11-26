@@ -8,9 +8,10 @@ const pairKey = ([a, b]: readonly [string, string]) => [a, b].map((word) => word
 const allPairs = [...THEMED.flatMap((category) => WORD_PAIRS[category]), ...GENERAL_WORD_PAIRS];
 
 describe("Undercover word library", () => {
-  it("has at least 50 pairs in every themed category", () => {
-    for (const category of THEMED) expect(WORD_PAIRS[category].length, category).toBeGreaterThanOrEqual(50);
-    expect(GENERAL_WORD_PAIRS.length).toBeGreaterThanOrEqual(45);
+  it("has the curated 25 pairs in every themed category and in the general set (150 in total)", () => {
+    for (const category of THEMED) expect(WORD_PAIRS[category].length, category).toBe(25);
+    expect(GENERAL_WORD_PAIRS.length).toBe(25);
+    expect(allPairs).toHaveLength(150);
   });
 
   it("contains clean pairs: two different, trimmed words that fit the guess limit", () => {
