@@ -70,6 +70,14 @@ describe("word assignment", () => {
     expect(swapped.secret.assignments.find((item) => item.role === "undercover")?.word).toBe(first);
   });
 
+  it("lets either word of a pair be the civilian word across games", () => {
+    // Pin the pair, leave every other draw (the word swap) to real randomness.
+    const pinned = (max: number) => (max === pairs.length ? 0 : Math.floor(Math.random() * max));
+    const civilianWords = new Set<string>();
+    for (let round = 0; round < 80; round += 1) civilianWords.add(undercoverGame.createInitialState(names, settings, pinned).secret.civilianWord);
+    expect([...civilianWords].sort()).toEqual([...pairs[0]!].sort());
+  });
+
   it("always gives civilians and the undercover the two different words of one library pair", () => {
     for (let round = 0; round < 40; round += 1) {
       const state = undercoverGame.createInitialState(names, { ...settings, category: "campuran" });
