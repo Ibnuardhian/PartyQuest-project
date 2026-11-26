@@ -15,6 +15,7 @@ const localStateSchema = z.object({
     clueIndex: z.number().int().min(0),
     clueDeadlineAt: z.string().datetime().nullable(),
     clueMinutes: z.number().refine(isClueMinutesOption).optional(),
+    category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]).optional(),
     clues: z.array(z.object({ playerId: z.string() })),
     votes: z.record(z.string(), z.string()),
     tiedPlayerIds: z.array(z.string()),
@@ -23,6 +24,7 @@ const localStateSchema = z.object({
     winner: z.enum(["civilian", "undercover", "mr-white"]).nullable(),
     resultReason: z.string().nullable(),
     lastRoundTied: z.boolean(),
+    voteRequests: z.array(z.string()).default([]),
   }),
   secret: z.object({
     civilianWord: z.string(),

@@ -53,6 +53,8 @@ export interface PublicState {
   clueDeadlineAt: string | null;
   /** Window length, copied from the room settings so every player's screen can show it. */
   clueMinutes?: number;
+  /** Word category of this round, copied from the room settings so the intro popup can name it. Absent in old sessions. */
+  category?: Category;
   clues: Array<{ playerId: string }>;
   votes: Record<string, string>;
   tiedPlayerIds: string[];
@@ -61,6 +63,8 @@ export interface PublicState {
   winner: Winner | null;
   resultReason: string | null;
   lastRoundTied: boolean;
+  /** Living players who asked to start voting early during the clue window; a majority opens voting at once. */
+  voteRequests: string[];
 }
 
 export interface PrivatePlayerState {
@@ -90,6 +94,7 @@ export interface GameState {
 export type GameAction =
   | { type: "confirm-reveal"; playerId: string }
   | { type: "finish-discussion" }
+  | { type: "request-vote"; playerId: string }
   | { type: "cast-vote"; playerId: string; targetPlayerId: string }
   | { type: "guess-civilian-word"; playerId: string; guess: string };
 

@@ -15,12 +15,12 @@ HTTPS dan domain ditangani **Nginx di host VPS** (sudah terpasang di server ini)
 ## 1. Siapkan VPS dan domain
 
 1. Di hPanel → VPS, pasang template **Ubuntu 24.04 with Docker** (atau Ubuntu biasa lalu pasang Docker Engine + Compose plugin).
-2. Di DNS domain Anda, buat **A record** (misalnya `partyquest.domainanda.com`) ke IP VPS. Tunggu sampai `ping` ke domain itu menunjukkan IP VPS.
+2. Di DNS domain Anda, buat **A record** (misalnya `partyquest.ibnuardhian.web.id`) ke IP VPS. Tunggu sampai `ping` ke domain itu menunjukkan IP VPS.
 3. Pastikan port **80** dan **443** terbuka (firewall hPanel / `ufw allow 80,443/tcp`). Jangan buka 5432 maupun 3005: keduanya hanya dipakai di dalam server.
-4. Buat server block Nginx yang meneruskan domain ke `127.0.0.1:3005`, lalu pasang sertifikat (misalnya `certbot --nginx -d partyquest.domainanda.com`). Pengaturan `proxy_buffering off` wajib agar stream realtime (SSE) tidak tertahan:
+4. Buat server block Nginx yang meneruskan domain ke `127.0.0.1:3005`, lalu pasang sertifikat (misalnya `certbot --nginx -d partyquest.ibnuardhian.web.id`). Pengaturan `proxy_buffering off` wajib agar stream realtime (SSE) tidak tertahan:
    ```nginx
    server {
-     server_name partyquest.domainanda.com;
+     server_name partyquest.ibnuardhian.web.id;
      listen 80;
      location / {
        proxy_pass http://127.0.0.1:3005;
@@ -91,7 +91,7 @@ Penyiapan sekali saja:
    | Secret | `VPS_KNOWN_HOSTS` | output `ssh-keyscan` |
    | Variable | `VPS_PORT` | opsional, default `22` |
    | Variable | `VPS_APP_DIR` | opsional, default `/opt/partyquest` |
-   | Variable | `DEPLOY_URL` | opsional, misalnya `https://partyquest.domainanda.com` (untuk health check) |
+   | Variable | `DEPLOY_URL` | opsional, misalnya `https://partyquest.ibnuardhian.web.id` (untuk health check) |
 
 5. Di **Settings → Secrets and variables → Actions → Variables** (tingkat repo), buat `DEPLOY_ENABLED` = `true`. Sebelum itu, workflow hanya menjalankan verify.
 

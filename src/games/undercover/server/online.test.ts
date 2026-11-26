@@ -87,6 +87,22 @@ describe("Undercover Online Room adapter", () => {
     expectGameError(() => undercoverOnline.applyIntent(clue, { type: "submit-clue" }, ctx(members[0]!.userId)).publicState, 400, "invalid_input");
   });
 
+  it("lets any player ask for voting and opens it for a majority, while the host can still skip straight to voting", () => {
+    let clue = revealAll(newSession());
+    const needed = Math.floor(members.length / 2) + 1;
+    for (let index = 0; index < needed - 1; index += 1) {
+      clue = { ...clue, publicState: undercoverOnline.applyIntent(clue, { type: "request-vote" }, ctx(members[index + 1]!.userId)).publicState };
+    }
+    expect((clue.publicState as PublicState).phase).toBe("clue");
+    expect((clue.publicState as PublicState).voteRequests).toHaveLength(needed - 1);
+    const voting = undercoverOnline.applyIntent(clue, { type: "request-vote" }, ctx(members[0]!.userId)).publicState as unknown as PublicState;
+    expect(voting.phase).toBe("voting");
+    expect(voting.voteRequests).toEqual([]);
+    // Outside the clue window a request is refused, and a non-member cannot ask at all.
+    expectGameError(() => undercoverOnline.applyIntent({ ...clue, publicState: voting }, { type: "request-vote" }, ctx(members[0]!.userId)).publicState, 400, "invalid_action");
+    expectGameError(() => undercoverOnline.applyIntent(clue, { type: "request-vote" }, ctx(outsider)).publicState, 403, "not_a_player");
+  });
+
   it("lets only the host end the clue window early and go to voting", () => {
     const clue = revealAll(newSession());
     const host = { ...ctx(members[0]!.userId), isHost: true };

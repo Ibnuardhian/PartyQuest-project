@@ -8,9 +8,10 @@ const pairKey = ([a, b]: readonly [string, string]) => [a, b].map((word) => word
 const allPairs = [...THEMED.flatMap((category) => WORD_PAIRS[category]), ...GENERAL_WORD_PAIRS];
 
 describe("Undercover word library", () => {
-  it("has at least 50 pairs in every themed category", () => {
-    for (const category of THEMED) expect(WORD_PAIRS[category].length, category).toBeGreaterThanOrEqual(50);
-    expect(GENERAL_WORD_PAIRS.length).toBeGreaterThanOrEqual(45);
+  it("has the curated 25 pairs in every themed category and in the general set (150 in total)", () => {
+    for (const category of THEMED) expect(WORD_PAIRS[category].length, category).toBe(25);
+    expect(GENERAL_WORD_PAIRS.length).toBe(25);
+    expect(allPairs).toHaveLength(150);
   });
 
   it("contains clean pairs: two different, trimmed words that fit the guess limit", () => {
@@ -67,6 +68,14 @@ describe("word assignment", () => {
     expect(swapped.secret).toMatchObject({ civilianWord: second, undercoverWord: first });
     expect(swapped.secret.assignments.filter((item) => item.role === "civilian").every((item) => item.word === second)).toBe(true);
     expect(swapped.secret.assignments.find((item) => item.role === "undercover")?.word).toBe(first);
+  });
+
+  it("lets either word of a pair be the civilian word across games", () => {
+    // Pin the pair, leave every other draw (the word swap) to real randomness.
+    const pinned = (max: number) => (max === pairs.length ? 0 : Math.floor(Math.random() * max));
+    const civilianWords = new Set<string>();
+    for (let round = 0; round < 80; round += 1) civilianWords.add(undercoverGame.createInitialState(names, settings, pinned).secret.civilianWord);
+    expect([...civilianWords].sort()).toEqual([...pairs[0]!].sort());
   });
 
   it("always gives civilians and the undercover the two different words of one library pair", () => {

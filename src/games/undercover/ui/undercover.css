@@ -226,3 +226,31 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .undercover-theme .lj-input:disabled { opacity: .6; }
 .undercover-theme .lj-cta { background: #8b1e1e; color: #fff; }.undercover-theme .lj-cta:hover:not(:disabled) { background: #721616; }
 .undercover-theme .lj-cta:disabled { background: rgba(20, 25, 35, .15); color: rgba(20, 25, 35, .4); }
+
+/* Online game: early-vote requests, host veto, and the always-available "my word" card. */
+.uc-vote-request { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.uc-vote-request small { font-size: 12px; color: #5c5449; line-height: 1.45; }
+.uc-vote-request .secondary-button.is-on { background: #1b263b; color: #fff; border-color: #1b263b; }
+.uc-myword { margin-top: 14px; border: 1px solid rgba(20, 25, 35, .25); background: rgba(255, 255, 255, .55); padding: 10px 14px; color: #141923; }
+.uc-myword summary { cursor: pointer; font-size: 13px; font-weight: 650; letter-spacing: .04em; color: #141923; }
+.uc-myword[open] summary { margin-bottom: 8px; }
+.uc-myword strong { display: block; font: 26px Georgia, serif; color: #8b0000; }
+.uc-myword small { display: block; margin-top: 4px; font-size: 11px; color: #5c5449; }
+.undercover-theme .lb-card .lb-ready.on { background: transparent; color: #141923; border: 1px solid rgba(20, 25, 35, .4); }
+.undercover-theme .lb-card .lb-ready.on:hover:not(:disabled) { background: rgba(20, 25, 35, .08); }
+
+/* Round intro popup (2 seconds): pops up, then pops down before the word card appears. */
+.uc-intro { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .72); animation: uc-intro-fade-in .2s ease-out both; }
+.uc-intro.is-leaving { animation: uc-intro-fade-out .25s ease-in both; }
+.uc-intro-card { width: min(360px, 100%); background: #eae3d5; color: #141923; border: 1px solid rgba(20, 25, 35, .25); box-shadow: 0 24px 70px #000b; padding: 22px; display: grid; gap: 14px; text-align: center; animation: uc-intro-pop-in .25s cubic-bezier(.2, .9, .3, 1.2) both; }
+.uc-intro.is-leaving .uc-intro-card { animation: uc-intro-pop-out .25s ease-in both; }
+.uc-intro-card dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.uc-intro-card dl div { border: 1px solid rgba(20, 25, 35, .2); background: rgba(255, 255, 255, .55); padding: 10px 8px; }
+.uc-intro-card dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #5c5449; font-weight: 600; }
+.uc-intro-card dd { margin: 4px 0 0; font: 600 18px Georgia, serif; color: #141923; }
+.uc-intro-card small { font-size: 12px; color: #5c5449; }
+@keyframes uc-intro-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes uc-intro-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes uc-intro-pop-in { from { opacity: 0; transform: scale(.88) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes uc-intro-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.94) translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .uc-intro, .uc-intro-card { animation-duration: .01ms; } }

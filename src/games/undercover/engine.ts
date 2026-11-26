@@ -117,7 +117,12 @@ export function endClueWindow(state: GameState, now: number): GameState {
   const more = clueIndex < cluePassesForRound(state.public.round);
   if (more) return { ...state, public: { ...state.public, clueIndex, clueDeadlineAt: deadlineAfter(now, state.settings) } };
   // The timed window is the whole clue phase: when it ends the table votes right away.
-  return { ...state, public: { ...state.public, clueIndex, phase: "voting", clueDeadlineAt: null, votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
+  return openVoting({ ...state, public: { ...state.public, clueIndex } });
+}
+
+/** Moves a running clue window straight into voting (timer end, host veto, or a majority of vote requests). */
+export function openVoting(state: GameState): GameState {
+  return { ...state, public: { ...state.public, phase: "voting", clueDeadlineAt: null, votes: {}, revoteUsed: false, tiedPlayerIds: [], voteRequests: [] } };
 }
 
 /** Finish the spoken clue window before players vote away from the device. */
@@ -150,6 +155,8 @@ function validateAction(state: GameState, action: GameAction): { valid: true } |
       return state.public.phase === "reveal" && !state.public.revealedPlayerIds.includes(action.playerId) ? { valid: true } : fail("Kartu sudah dikonfirmasi atau fase pembagian selesai.");
     case "finish-discussion":
       return state.public.phase === "discussion" ? { valid: true } : fail("Diskusi belum dimulai.");
+    case "request-vote":
+      return state.public.phase === "clue" ? { valid: true } : fail("Usul voting hanya tersedia saat ronde petunjuk.");
     case "cast-vote": {
       if (state.public.phase !== "voting" && state.public.phase !== "revote") return fail("Fase voting sedang tidak aktif.");
       if (state.public.votes[action.playerId]) return fail("Kamu sudah memilih.");
@@ -179,6 +186,14 @@ function applyAction(state: GameState, action: GameAction, now = Date.now()): Ga
     }
     case "finish-discussion":
       return { ...state, public: { ...current, phase: "voting", votes: {}, revoteUsed: false, tiedPlayerIds: [] } };
+    case "request-vote": {
+      const requested = current.voteRequests ?? [];
+      const voteRequests = requested.includes(action.playerId) ? requested.filter((id) => id !== action.playerId) : [...requested, action.playerId];
+      const alive = current.players.filter((item) => item.alive).length;
+      const next = { ...state, public: { ...current, voteRequests } };
+      // A strict majority of the living players opens voting immediately.
+      return voteRequests.length * 2 > alive ? openVoting(next) : next;
+    }
     case "cast-vote": {
       const votes = { ...current.votes, [action.playerId]: action.targetPlayerId };
       const livingCount = current.players.filter((item) => item.alive).length;
@@ -244,8 +259,8 @@ function createInitialState(names: string[], input: GameSettings, pick = randomI
     return { playerId: player.id, role, word: role === "civilian" ? civilianWord : role === "undercover" ? undercoverWord : null };
   });
   const publicState: PublicState = {
-    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueMinutes: settings.clueMinutes, clues: [], votes: {}, tiedPlayerIds: [],
-    revoteUsed: false, eliminatedPlayerId: null, winner: null, resultReason: null, lastRoundTied: false,
+    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueMinutes: settings.clueMinutes, category: settings.category, clues: [], votes: {}, tiedPlayerIds: [],
+    revoteUsed: false, eliminatedPlayerId: null, winner: null, resultReason: null, lastRoundTied: false, voteRequests: [],
   };
   return { public: publicState, secret: { civilianWord, undercoverWord, assignments }, settings };
 }

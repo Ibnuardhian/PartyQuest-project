@@ -116,8 +116,9 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
     const response = await fetch(`/api/rooms/${code}/settings`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settings }) });
     const payload = await response.json() as { error?: { message?: string } };
     if (!response.ok) {
-      setError(payload.error?.message ?? "Pengaturan belum tersimpan.");
-      return;
+      const message = payload.error?.message ?? "Pengaturan belum tersimpan.";
+      setError(message);
+      throw new Error(message);
     }
     await load(false);
   }
@@ -288,7 +289,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
             </div>)}
             {room.members.length < minPlayers && Array.from({ length: Math.min(2, minPlayers - room.members.length) }, (_, index) => <div className="lb-row lb-empty" key={`empty-${index}`}>Menunggu pemain lain…</div>)}</div>
             <div className="lb-actions">
-              {status === "lobby" && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "SUDAH SIAP ✓" : "TANDAI SIAP"}</button>}
+              {status === "lobby" && <button className={me?.is_ready ? "lb-btn lb-ready on" : "lb-btn lb-ready"} disabled={busy} onClick={() => void roomAction("ready", { ready: !me?.is_ready })}>{me?.is_ready ? "BATAL SIAP" : "TANDAI SIAP"}</button>}
               {room.isHost && status === "lobby" && <button className="lb-btn lb-start" disabled={busy || Boolean(startBlocker)} onClick={() => void roomAction("start")}>{startBlocker || "MULAI PERMAINAN →"}</button>}
               {status === "finished" && room.isHost && <>
                 <button className="lb-btn lb-start" disabled>{`MENUNGGU SEMUA KEMBALI KE LOBI (${returnedCount}/${waitingMembers.length})`}</button>
