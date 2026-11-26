@@ -53,6 +53,8 @@ export interface PublicState {
   clueDeadlineAt: string | null;
   /** Window length, copied from the room settings so every player's screen can show it. */
   clueMinutes?: number;
+  /** Word category of this round, copied from the room settings so the intro popup can name it. Absent in old sessions. */
+  category?: Category;
   clues: Array<{ playerId: string }>;
   votes: Record<string, string>;
   tiedPlayerIds: string[];

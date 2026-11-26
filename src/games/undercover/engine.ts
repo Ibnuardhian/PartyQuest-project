@@ -259,7 +259,7 @@ function createInitialState(names: string[], input: GameSettings, pick = randomI
     return { playerId: player.id, role, word: role === "civilian" ? civilianWord : role === "undercover" ? undercoverWord : null };
   });
   const publicState: PublicState = {
-    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueMinutes: settings.clueMinutes, clues: [], votes: {}, tiedPlayerIds: [],
+    phase: "reveal", players, round: 1, revealIndex: 0, revealedPlayerIds: [], clueIndex: 0, clueDeadlineAt: null, clueMinutes: settings.clueMinutes, category: settings.category, clues: [], votes: {}, tiedPlayerIds: [],
     revoteUsed: false, eliminatedPlayerId: null, winner: null, resultReason: null, lastRoundTied: false, voteRequests: [],
   };
   return { public: publicState, secret: { civilianWord, undercoverWord, assignments }, settings };

@@ -238,3 +238,19 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 .uc-myword small { display: block; margin-top: 4px; font-size: 11px; color: #5c5449; }
 .undercover-theme .lb-card .lb-ready.on { background: transparent; color: #141923; border: 1px solid rgba(20, 25, 35, .4); }
 .undercover-theme .lb-card .lb-ready.on:hover:not(:disabled) { background: rgba(20, 25, 35, .08); }
+
+/* Round intro popup (2 seconds): pops up, then pops down before the word card appears. */
+.uc-intro { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .72); animation: uc-intro-fade-in .2s ease-out both; }
+.uc-intro.is-leaving { animation: uc-intro-fade-out .25s ease-in both; }
+.uc-intro-card { width: min(360px, 100%); background: #eae3d5; color: #141923; border: 1px solid rgba(20, 25, 35, .25); box-shadow: 0 24px 70px #000b; padding: 22px; display: grid; gap: 14px; text-align: center; animation: uc-intro-pop-in .25s cubic-bezier(.2, .9, .3, 1.2) both; }
+.uc-intro.is-leaving .uc-intro-card { animation: uc-intro-pop-out .25s ease-in both; }
+.uc-intro-card dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.uc-intro-card dl div { border: 1px solid rgba(20, 25, 35, .2); background: rgba(255, 255, 255, .55); padding: 10px 8px; }
+.uc-intro-card dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #5c5449; font-weight: 600; }
+.uc-intro-card dd { margin: 4px 0 0; font: 600 18px Georgia, serif; color: #141923; }
+.uc-intro-card small { font-size: 12px; color: #5c5449; }
+@keyframes uc-intro-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes uc-intro-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes uc-intro-pop-in { from { opacity: 0; transform: scale(.88) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes uc-intro-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.94) translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .uc-intro, .uc-intro-card { animation-duration: .01ms; } }
