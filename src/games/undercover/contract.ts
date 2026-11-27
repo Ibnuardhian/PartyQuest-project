@@ -55,6 +55,9 @@ export interface PublicState {
   clueMinutes?: number;
   /** Word category of this round, copied from the room settings so the intro popup can name it. Absent in old sessions. */
   category?: Category;
+  /** Role setup of this round (room settings every member already sees in the lobby), for the intro popup. Absent in old sessions. */
+  undercoverCount?: number;
+  mrWhiteEnabled?: boolean;
   clues: Array<{ playerId: string }>;
   votes: Record<string, string>;
   tiedPlayerIds: string[];

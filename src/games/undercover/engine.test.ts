@@ -115,6 +115,13 @@ describe("Undercover engine", () => {
     expect(game.public.phase).toBe("voting");
   });
 
+  it("carries the round setup in the public state for the intro popup", () => {
+    const game = start({ mrWhiteEnabled: true, undercoverCount: 1, category: "hewan" }, ["Alya", "Bima", "Citra", "Dara"]);
+    expect(game.public).toMatchObject({ category: "hewan", undercoverCount: 1, mrWhiteEnabled: true });
+    // Counts and flags are room settings, not secrets: nobody's role or word is in the public state.
+    expect(JSON.stringify(game.public)).not.toContain(game.secret.civilianWord);
+  });
+
   it("does not let an eliminated player ask for voting", () => {
     let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
     game = endClueWindow(game, 0);
