@@ -101,10 +101,19 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
     if (phase !== "reveal" || seen) { const skip = window.setTimeout(() => setIntro("done"), 0); return () => window.clearTimeout(skip); }
     try { window.sessionStorage.setItem(introKey, "1"); } catch { /* storage can be blocked */ }
     const open = window.setTimeout(() => setIntro("show"), 0);
-    const leave = window.setTimeout(() => setIntro("leaving"), 1750);
-    const close = window.setTimeout(() => setIntro("done"), 2000);
-    return () => { window.clearTimeout(open); window.clearTimeout(leave); window.clearTimeout(close); };
+    return () => window.clearTimeout(open);
   }, [intro, phase, introKey]);
+  // show (1.75 s) -> leaving (0.25 s) -> done; each step has its own effect so a state change never cancels the next timer.
+  useEffect(() => {
+    if (intro !== "show") return;
+    const timer = window.setTimeout(() => setIntro("leaving"), 1750);
+    return () => window.clearTimeout(timer);
+  }, [intro]);
+  useEffect(() => {
+    if (intro !== "leaving") return;
+    const timer = window.setTimeout(() => setIntro("done"), 250);
+    return () => window.clearTimeout(timer);
+  }, [intro]);
   const viewerId = state?.private?.playerId;
   const clueMaxSeconds = (state?.public.clueMinutes ?? DEFAULT_CLUE_MINUTES) * 60;
   const aliveCount = state?.public.players.filter((player) => player.alive).length ?? 0;
@@ -132,6 +141,7 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
       {error && <p className="error-message" role="alert">{error}</p>}
     </>}</div>
     {(intro === "show" || intro === "leaving") && state && <div className={`uc-intro${intro === "leaving" ? " is-leaving" : ""}`} role="dialog" aria-live="polite" aria-label="Info ronde"><div className="uc-intro-card">
+      <button type="button" className="uc-intro-close" aria-label="Tutup info ronde" autoFocus onClick={() => setIntro("leaving")}>✕</button>
       <span className="section-kicker">RONDE DIMULAI</span>
       <dl><div><dt>Kategori</dt><dd>{state.public.category ? CATEGORY_LABELS[state.public.category] : "Rahasia"}</dd></div><div><dt>Waktu diskusi</dt><dd>{formatClueMinutes(state.public.clueMinutes ?? DEFAULT_CLUE_MINUTES)}</dd></div></dl>
       <small>Bersiaplah melihat kata rahasiamu…</small>

@@ -10,6 +10,8 @@ export interface RoomSettingsEditorProps {
   disabled: boolean;
   /** Resolves once saved; rejects when the server refuses (the lobby already shows the message). */
   onSave(settings: unknown): Promise<void>;
+  /** Called with true while an autosave is pending or running, so the lobby can hold the start button until it settles. */
+  onPendingChange?(pending: boolean): void;
 }
 
 export interface GameModule {

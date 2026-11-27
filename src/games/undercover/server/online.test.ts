@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OnlineGameError, type StoredSession } from "@/games/online-game";
 import { type PublicState, type SecretState } from "@/games/undercover/contract";
-import { undercoverOnline } from "@/games/undercover/server/online";
+import { restoreState, undercoverOnline } from "@/games/undercover/server/online";
 
 const members = [
   { userId: "11111111-1111-4111-8111-111111111111", displayName: "Alya" },
@@ -101,6 +101,17 @@ describe("Undercover Online Room adapter", () => {
     // Outside the clue window a request is refused, and a non-member cannot ask at all.
     expectGameError(() => undercoverOnline.applyIntent({ ...clue, publicState: voting }, { type: "request-vote" }, ctx(members[0]!.userId)).publicState, 400, "invalid_action");
     expectGameError(() => undercoverOnline.applyIntent(clue, { type: "request-vote" }, ctx(outsider)).publicState, 403, "not_a_player");
+  });
+
+  it("restores a stored session from before voteRequests existed and retries simultaneous vote requests", () => {
+    const session = newSession();
+    const { voteRequests, ...older } = session.publicState as PublicState;
+    void voteRequests;
+    expect(restoreState({ ...session, publicState: older }).public.voteRequests).toEqual([]);
+    // Several players tapping "usul voting" together must not be refused on a stale version.
+    expect(undercoverOnline.retryOnConflict!({ type: "request-vote" })).toBe(true);
+    expect(undercoverOnline.retryOnConflict!({ type: "cast-vote", targetPlayerId: members[1]!.userId })).toBe(true);
+    expect(undercoverOnline.retryOnConflict!({ type: "end-clue" })).toBe(false);
   });
 
   it("lets only the host end the clue window early and go to voting", () => {

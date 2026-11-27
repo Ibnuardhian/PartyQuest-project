@@ -254,3 +254,6 @@ body:has(.undercover-theme) { background-color: #0a0a0a; color: #e5e0d8; }
 @keyframes uc-intro-pop-in { from { opacity: 0; transform: scale(.88) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes uc-intro-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.94) translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .uc-intro, .uc-intro-card { animation-duration: .01ms; } }
+.uc-intro-card { position: relative; }
+.uc-intro-close { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 1px solid rgba(20, 25, 35, .3); background: transparent; color: #141923; font-size: 14px; line-height: 1; cursor: pointer; }
+.uc-intro-close:hover { background: rgba(20, 25, 35, .1); }

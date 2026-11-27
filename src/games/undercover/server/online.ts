@@ -96,7 +96,8 @@ export const undercoverOnline: OnlineGameServer = {
   },
   // Votes in Undercover are also simultaneous; a stale version should not lose a valid vote.
   retryOnConflict(intent) {
-    return typeof intent === "object" && intent !== null && (intent as { type?: unknown }).type === "cast-vote";
+    const type = typeof intent === "object" && intent !== null ? (intent as { type?: unknown }).type : undefined;
+    return type === "cast-vote" || type === "request-vote";
   },
   /** Each member of the winning side scores 1 point; a winning Mr. White scores 3. */
   roundPoints(session) {

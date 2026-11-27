@@ -8,7 +8,7 @@ import { CategorySelect } from "@/games/undercover/ui/category-select";
 interface RoomSettings { category: Category; undercoverCount: number; mrWhiteEnabled: boolean; clueMinutes: number }
 
 /** Host-only lobby editor for an Undercover room: category, roles, and the spoken-clue time per player. */
-export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, onSave }: RoomSettingsEditorProps) {
+export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, onSave, onPendingChange }: RoomSettingsEditorProps) {
   const initial: RoomSettings = { category: "campuran", undercoverCount: 1, mrWhiteEnabled: false, clueMinutes: DEFAULT_CLUE_MINUTES, ...(settings as Partial<RoomSettings>) };
   const [category, setCategory] = useState<Category>(initial.category);
   const [undercoverCount, setUndercoverCount] = useState(initial.undercoverCount);
@@ -17,8 +17,12 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
   const [failedKey, setFailedKey] = useState("");
+  // Only the host's own interaction may trigger a save, so a second tab that merely received new props never writes them back.
+  const [edited, setEdited] = useState(false);
+  const mark = () => setEdited(true);
   const saveRef = useRef(onSave);
-  useEffect(() => { saveRef.current = onSave; }, [onSave]);
+  const pendingRef = useRef(onPendingChange);
+  useEffect(() => { saveRef.current = onSave; pendingRef.current = onPendingChange; }, [onSave, onPendingChange]);
   const opposing = undercoverCount + Number(mrWhiteEnabled);
   const fitsPlayers = playerCount < 3 || playerCount - opposing >= 2;
   const dirty = category !== initial.category || undercoverCount !== initial.undercoverCount || mrWhiteEnabled !== initial.mrWhiteEnabled || clueMinutes !== initial.clueMinutes;
@@ -26,13 +30,20 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
   // Every change is saved on its own after a short pause; there is no save button to remember.
   // After a refused save it waits for the host to change something instead of retrying in a loop.
   const key = `${category}|${undercoverCount}|${mrWhiteEnabled}|${clueMinutes}`;
+  const latestKey = useRef(key);
+  useEffect(() => { latestKey.current = key; }, [key]);
+  const pending = saving || (edited && dirty && fitsPlayers && failedKey !== key);
+  useEffect(() => { pendingRef.current?.(pending); }, [pending]);
+  useEffect(() => () => pendingRef.current?.(false), []);
   useEffect(() => {
-    if (!dirty || !fitsPlayers || disabled || saving || failedKey === key) return;
+    if (!edited || !dirty || !fitsPlayers || disabled || saving || failedKey === key) return;
     const timer = window.setTimeout(async () => {
       setSaving(true);
       try {
         await saveRef.current({ category, undercoverCount, mrWhiteEnabled, clueMinutes } satisfies RoomSettings);
         setStatus("saved");
+        // Keep editing state if the host changed something again while this save was running.
+        if (latestKey.current === key) setEdited(false);
       } catch {
         setStatus("failed");
         setFailedKey(key);
@@ -41,11 +52,15 @@ export function UndercoverRoomSettingsEditor({ settings, playerCount, disabled, 
       }
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [category, undercoverCount, mrWhiteEnabled, clueMinutes, dirty, fitsPlayers, disabled, saving, failedKey, key]);
+  }, [edited, category, undercoverCount, mrWhiteEnabled, clueMinutes, dirty, fitsPlayers, disabled, saving, failedKey, key]);
 
-  const label = saving ? "Menyimpan…" : dirty && fitsPlayers ? "Menyimpan perubahan…" : status === "failed" && dirty && failedKey === key ? "Gagal menyimpan, coba ubah lagi" : status === "saved" ? "Tersimpan ✓" : "Perubahan tersimpan otomatis";
+  const label = saving ? "Menyimpan…"
+    : failedKey === key && dirty ? "Gagal menyimpan, coba ubah lagi"
+    : dirty && !fitsPlayers ? "Belum disimpan: sesuaikan jumlah peran"
+    : dirty && edited ? "Menyimpan perubahan…"
+    : status === "saved" ? "Tersimpan ✓" : "Perubahan tersimpan otomatis";
 
-  return <div className="lb-editor">
+  return <div className="lb-editor" onChangeCapture={mark} onClickCapture={mark} onInputCapture={mark} onKeyDownCapture={mark}>
     <div className="lb-set-grid">
       <div className="form-field"><label className="field-label" htmlFor="room-category">Kategori kata</label><CategorySelect id="room-category" value={category} disabled={disabled} onChange={setCategory} /></div>
       <div className="form-field"><label className="field-label" htmlFor="room-undercover">Jumlah Undercover</label><select id="room-undercover" value={undercoverCount} disabled={disabled} onChange={(event) => setUndercoverCount(Number(event.target.value))}>{[1, 2, 3, 4].map((count) => <option key={count} value={count}>{count} orang</option>)}</select></div>

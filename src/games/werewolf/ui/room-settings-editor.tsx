@@ -24,7 +24,7 @@ function recommended(playerCount: number, advanced: boolean): Roles {
 }
 
 /** Host-only lobby editor: Advanced mode, AUTO or custom composition, dead-player visibility, and timers. */
-export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, onSave }: RoomSettingsEditorProps) {
+export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, onSave, onPendingChange }: RoomSettingsEditorProps) {
   const initial = { ...DEFAULT_ROOM_SETTINGS, ...(settings as Partial<WerewolfRoomSettings>) };
   const [advanced, setAdvanced] = useState(Boolean(initial.advanced));
   const [auto, setAuto] = useState(initial.roles === "AUTO");
@@ -35,8 +35,12 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "saved" | "failed">("idle");
   const [failedKey, setFailedKey] = useState("");
+  // Only the host's own interaction may trigger a save, so a second tab that merely received new props never writes them back.
+  const [edited, setEdited] = useState(false);
+  const mark = () => setEdited(true);
   const saveRef = useRef(onSave);
-  useEffect(() => { saveRef.current = onSave; }, [onSave]);
+  const pendingRef = useRef(onPendingChange);
+  useEffect(() => { saveRef.current = onSave; pendingRef.current = onPendingChange; }, [onSave, onPendingChange]);
   const total = CLASSIC_ROLES.reduce((sum, role) => sum + (roles[role] ?? 0), 0);
   const preview = auto ? recommended(playerCount, advanced) : roles;
 
@@ -63,13 +67,20 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
   const payload = toPayload({ roles: auto ? "AUTO" : roles, deadRevealMode, nightTurnSeconds, dayDiscussionSeconds, advanced });
   const key = JSON.stringify(payload);
   const dirty = key !== JSON.stringify(toPayload(initial));
+  const latestKey = useRef(key);
+  useEffect(() => { latestKey.current = key; }, [key]);
+  const pending = saving || (edited && dirty && failedKey !== key);
+  useEffect(() => { pendingRef.current?.(pending); }, [pending]);
+  useEffect(() => () => pendingRef.current?.(false), []);
   useEffect(() => {
-    if (!dirty || disabled || saving || failedKey === key) return;
+    if (!edited || !dirty || disabled || saving || failedKey === key) return;
     const timer = window.setTimeout(async () => {
       setSaving(true);
       try {
         await saveRef.current(JSON.parse(key) as WerewolfRoomSettings);
         setStatus("saved");
+        // Keep editing state if the host changed something again while this save was running.
+        if (latestKey.current === key) setEdited(false);
       } catch {
         // The lobby already shows why the save was refused.
         setStatus("failed");
@@ -79,11 +90,11 @@ export function WerewolfRoomSettingsEditor({ settings, playerCount, disabled, on
       }
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [key, dirty, disabled, saving, failedKey]);
+  }, [edited, key, dirty, disabled, saving, failedKey]);
 
   const label = saving ? "Menyimpan…" : dirty && failedKey !== key ? "Menyimpan perubahan…" : dirty ? "Gagal menyimpan, coba ubah lagi" : status === "saved" ? "Tersimpan ✓" : "Perubahan tersimpan otomatis";
 
-  return <div className="ww-editor gx-stack">
+  return <div className="ww-editor gx-stack" onChangeCapture={mark} onClickCapture={mark} onInputCapture={mark} onKeyDownCapture={mark}>
     <label className="ww-check"><input type="checkbox" checked={advanced} disabled={disabled} onChange={(event) => toggleAdvanced(event.target.checked)} /> Mode lanjutan (role penuh twist)</label>
     <p className="ww-muted">{advanced ? `Role bertwist aktif: ${TWIST_ROLES.map((role) => CLASSIC_ROLE_INFO[role].name).join(", ")}. Komposisi otomatis ikut memakainya.` : "Mode dasar hanya memakai role standar. Nyalakan mode lanjutan untuk menambah role bertwist."}</p>
     <label className="ww-check"><input type="checkbox" checked={auto} onChange={(event) => setAuto(event.target.checked)} /> Komposisi otomatis sesuai jumlah pemain</label>
