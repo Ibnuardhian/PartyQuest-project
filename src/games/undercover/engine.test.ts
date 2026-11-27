@@ -115,6 +115,24 @@ describe("Undercover engine", () => {
     expect(game.public.phase).toBe("voting");
   });
 
+  it("does not let an eliminated player ask for voting", () => {
+    let game = revealAll(start({}, ["Alya", "Bima", "Citra", "Dara", "Eka"]));
+    game = endClueWindow(game, 0);
+    const civilianId = game.secret.assignments.find((item) => item.role === "civilian")!.playerId;
+    game = voteFor(game, civilianId);
+    expect(game.public.phase).toBe("clue");
+    expect(() => run(game, { type: "request-vote", playerId: civilianId })).toThrow("tidak aktif");
+  });
+
+  it("restores a saved local game from before voteRequests and category existed", () => {
+    const game = start();
+    const { voteRequests, category, ...older } = game.public;
+    void voteRequests; void category;
+    const restored = parseLocalGameState(JSON.stringify({ ...game, public: older }));
+    expect(restored?.public.voteRequests).toEqual([]);
+    expect(restored?.public.category).toBeUndefined();
+  });
+
   it("only accepts vote requests during the clue phase", () => {
     const voting = endClueWindow(revealAll(start()), 0);
     expect(voting.public.phase).toBe("voting");
