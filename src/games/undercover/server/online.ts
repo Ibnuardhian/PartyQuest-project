@@ -83,6 +83,10 @@ export const undercoverOnline: OnlineGameServer = {
     if (!intent.success) throw new OnlineGameError(400, "invalid_input", "Aksi permainan tidak valid.");
     const state = restoreState(session);
     requireSeat(state, ctx.userId);
+    if (intent.data.type === "request-vote" && ctx.isHost) {
+      // The host already holds the veto (end-clue), so the host does not take part in the early-vote request.
+      throw new OnlineGameError(403, "host_cannot_request", "Host tidak perlu mengusulkan voting; gunakan tombol akhiri ronde clue.");
+    }
     if (intent.data.type === "end-clue") {
       if (!ctx.isHost) throw new OnlineGameError(403, "host_only", "Hanya host yang dapat mengakhiri ronde petunjuk.");
       if (state.public.phase !== "clue") throw new OnlineGameError(400, "invalid_action", "Aksi tidak sesuai dengan fase permainan saat ini.");
@@ -105,7 +109,7 @@ export const undercoverOnline: OnlineGameServer = {
     const winner = state.public.winner;
     if (state.public.phase !== "finished" || !winner) return null;
     const points: Record<string, number> = {};
-    for (const assignment of state.secret.assignments) if (assignment.role === winner) points[assignment.playerId] = winner === "mr-white" ? 3 : 1;
+    for (const assignment of state.secret.assignments) if (assignment.role === winner) points[assignment.playerId] = winner === "mr-white" ? 3 : winner === "undercover" ? 2 : 1;
     return points;
   },
   advance(session, now) {

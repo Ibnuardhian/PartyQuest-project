@@ -114,6 +114,14 @@ describe("Undercover Online Room adapter", () => {
     expect(undercoverOnline.retryOnConflict!({ type: "end-clue" })).toBe(false);
   });
 
+  it("does not let the host ask for early voting, since the host has the veto instead", () => {
+    const clue = revealAll(newSession());
+    const host = { ...ctx(members[0]!.userId), isHost: true };
+    expectGameError(() => undercoverOnline.applyIntent(clue, { type: "request-vote" }, host).publicState, 403, "host_cannot_request");
+    // The host's veto still works.
+    expect((undercoverOnline.applyIntent(clue, { type: "end-clue" }, host).publicState as unknown as PublicState).phase).toBe("voting");
+  });
+
   it("lets only the host end the clue window early and go to voting", () => {
     const clue = revealAll(newSession());
     const host = { ...ctx(members[0]!.userId), isHost: true };
@@ -136,6 +144,8 @@ describe("Undercover Online Room adapter", () => {
     expect(Object.values(points).every((value) => value === 1)).toBe(true);
     const undercoverWin = undercoverOnline.roundPoints!({ ...session, publicState: { ...pub, phase: "finished", winner: "undercover" } })!;
     expect(Object.keys(undercoverWin)).toEqual(secret.assignments.filter((item) => item.role === "undercover").map((item) => item.playerId));
+    // A winning Undercover scores 2 (Civilians 1, Mr. White 3).
+    expect(Object.values(undercoverWin).every((value) => value === 2)).toBe(true);
     expect(undercoverOnline.roundPoints!({ ...session, publicState: { ...pub, phase: "clue", winner: "civilian" } })).toBeNull();
     const withWhite = { ...settings, mrWhiteEnabled: true };
     const round = undercoverOnline.createRound(members, withWhite);
@@ -144,8 +154,6 @@ describe("Undercover Online Room adapter", () => {
     expect(undercoverOnline.roundPoints!(whiteSession)).toEqual({ [white.playerId]: 3 });
   });
 
-    // A winning Undercover scores 2 (Civilians 1, Mr. White 3).
-    expect(Object.values(undercoverWin).every((value) => value === 2)).toBe(true);
   it("advances the clue window from server time only", () => {
     const clue = revealAll(newSession());
     const publicState = clue.publicState as PublicState;
