@@ -36,6 +36,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [settingsPending, setSettingsPending] = useState(false);
   const [hostNotice, setHostNotice] = useState(false);
   const [preview, setPreview] = useState<RoomPreview | null>(null);
   const [roomGone, setRoomGone] = useState(false);
@@ -211,7 +212,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
   const minPlayers = 3;
   const readyCount = room?.members.filter((member) => member.is_ready).length ?? 0;
   const status = room?.room.status;
-  const startBlocker = !room ? "" : room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : readyCount < room.members.length ? `MENUNGGU SEMUA SIAP (${readyCount}/${room.members.length})` : "";
+  const startBlocker = !room ? "" : settingsPending ? "MENYIMPAN PENGATURAN…" : room.members.length < minPlayers ? `BUTUH MINIMAL ${minPlayers} PEMAIN (${room.members.length}/${minPlayers})` : readyCount < room.members.length ? `MENUNGGU SEMUA SIAP (${readyCount}/${room.members.length})` : "";
   const showInvite = status === "lobby" || status === "finished";
   // Offline members cannot come back, so they neither block the lobby nor count toward the wait.
   const waitingMembers = room?.members.filter((member) => member.returned || member.online) ?? [];
@@ -258,7 +259,7 @@ export default function RoomLobby({ code, initialGameKey = null }: { code: strin
           <section className="setup-card lb-card lb-settings" aria-label="Pengaturan ronde">
             <div className="lb-card-head"><span className="section-kicker">{editable ? "PENGATURAN RONDE" : "ATURAN RONDE AKTIF"}</span>{!room.isHost && <span className="lb-badge">Diatur oleh Host</span>}</div>
             {editable && game?.RoomSettingsEditor
-              ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} />
+              ? <game.RoomSettingsEditor settings={room.room.settings} playerCount={room.members.length} disabled={busy} onSave={saveSettings} onPendingChange={setSettingsPending} />
               : <>
                 <div className="lb-stats">{settingsItems.map((item) => <div className="lb-stat" key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}</div>
                 {status === "finished" && room.isHost && <p className="lb-callout">Pengaturan bisa diubah setelah semua pemain yang online kembali ke lobi. Pemain offline tidak ditunggu, atau tekan Buka lobi sekarang.</p>}
