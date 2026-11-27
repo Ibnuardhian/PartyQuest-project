@@ -16,6 +16,8 @@ const localStateSchema = z.object({
     clueDeadlineAt: z.string().datetime().nullable(),
     clueMinutes: z.number().refine(isClueMinutesOption).optional(),
     category: z.enum(["makanan", "hewan", "benda", "tempat", "pekerjaan", "campuran"]).optional(),
+    undercoverCount: z.number().int().min(1).max(4).optional(),
+    mrWhiteEnabled: z.boolean().optional(),
     clues: z.array(z.object({ playerId: z.string() })),
     votes: z.record(z.string(), z.string()),
     tiedPlayerIds: z.array(z.string()),

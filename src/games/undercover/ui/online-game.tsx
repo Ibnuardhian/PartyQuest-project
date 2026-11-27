@@ -143,7 +143,7 @@ export default function OnlineGame({ roomCode, sessionId }: { roomCode: string; 
     {(intro === "show" || intro === "leaving") && state && <div className={`uc-intro${intro === "leaving" ? " is-leaving" : ""}`} role="dialog" aria-live="polite" aria-label="Info ronde"><div className="uc-intro-card">
       <button type="button" className="uc-intro-close" aria-label="Tutup info ronde" autoFocus onClick={() => setIntro("leaving")}>✕</button>
       <span className="section-kicker">RONDE DIMULAI</span>
-      <dl><div><dt>Kategori</dt><dd>{state.public.category ? CATEGORY_LABELS[state.public.category] : "Rahasia"}</dd></div><div><dt>Waktu diskusi</dt><dd>{formatClueMinutes(state.public.clueMinutes ?? DEFAULT_CLUE_MINUTES)}</dd></div></dl>
+      <dl><div><dt>Kategori</dt><dd>{state.public.category ? CATEGORY_LABELS[state.public.category] : "Rahasia"}</dd></div><div><dt>Waktu diskusi</dt><dd>{formatClueMinutes(state.public.clueMinutes ?? DEFAULT_CLUE_MINUTES)}</dd></div>{state.public.undercoverCount !== undefined && <div><dt>Undercover</dt><dd>{state.public.undercoverCount} orang</dd></div>}{state.public.mrWhiteEnabled !== undefined && <div><dt>Mr. White</dt><dd>{state.public.mrWhiteEnabled ? "Aktif" : "Nonaktif"}</dd></div>}</dl>
       <small>Bersiaplah melihat kata rahasiamu…</small>
     </div></div>}</section><footer className="footer"><span>PARTYQUEST <span className="footer-star">✦</span> ONLINE GAME</span><span>Perubahan state dikirim sebagai notifikasi, lalu view diambil ulang</span></footer></main>;
 }
