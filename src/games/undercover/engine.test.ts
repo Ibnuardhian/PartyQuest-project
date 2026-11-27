@@ -276,6 +276,22 @@ describe("Undercover engine", () => {
     expect(undercoverGame.getResult(game)?.undercoverWord).toBe(game.secret.undercoverWord);
   });
 
+  it("lets Mr. White win when only one Civilian and Mr. White are left, instead of an endless tie", () => {
+    let game = start({ mrWhiteEnabled: true }, ["Alya", "Bima", "Citra", "Dara"]);
+    const undercoverId = game.secret.assignments.find((item) => item.role === "undercover")!.playerId;
+    game = cluesAndVoting(game);
+    game = voteFor(game, undercoverId);
+    // Two Civilians against Mr. White: the game goes on.
+    expect(game.public.phase).toBe("clue");
+    game = endClueWindow(game, 0);
+    const civilianId = game.secret.assignments.find((item) => item.role === "civilian" && game.public.players.find((player) => player.id === item.playerId)?.alive)!.playerId;
+    game = voteFor(game, civilianId);
+    // One Civilian against Mr. White would never end (each can only vote the other), so Mr. White wins at parity.
+    expect(game.public.phase).toBe("finished");
+    expect(game.public.winner).toBe("mr-white");
+    expect(undercoverGame.getResult(game)?.reason).toContain("Mr. White");
+  });
+
   it("starts a new clue round when Mr. White guesses incorrectly and checks the normal win condition", () => {
     let game = start({ mrWhiteEnabled: true }, ["Alya", "Bima", "Citra", "Dara"]);
     const whiteId = game.secret.assignments.find((item) => item.role === "mr-white")!.playerId;

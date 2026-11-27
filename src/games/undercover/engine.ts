@@ -73,9 +73,11 @@ function endIfWon(state: GameState): GameState {
   } else if (alive.undercover > 0 && alive.undercover >= alive.civilian) {
     winner = "undercover";
     reason = "Jumlah Undercover menyamai atau melebihi Civilian yang tersisa.";
-  } else if (alive["mr-white"] === 1 && alive.civilian === 0 && alive.undercover === 0) {
+  } else if (alive.undercover === 0 && alive["mr-white"] > 0 && alive.civilian <= alive["mr-white"]) {
+    // With no Undercover left, Mr. White survives to parity with the Civilians. Without this a Civilian vs Mr. White
+    // table could never end: each can only vote the other, so every vote ties and a new round starts forever.
     winner = "mr-white";
-    reason = "Mr. White menjadi pemain terakhir yang bertahan.";
+    reason = "Mr. White bertahan sampai jumlahnya sama dengan Civilian yang tersisa.";
   }
   if (!winner) return state;
   return { ...state, public: { ...state.public, phase: "finished", clueDeadlineAt: null, winner, resultReason: reason } };
@@ -94,7 +96,7 @@ function resolveVotes(state: GameState, now: number): GameState {
     if (!state.public.revoteUsed && tied.length > 1) {
       return { ...state, public: { ...state.public, phase: "revote", tiedPlayerIds: tied, votes: {}, revoteUsed: true, eliminatedPlayerId: null } };
     }
-    return { ...state, public: { ...state.public, phase: "clue", round: state.public.round + 1, clueIndex: 0, clueDeadlineAt: deadlineAfter(now, state.settings), clues: [], votes: {}, tiedPlayerIds: [], eliminatedPlayerId: null, lastRoundTied: true } };
+    return endIfWon({ ...state, public: { ...state.public, phase: "clue", round: state.public.round + 1, clueIndex: 0, clueDeadlineAt: deadlineAfter(now, state.settings), clues: [], votes: {}, tiedPlayerIds: [], eliminatedPlayerId: null, lastRoundTied: true } });
   }
   const eliminatedPlayerId = tied[0]!;
   const players = state.public.players.map((player) => player.id === eliminatedPlayerId ? { ...player, alive: false } : player);
