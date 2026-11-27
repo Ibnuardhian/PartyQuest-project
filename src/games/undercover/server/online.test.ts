@@ -144,6 +144,8 @@ describe("Undercover Online Room adapter", () => {
     expect(undercoverOnline.roundPoints!(whiteSession)).toEqual({ [white.playerId]: 3 });
   });
 
+    // A winning Undercover scores 2 (Civilians 1, Mr. White 3).
+    expect(Object.values(undercoverWin).every((value) => value === 2)).toBe(true);
   it("advances the clue window from server time only", () => {
     const clue = revealAll(newSession());
     const publicState = clue.publicState as PublicState;

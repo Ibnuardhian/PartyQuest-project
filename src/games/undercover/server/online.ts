@@ -99,7 +99,7 @@ export const undercoverOnline: OnlineGameServer = {
     const type = typeof intent === "object" && intent !== null ? (intent as { type?: unknown }).type : undefined;
     return type === "cast-vote" || type === "request-vote";
   },
-  /** Each member of the winning side scores 1 point; a winning Mr. White scores 3. */
+  /** Each member of the winning side scores a point: Civilian 1, Undercover 2, Mr. White 3. */
   roundPoints(session) {
     const state = restoreState(session);
     const winner = state.public.winner;
